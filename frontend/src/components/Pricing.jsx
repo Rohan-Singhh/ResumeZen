@@ -35,7 +35,7 @@ export default function Pricing() {
     },
     {
       title: "Unlimited Pack",
-      price: "₹250",
+      price: "₹500",
       period: "3 months",
       special: true,
       features: [
