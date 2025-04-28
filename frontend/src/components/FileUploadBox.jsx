@@ -64,6 +64,7 @@ export default function FileUploadBox({ onFileSelect }) {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    onFileSelect(null);
   };
 
   return (

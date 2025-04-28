@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   UserCircleIcon,
@@ -7,7 +7,8 @@ import {
   PencilSquareIcon,
   ArrowRightIcon,
   PlayIcon,
-  XMarkIcon
+  XMarkIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import VlogModal from '../components/VlogModal';
 import EditProfileModal from '../components/EditProfileModal';
@@ -21,7 +22,9 @@ const dummyData = {
     email: "rohan@example.com",
     phone: "+91-9876543210",
     purchased_plan: "3 Resume Checks Left",
-    initials: "RS"
+    initials: "RS",
+    remaining_checks: 3,
+    plan_type: "regular" // can be "regular" or "unlimited"
   },
   resumes: [
     {
@@ -142,22 +145,80 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [selectedVlog, setSelectedVlog] = useState(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [showPlanAlert, setShowPlanAlert] = useState(false);
+  const [remainingChecks, setRemainingChecks] = useState(dummyData.user.remaining_checks);
+  const [isPlanUnlimited] = useState(dummyData.user.plan_type === "unlimited");
 
   const getFirstName = (fullName) => {
     return fullName.split(' ')[0];
   };
 
   const handleProfileUpdate = ({ name, photo }) => {
-    // Here you would typically make an API call to update the profile
     console.log('Updating profile:', { name, photo });
-    // For now, we'll just close the modal
     setIsEditProfileOpen(false);
   };
 
   const handleFileSelect = (file) => {
-    // Here you would typically handle the file upload to your backend
-    console.log('Selected file:', file);
+    if (remainingChecks <= 0 && !isPlanUnlimited) {
+      setShowPlanAlert(true);
+      return;
+    }
+    setSelectedFile(file);
   };
+
+  const handleUploadConfirm = () => {
+    // Here you would typically handle the actual upload
+    console.log('Processing file:', selectedFile);
+    
+    // Update remaining checks if not unlimited plan
+    if (!isPlanUnlimited) {
+      setRemainingChecks(prev => prev - 1);
+      // Update the displayed plan text
+      dummyData.user.purchased_plan = `${remainingChecks - 1} Resume Checks Left`;
+    }
+    
+    // Reset selected file
+    setSelectedFile(null);
+  };
+
+  // Plan alert modal
+  const PlanAlertModal = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
+      <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <div className="flex items-center gap-3 text-yellow-600 mb-4">
+          <ExclamationTriangleIcon className="w-6 h-6" />
+          <h3 className="text-xl font-semibold">No Checks Remaining</h3>
+        </div>
+        <p className="text-gray-600 mb-6">
+          You've used all your resume checks. Purchase more checks to continue using our ATS optimization service.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => setShowPlanAlert(false)}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              setShowPlanAlert(false);
+              // Scroll to pricing section
+              document.querySelector('#pricing-section')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+          >
+            View Plans
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,6 +302,7 @@ export default function Dashboard() {
 
             {/* Payment Info Section */}
             <motion.div
+              id="pricing-section"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -290,7 +352,29 @@ export default function Dashboard() {
               className="bg-white rounded-xl shadow-md p-6"
             >
               <h2 className="text-xl font-semibold mb-6">Upload Resume</h2>
-              <FileUploadBox onFileSelect={handleFileSelect} />
+              <div className="space-y-4">
+                <FileUploadBox onFileSelect={handleFileSelect} />
+                
+                {/* Confirmation button */}
+                <AnimatePresence>
+                  {selectedFile && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="flex justify-end"
+                    >
+                      <button
+                        onClick={handleUploadConfirm}
+                        className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                      >
+                        <span>Process Resume</span>
+                        <ArrowRightIcon className="w-5 h-5" />
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
 
             {/* Resume History */}
@@ -364,19 +448,20 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Vlog Modal */}
-      {selectedVlog && (
-        <VlogModal vlog={selectedVlog} onClose={() => setSelectedVlog(null)} />
-      )}
-
-      {/* Edit Profile Modal */}
-      {isEditProfileOpen && (
-        <EditProfileModal
-          user={dummyData.user}
-          onClose={() => setIsEditProfileOpen(false)}
-          onSave={handleProfileUpdate}
-        />
-      )}
+      {/* Modals */}
+      <AnimatePresence>
+        {showPlanAlert && <PlanAlertModal />}
+        {selectedVlog && (
+          <VlogModal vlog={selectedVlog} onClose={() => setSelectedVlog(null)} />
+        )}
+        {isEditProfileOpen && (
+          <EditProfileModal
+            user={dummyData.user}
+            onClose={() => setIsEditProfileOpen(false)}
+            onSave={handleProfileUpdate}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 } 
