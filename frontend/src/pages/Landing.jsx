@@ -6,18 +6,25 @@ import Pricing from '../components/Pricing';
 import Reviews from '../components/Reviews';
 import FAQ from '../components/FAQ';
 import Support from '../components/Support';
+import { useNavigate } from 'react-router-dom';
 
 export default function Landing() {
+  const navigate = useNavigate();
+
+  const handleShowSuccessStories = () => {
+    navigate('/success-stories');
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <main className="bg-white">
       <Navbar />
-      <Hero />
+      <Hero onShowSuccessStories={handleShowSuccessStories} />
       <Features />
       <Steps />
       <Pricing />
       <Reviews />
       <FAQ />
       <Support />
-    </div>
+    </main>
   );
 }

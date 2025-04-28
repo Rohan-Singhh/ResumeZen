@@ -50,7 +50,7 @@ export default function Features() {
   };
 
   return (
-    <div id="features" className="bg-gray-50 py-24 sm:py-32">
+    <div id="features" className="bg-gray-50 pt-8 pb-24 sm:pt-12 sm:pb-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div 
           className="mx-auto max-w-2xl text-center"
@@ -59,11 +59,13 @@ export default function Features() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-base font-semibold leading-7 text-primary">Features</h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Everything you need to create the perfect resume
-          </p>
-          <p className="mt-6 text-lg leading-8 text-gray-600">
+          <span className="inline-block text-lg font-bold uppercase tracking-[0.2em] text-primary mb-6 bg-primary/10 px-6 py-2 rounded-full">
+            OUR FEATURES
+          </span>
+          <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">
+            Supercharge Your Resume
+          </h2>
+          <p className="text-lg leading-8 text-gray-600">
             Our AI-powered platform provides all the tools you need to create a professional, ATS-friendly resume that stands out.
           </p>
         </motion.div>
@@ -95,35 +97,6 @@ export default function Features() {
               );
             })}
           </dl>
-        </motion.div>
-
-        <motion.div 
-          className="mt-16 flex justify-center"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
-          <div className="relative overflow-hidden rounded-xl bg-primary/5 p-8">
-            <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
-            <div className="relative flex items-center gap-6">
-              <SparklesIcon className="h-12 w-12 text-primary" />
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Try our AI Resume Review</h3>
-                <p className="mt-2 text-gray-600">Get instant feedback on your existing resume</p>
-              </div>
-              <motion.button 
-                className="ml-auto flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-secondary transition-all duration-300 transform"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Upload Resume
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </motion.button>
-            </div>
-          </div>
         </motion.div>
       </div>
     </div>

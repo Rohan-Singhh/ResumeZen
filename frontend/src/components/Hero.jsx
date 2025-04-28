@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 
-export default function Hero() {
+export default function Hero({ onShowSuccessStories }) {
   return (
     <div id="home" className="relative overflow-hidden bg-white">
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
@@ -48,6 +48,7 @@ export default function Hero() {
                 className="rounded-full border-2 border-gray-200 px-8 py-3 text-gray-600 hover:border-primary hover:text-primary transition-all duration-300 transform"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={onShowSuccessStories}
               >
                 See Success Stories
               </motion.button>
