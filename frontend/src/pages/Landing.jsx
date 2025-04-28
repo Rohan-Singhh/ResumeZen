@@ -1,9 +1,10 @@
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
-import Steps from '../components/Steps';
 import Features from '../components/Features';
-import Reviews from '../components/Reviews';
+import Steps from '../components/Steps';
 import Pricing from '../components/Pricing';
+import Reviews from '../components/Reviews';
+import FAQ from '../components/FAQ';
 import Support from '../components/Support';
 
 export default function Landing() {
@@ -11,10 +12,11 @@ export default function Landing() {
     <div className="min-h-screen bg-white">
       <Navbar />
       <Hero />
-      <Steps />
       <Features />
-      <Reviews />
+      <Steps />
       <Pricing />
+      <Reviews />
+      <FAQ />
       <Support />
     </div>
   );

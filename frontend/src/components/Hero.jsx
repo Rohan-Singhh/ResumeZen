@@ -3,7 +3,7 @@ import { ArrowRightIcon } from '@heroicons/react/24/outline';
 
 export default function Hero() {
   return (
-    <div className="relative overflow-hidden bg-white">
+    <div id="home" className="relative overflow-hidden bg-white">
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
           {/* Left side content */}
@@ -36,13 +36,21 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.5 }}
             >
-              <button className="rounded-full bg-primary px-8 py-3 text-white hover:bg-secondary transition-colors flex items-center gap-2 group">
+              <motion.button 
+                className="rounded-full bg-primary px-8 py-3 text-white hover:bg-secondary transition-all duration-300 flex items-center gap-2 group transform"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Start Your Journey
                 <ArrowRightIcon className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="rounded-full border-2 border-gray-200 px-8 py-3 text-gray-600 hover:border-primary hover:text-primary transition-colors">
+              </motion.button>
+              <motion.button 
+                className="rounded-full border-2 border-gray-200 px-8 py-3 text-gray-600 hover:border-primary hover:text-primary transition-all duration-300 transform"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 See Success Stories
-              </button>
+              </motion.button>
             </motion.div>
             <motion.div 
               className="mt-8 flex items-center justify-center lg:justify-start gap-8"

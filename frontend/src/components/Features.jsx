@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { features } from '../data/content';
 import {
   SparklesIcon,
   DocumentCheckIcon,
@@ -7,12 +6,32 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 
-const iconMap = {
-  SparklesIcon,
-  DocumentCheckIcon,
-  UserGroupIcon,
-  MagnifyingGlassIcon
-};
+const features = [
+  {
+    id: 1,
+    title: "AI-Powered Resume Analysis",
+    description: "Get instant feedback on your resume with our advanced AI technology that analyzes format, content, and keywords.",
+    icon: SparklesIcon
+  },
+  {
+    id: 2,
+    title: "ATS-Friendly Templates",
+    description: "Choose from 50+ professionally designed templates that are guaranteed to pass Applicant Tracking Systems.",
+    icon: DocumentCheckIcon
+  },
+  {
+    id: 3,
+    title: "Real-Time Collaboration",
+    description: "Work with mentors and peers in real-time to perfect your resume with our collaborative editing feature.",
+    icon: UserGroupIcon
+  },
+  {
+    id: 4,
+    title: "Industry-Specific Keywords",
+    description: "Access our database of industry-specific keywords to optimize your resume for your target role.",
+    icon: MagnifyingGlassIcon
+  }
+];
 
 export default function Features() {
   const container = {
@@ -31,7 +50,7 @@ export default function Features() {
   };
 
   return (
-    <div className="bg-gray-50 py-24 sm:py-32">
+    <div id="features" className="bg-gray-50 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div 
           className="mx-auto max-w-2xl text-center"
@@ -58,7 +77,7 @@ export default function Features() {
         >
           <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 lg:max-w-none lg:grid-cols-2 lg:gap-y-16">
             {features.map((feature) => {
-              const Icon = iconMap[feature.icon];
+              const Icon = feature.icon;
               return (
                 <motion.div 
                   key={feature.id}
@@ -93,12 +112,16 @@ export default function Features() {
                 <h3 className="text-lg font-semibold text-gray-900">Try our AI Resume Review</h3>
                 <p className="mt-2 text-gray-600">Get instant feedback on your existing resume</p>
               </div>
-              <button className="ml-auto flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-secondary transition-colors">
+              <motion.button 
+                className="ml-auto flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-secondary transition-all duration-300 transform"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Upload Resume
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
-              </button>
+              </motion.button>
             </div>
           </div>
         </motion.div>

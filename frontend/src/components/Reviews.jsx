@@ -1,6 +1,32 @@
 import { motion } from 'framer-motion';
-import { testimonials } from '../data/content';
 import { StarIcon } from '@heroicons/react/24/solid';
+
+const testimonials = [
+  {
+    id: 1,
+    name: "Sarah Johnson",
+    role: "Software Engineer at Google",
+    image: "https://randomuser.me/api/portraits/women/1.jpg",
+    content: "ResumeZen helped me land my dream job at Google. The AI suggestions were spot-on!",
+    rating: 5
+  },
+  {
+    id: 2,
+    name: "Michael Chen",
+    role: "Product Manager at Meta",
+    image: "https://randomuser.me/api/portraits/men/2.jpg",
+    content: "The ATS-friendly templates and keyword suggestions made a huge difference in my job search.",
+    rating: 5
+  },
+  {
+    id: 3,
+    name: "Emily Rodriguez",
+    role: "UX Designer at Apple",
+    image: "https://randomuser.me/api/portraits/women/3.jpg",
+    content: "Clean, professional templates and amazing customer support. Highly recommended!",
+    rating: 5
+  }
+];
 
 export default function Reviews() {
   const container = {
@@ -19,7 +45,7 @@ export default function Reviews() {
   };
 
   return (
-    <div className="bg-white py-24 sm:py-32">
+    <div id="reviews" className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div 
           className="mx-auto max-w-2xl text-center"
@@ -92,12 +118,20 @@ export default function Reviews() {
               Ready to transform your career?
             </h3>
             <div className="flex flex-wrap justify-center gap-4">
-              <button className="rounded-full bg-primary px-8 py-3 text-white hover:bg-secondary transition-colors">
+              <motion.button 
+                className="rounded-full bg-primary px-8 py-3 text-white hover:bg-secondary transition-all duration-300 transform"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Get Started Free
-              </button>
-              <button className="rounded-full border-2 border-gray-200 px-8 py-3 text-gray-600 hover:border-primary hover:text-primary transition-colors">
+              </motion.button>
+              <motion.button 
+                className="rounded-full border-2 border-gray-200 px-8 py-3 text-gray-600 hover:border-primary hover:text-primary transition-all duration-300 transform"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 View Pricing
-              </button>
+              </motion.button>
             </div>
           </div>
         </motion.div>
