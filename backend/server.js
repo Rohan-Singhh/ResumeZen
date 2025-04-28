@@ -33,7 +33,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 30 * 60 * 1000, // 30 minutes
   max: 100 // limit each IP to 100 requests per windowMs
 });
 
