@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import LoginOptions from '../components/auth/LoginOptions';
 import PhoneLogin from '../components/auth/PhoneLogin';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [showPhoneLogin, setShowPhoneLogin] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,13 +30,22 @@ export default function Login() {
            backgroundColor: 'rgba(255, 255, 255, 0.9)',
            backgroundBlendMode: 'overlay'
          }}>
+      <motion.button
+        onClick={() => navigate('/')}
+        className="absolute top-8 left-8 flex items-center gap-2 text-primary hover:text-secondary font-medium px-4 py-2 rounded-lg transition-colors duration-300"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <span>🏠</span>
+        <span>Back to Home</span>
+      </motion.button>
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8"
       >
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Buddy</h1>
           <p className="text-gray-600">Sign in to continue to ResumeZen</p>
           {error && (
             <motion.div

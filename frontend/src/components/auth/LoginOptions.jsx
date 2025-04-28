@@ -1,10 +1,15 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { PhoneIcon } from '@heroicons/react/24/outline';
 
 export default function LoginOptions({ onPhoneLogin }) {
+  const navigate = useNavigate();
+
   const handleGoogleLogin = () => {
-    // TODO: Implement Google Authentication
+    // TODO: Implement actual Google Authentication
     console.log('Google login clicked');
+    // For now, just navigate to dashboard
+    navigate('/dashboard');
   };
 
   return (

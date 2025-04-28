@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   UserPlusIcon,
   DocumentArrowUpIcon,
@@ -41,6 +42,8 @@ const steps = [
 ];
 
 export default function Steps() {
+  const navigate = useNavigate();
+
   return (
     <section id="how-it-works" className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
@@ -89,6 +92,7 @@ export default function Steps() {
           transition={{ delay: 1 }}
         >
           <motion.button
+            onClick={() => navigate('/login')}
             className="bg-primary hover:bg-secondary text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
