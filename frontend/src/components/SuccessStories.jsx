@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircleIcon, SparklesIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 const successStories = [
   {
@@ -168,7 +168,7 @@ export default function SuccessStories() {
 
         {/* Price Comparison */}
         <motion.div
-          className="bg-primary/5 rounded-3xl p-8 lg:p-12 mb-20"
+          className="bg-primary/5 rounded-3xl p-8 lg:p-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -202,32 +202,6 @@ export default function SuccessStories() {
               </div>
             </div>
           </div>
-        </motion.div>
-
-        {/* Motivational CTA */}
-        <motion.div
-          className="text-center max-w-3xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <ArrowTrendingUpIcon className="h-12 w-12 text-primary mx-auto mb-6" />
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            Your Success Story Starts Here 🚀
-          </h3>
-          <p className="text-lg text-gray-600 mb-8">
-            Don't let your dream job slip away. Join thousands of successful professionals who took 
-            their first step towards career success with ResumeZen. Your future self will thank you!
-          </p>
-          <motion.button
-            className="inline-flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-full hover:bg-secondary transition-all duration-300"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Start Your Success Story
-            <ArrowTrendingUpIcon className="h-5 w-5" />
-          </motion.button>
         </motion.div>
       </div>
     </section>

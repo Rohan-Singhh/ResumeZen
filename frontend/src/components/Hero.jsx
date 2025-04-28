@@ -1,7 +1,10 @@
 import { motion } from 'framer-motion';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
 
 export default function Hero({ onShowSuccessStories }) {
+  const navigate = useNavigate();
+
   return (
     <div id="home" className="relative overflow-hidden bg-white">
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
@@ -37,6 +40,7 @@ export default function Hero({ onShowSuccessStories }) {
               transition={{ delay: 0.6, duration: 0.5 }}
             >
               <motion.button 
+                onClick={() => navigate('/login')}
                 className="rounded-full bg-primary px-8 py-3 text-white hover:bg-secondary transition-all duration-300 flex items-center gap-2 group transform"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

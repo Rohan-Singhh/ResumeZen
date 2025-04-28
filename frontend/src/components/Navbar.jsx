@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,6 +64,7 @@ export default function Navbar() {
                 </motion.a>
               ))}
               <motion.button
+                onClick={() => navigate('/login')}
                 className="bg-primary hover:bg-secondary text-white font-semibold py-2 px-6 rounded-lg transition duration-300 ml-2"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

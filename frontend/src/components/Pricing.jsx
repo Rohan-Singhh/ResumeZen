@@ -1,7 +1,10 @@
 import { motion } from 'framer-motion';
 import { CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/solid';
+import { useNavigate } from 'react-router-dom';
 
 export default function Pricing() {
+  const navigate = useNavigate();
+  
   const plans = [
     {
       title: "One-Time Check",
@@ -101,6 +104,7 @@ export default function Pricing() {
                 ))}
               </ul>
               <motion.button 
+                onClick={() => navigate('/login')}
                 className={`w-full font-semibold py-3 px-8 rounded-lg transition-all duration-300 ${
                   plan.special 
                     ? 'bg-secondary hover:bg-secondary/90 text-white' 

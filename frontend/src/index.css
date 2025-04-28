@@ -20,3 +20,67 @@ body {
   background-color: #ffffff;
   color: #213547;
 }
+
+/* Phone Input Custom Styles */
+.react-tel-input .form-control {
+  @apply w-full h-14 px-12 rounded-xl border-0 bg-white text-gray-900 text-lg transition-all duration-300;
+  box-shadow: 0 0 0 1px rgb(229 231 235);
+}
+
+.react-tel-input .form-control:hover {
+  box-shadow: 0 0 0 1px rgb(209 213 219);
+}
+
+.react-tel-input .form-control:focus {
+  @apply outline-none shadow-none;
+}
+
+.react-tel-input .selected-flag {
+  @apply bg-white rounded-l-xl border-0 transition-colors duration-200;
+  width: 45px;
+}
+
+.react-tel-input .selected-flag:hover,
+.react-tel-input .selected-flag:focus {
+  @apply bg-gray-50;
+}
+
+.react-tel-input .country-list {
+  @apply bg-white text-gray-900 shadow-lg border-0 rounded-xl overflow-hidden;
+  margin-top: 8px;
+}
+
+.react-tel-input .country-list .search {
+  @apply sticky top-0 z-10 m-0 p-3;
+  background: white;
+}
+
+.react-tel-input .country-list .search-box {
+  @apply w-full px-3 py-2 text-base border border-gray-200 rounded-lg;
+  background: white;
+}
+
+.react-tel-input .country-list .country {
+  @apply px-4 py-2 transition-colors duration-200;
+}
+
+.react-tel-input .country-list .country:hover,
+.react-tel-input .country-list .country.highlight {
+  @apply bg-gray-50;
+}
+
+.react-tel-input .country-list .country-name {
+  @apply text-sm text-gray-700;
+}
+
+.react-tel-input .country-list .dial-code {
+  @apply text-sm text-gray-500;
+}
+
+.phone-input-container {
+  @apply w-full;
+}
+
+.phone-input-container .flag-dropdown {
+  @apply border-0;
+}
