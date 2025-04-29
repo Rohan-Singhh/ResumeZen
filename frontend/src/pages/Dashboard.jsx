@@ -457,7 +457,7 @@ export default function Dashboard() {
           <button
             onClick={() => {
               setShowAnalysis(false);
-              setSelectedFile(null);
+              clearUploadArea();
             }}
             className="text-gray-500 hover:text-gray-700"
           >
@@ -506,7 +506,12 @@ export default function Dashboard() {
           <button
             onClick={() => {
               setShowAnalysis(false);
-              setSelectedFile(null);
+              clearUploadArea();
+              // Update remaining checks if not unlimited plan
+              if (!isPlanUnlimited) {
+                setRemainingChecks(prev => prev - 1);
+                dummyData.user.purchased_plan = `${remainingChecks - 1} Resume Checks Left`;
+              }
             }}
             className="px-4 py-2 text-white bg-primary hover:bg-primary/90 rounded-lg"
           >
