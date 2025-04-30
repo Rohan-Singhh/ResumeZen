@@ -124,7 +124,7 @@ export default function Support() {
                   <input
                     type="text"
                     placeholder="Your Name"
-                    className="w-full px-4 py-2.5 text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200"
+                    className="w-full px-4 py-2.5 text-gray-300 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -132,7 +132,7 @@ export default function Support() {
                   <input
                     type="email"
                     placeholder="Your Email"
-                    className="w-full px-4 py-2.5 text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200"
+                    className="w-full px-4 py-2.5 text-gray-300 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                   />
                 </div>
               </div>
@@ -141,7 +141,7 @@ export default function Support() {
                 <input
                   type="text"
                   placeholder="How can we help?"
-                  className="w-full px-4 py-2.5 text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200"
+                  className="w-full px-4 py-2.5 text-gray-300 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                 />
               </div>
               <div>
@@ -149,7 +149,7 @@ export default function Support() {
                 <textarea
                   placeholder="Your Message"
                   rows="4"
-                  className="w-full px-4 py-2.5 text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200"
+                  className="w-full px-4 py-2.5 text-gray-300 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                 ></textarea>
               </div>
               <motion.button
