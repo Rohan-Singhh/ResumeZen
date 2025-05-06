@@ -2,6 +2,9 @@ import React from 'react';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
 
 export default function ProfileCard({ user, onEdit }) {
+  // Extract first name from the full name
+  const firstName = user.name.split(' ')[0];
+  
   return (
     <div className="bg-white rounded-xl shadow-md p-6 overflow-hidden">
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
@@ -10,7 +13,7 @@ export default function ProfileCard({ user, onEdit }) {
             {user.initials}
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{user.name}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{firstName}</h2>
           </div>
         </div>
         <button onClick={onEdit} className="flex items-center gap-2 text-primary hover:text-secondary whitespace-nowrap flex-shrink-0">
