@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
 import SuccessStoriesPage from './pages/SuccessStoriesPage';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './dashboard/Dashboard';
 
 export default function App() {
   return (
