@@ -157,8 +157,18 @@ export const AuthProvider = ({ children }) => {
 
   // Function to handle logout
   const logout = () => {
+    // Set a flag in sessionStorage to detect logout in progress
+    sessionStorage.setItem('logoutInProgress', 'true');
+    
+    // Clear all auth-related data
     localStorage.removeItem('token');
+    localStorage.removeItem('lastPlanUpdate');
+    localStorage.removeItem('dashboardPlanUpdate');
+    
+    // Clear auth headers
     delete axios.defaults.headers.common['x-auth-token'];
+    
+    // Reset state
     setCurrentUser(null);
     
     // Clear cache
@@ -166,6 +176,11 @@ export const AuthProvider = ({ children }) => {
     apiCache.paymentHistory = null;
     apiCache.lastFetch.userData = 0;
     apiCache.lastFetch.paymentHistory = 0;
+    
+    // Clear the logout flag after a short delay
+    setTimeout(() => {
+      sessionStorage.removeItem('logoutInProgress');
+    }, 1000);
   };
 
   // Function to fetch user data with caching

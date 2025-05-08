@@ -41,7 +41,7 @@ export default function Dashboard() {
   const location = useLocation();
   const state = useDashboardState();
   const { currentUser, loading: authLoading, logout, fetchUserData, purchasePlan } = useAuth();
-  const { setLoading, isLoading } = useLoading();
+  const { setLoading, isLoading, disableLoadingTransitions } = useLoading();
   
   // Dashboard state
   const [payments, setPayments] = useState([]);
@@ -299,13 +299,41 @@ export default function Dashboard() {
   // ========== EVENT HANDLERS ==========
   
   // Handle logout
-  const handleLogout = () => {
-    // Clear request queue before logout
+  const handleLogout = async () => {
+    // Set a flag in sessionStorage to completely disable loading screens
+    sessionStorage.setItem('logoutInProgress', 'true');
+    
+    // Stop all ongoing processes
     requestQueue.current = [];
     isProcessingQueue.current = false;
     
+    // Clear loading states in all contexts
+    // 1. Global loading context
+    disableLoadingTransitions(true);
+    setLoading(false);
+    
+    // 2. Dashboard component loading states
+    state.setIsProcessing(false);
+    state.setShowAnalysis(false);
+    state.setShowFeedback(false);
+    setLoadingPayments(false);
+    
+    // 3. Clear all timers if any are active
+    if (animationTimer.current) {
+      clearTimeout(animationTimer.current);
+      animationTimer.current = null;
+    }
+    
+    // Perform the logout operation (Auth Context)
     logout();
-    navigate('/');
+    
+    // Force immediate navigation with replace to prevent back navigation
+    navigate('/', { 
+      replace: true,
+      state: { 
+        fromLogout: true 
+      } 
+    });
   };
   
   // UI Event handlers
