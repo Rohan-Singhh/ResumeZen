@@ -7,8 +7,9 @@ import { auth } from '../../firebase';
 import { signInWithPhoneNumber, RecaptchaVerifier } from 'firebase/auth';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
+import { useLoading } from '../../App';
 
-export default function PhoneLogin({ onBack }) {
+export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [verificationId, setVerificationId] = useState(null);
@@ -18,12 +19,28 @@ export default function PhoneLogin({ onBack }) {
   const [countdown, setCountdown] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [previousCode, setPreviousCode] = useState('');
+  const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading();
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Clean up loading state on unmount
+  useEffect(() => {
+    return () => {
+      // Only if we're not navigating to dashboard
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('/login')) {
+        setGlobalLoading(false);
+      }
+    };
+  }, [setGlobalLoading]);
 
   // Handle sending verification code
   const handleSendCode = async (e) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (loading) return;
+    
     setLoading(true);
     setError('');
     
@@ -50,6 +67,7 @@ export default function PhoneLogin({ onBack }) {
             // Response expired. Ask user to solve reCAPTCHA again.
             console.log('reCAPTCHA expired');
             setError('Verification timeout. Please try again.');
+            if (onError) onError('Verification timeout. Please try again.');
           }
         });
       }
@@ -91,11 +109,14 @@ export default function PhoneLogin({ onBack }) {
         errorMessage = 'Too many requests. Please try again later.';
       } else if (error.code === 'auth/missing-phone-number') {
         errorMessage = 'Please enter a phone number.';
+      } else if (error.response?.status === 429) {
+        errorMessage = 'Too many login attempts. Please try again in a few minutes.';
       } else {
         errorMessage += error.message || 'Please try again.';
       }
       
       setError(errorMessage);
+      if (onError) onError(errorMessage);
       
       // Reset reCAPTCHA
       if (window.recaptchaVerifier) {
@@ -114,6 +135,10 @@ export default function PhoneLogin({ onBack }) {
   // Handle verifying the code
   const handleVerifyCode = async (e) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (loading) return;
+    
     setLoading(true);
     setError('');
     
@@ -159,23 +184,36 @@ export default function PhoneLogin({ onBack }) {
       const idToken = await result.user.getIdToken();
       
       // Send the ID token to the backend for verification
-      const response = await axios.post('/api/auth/phone', { idToken });
+      const response = await axios.post('/api/auth/phone', { 
+        idToken,
+        headers: {
+          'Cache-Control': 'no-cache' // Prevent caching on this critical request
+        }
+      });
       console.log('Backend authentication successful:', response.data);
       
       // Handle authentication
       await login(response.data.user, response.data.token);
       
-      // Keep loading state active during redirect to prevent flickering
-      // Don't set loading to false here - keep the loading UI visible
-      setError('');
+      // Set welcome message with user's first name if available
+      const firstName = response.data.user.name?.split(' ')[0] || 'User';
+      setLoadingMessage(`Welcome, ${firstName}!`);
       
-      // Navigate to dashboard immediately without the temporary message
-      navigate('/dashboard', { 
-        state: { 
-          justLoggedIn: true,
-          authMethod: 'phone' 
-        } 
-      });
+      // Enable global loading state
+      setGlobalLoading(true);
+      
+      // Notify parent about navigation if provided
+      if (onSuccessNavigation) onSuccessNavigation();
+      
+      // Navigate to dashboard after consistent delay
+      setTimeout(() => {
+        navigate('/dashboard', { 
+          state: { 
+            justLoggedIn: true,
+            authMethod: 'phone' 
+          } 
+        });
+      }, 2000);
       
       return; // Stop execution here to prevent setting loading to false
     } catch (firebaseError) {
@@ -214,9 +252,17 @@ export default function PhoneLogin({ onBack }) {
         }
         
         setError(errorMessage);
+        if (onError) onError(errorMessage);
+        
+        // Reset global loading
+        setGlobalLoading(false);
       } catch (e) {
         setError('An unexpected error occurred. Please try again.');
         console.error('Error handling verification code error:', e);
+        if (onError) onError('An unexpected error occurred. Please try again.');
+        
+        // Reset global loading
+        setGlobalLoading(false);
       }
     } finally {
       setLoading(false);
@@ -249,6 +295,7 @@ export default function PhoneLogin({ onBack }) {
         'expired-callback': () => {
           console.log('reCAPTCHA expired');
           setError('Verification timeout. Please try again.');
+          if (onError) onError('Verification timeout. Please try again.');
         }
       });
       
@@ -280,11 +327,14 @@ export default function PhoneLogin({ onBack }) {
       let errorMessage = 'Failed to resend verification code. ';
       if (error.code === 'auth/too-many-requests') {
         errorMessage = 'Too many attempts. Please try again later.';
+      } else if (error.response?.status === 429) {
+        errorMessage = 'Too many requests. Please try again in a few minutes.';
       } else {
         errorMessage += error.message || 'Please try again.';
       }
       
       setError(errorMessage);
+      if (onError) onError(errorMessage);
     } finally {
       setLoading(false);
     }

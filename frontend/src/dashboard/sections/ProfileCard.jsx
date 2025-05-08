@@ -15,6 +15,26 @@ export default function ProfileCard({ user, onEdit }) {
   const [photoError, setPhotoError] = useState(null);
   const fileInputRef = useRef(null);
   
+  // Determine plan name for display
+  const getPlanDisplayName = (userData) => {
+    // Check for various plan name fields and handle them
+    const plan = userData.plan || userData.currentPlan || 'No Plan';
+    
+    // Handle specific cases
+    if (!plan || plan.toLowerCase() === 'no plan') {
+      return 'No Plan';
+    }
+    
+    // Format plan name to be more readable
+    // - First letter capitalized, rest lowercase
+    // - Remove special characters and underscores
+    return plan
+      .replace(/[-_]/g, ' ')
+      .replace(/\w\S*/g, (txt) => {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+      });
+  };
+  
   // Handle photo upload
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -165,8 +185,12 @@ export default function ProfileCard({ user, onEdit }) {
         </div>
         <div className="bg-primary/5 rounded-lg p-4 overflow-hidden">
           <p className="text-primary font-semibold">Current Plan</p>
-          <p className="text-lg font-bold truncate capitalize">{user.plan || 'Free'}</p>
-          {user.remainingChecks !== undefined && !user.hasUnlimitedChecks && (
+          <p className="text-lg font-bold truncate capitalize">
+            {getPlanDisplayName(user)}
+          </p>
+          {((user.plan && user.plan !== 'no plan') || (user.currentPlan && user.currentPlan !== 'no plan')) && 
+           !user.hasUnlimitedChecks && 
+           user.remainingChecks !== undefined && (
             <p className="text-sm text-gray-600 mt-1">
               {user.remainingChecks} checks remaining
             </p>

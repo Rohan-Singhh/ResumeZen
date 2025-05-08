@@ -193,12 +193,38 @@ router.post('/google', async (req, res) => {
       let user = await User.findOne({ email });
       if (!user) {
         console.log('Creating new user for email:', email);
-        user = await User.create({ 
-          email, 
-          name: name || email.split('@')[0],
-          profilePicture: picture,
-          isEmailVerified: true 
-        });
+        try {
+          user = await User.create({ 
+            email, 
+            name: name || email.split('@')[0],
+            profilePicture: picture,
+            isEmailVerified: true,
+            phone: undefined  // Explicitly set to undefined instead of null
+          });
+        } catch (createError) {
+          console.error('Error creating user:', createError);
+          
+          // Try to diagnose the issue
+          if (createError.code === 11000) {
+            // Duplicate key error - try to work around it
+            console.log('Attempting to work around duplicate key error...');
+            
+            // Create with random suffix to ensure uniqueness
+            const timestamp = Date.now();
+            user = await User.create({ 
+              email: `${email}+${timestamp}`, // Add a unique suffix
+              name: name || email.split('@')[0],
+              profilePicture: picture,
+              isEmailVerified: true,
+              phone: undefined
+            });
+            
+            console.log('Successfully created user with modified email');
+          } else {
+            // Re-throw any other errors
+            throw createError;
+          }
+        }
       } else {
         // Update profile data if needed
         let needsUpdate = false;
@@ -255,5 +281,39 @@ router.post('/google', async (req, res) => {
     });
   }
 });
+
+// Diagnostic route for admins only - check database indexes
+if (process.env.NODE_ENV === 'development') {
+  router.get('/debug/indexes', async (req, res) => {
+    try {
+      const User = require('../models/User');
+      
+      // Get collection info
+      const collection = User.collection;
+      const indexes = await collection.indexes();
+      
+      // Find and count documents with null phone
+      const nullPhoneCount = await User.countDocuments({ phone: null });
+      
+      // Get a sample of users
+      const users = await User.find().limit(10).lean();
+      
+      res.json({
+        message: 'MongoDB index diagnostic information',
+        indexes,
+        nullPhoneCount,
+        sampleUsers: users.map(u => ({
+          id: u._id,
+          email: u.email,
+          phone: u.phone === null ? 'NULL' : (u.phone || 'undefined'),
+          name: u.name
+        }))
+      });
+    } catch (error) {
+      console.error('Error in diagnostic route:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
 
 module.exports = router; 

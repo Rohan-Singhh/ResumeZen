@@ -1,20 +1,23 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { InformationCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
-export default function PlanSection({ plans, onPurchase, currentPlan, planEndDate, remainingChecks, hasUnlimitedChecks }) {
-  const { purchasePlan } = useAuth();
-
-  // Function to format date
-  const formatDate = (date) => {
-    if (!date) return 'Not applicable';
-    
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+export default function PlanSection({ plans, onPurchase, currentPlan }) {
+  const { fetchUserData } = useAuth();
+  const [expandedPlan, setExpandedPlan] = useState(null);
+  const [purchaseStatus, setPurchaseStatus] = useState({ loading: false, error: null, success: false, message: '' });
+  
+  // Reset purchase status if notification closed
+  useEffect(() => {
+    if (purchaseStatus.message) {
+      const timer = setTimeout(() => {
+        setPurchaseStatus({ loading: false, error: null, success: false, message: '' });
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [purchaseStatus.message]);
 
   // Get a plan identifier that works for all plan types
   const getPlanIdentifier = (plan) => {
@@ -29,111 +32,176 @@ export default function PlanSection({ plans, onPurchase, currentPlan, planEndDat
 
   // Check if current plan matches the plan in the list
   const isPlanCurrent = (plan) => {
-    const planId = getPlanIdentifier(plan);
-    return currentPlan && (
-      planId === currentPlan.toLowerCase() || 
-      (plan.type && plan.type.toLowerCase() === currentPlan.toLowerCase())
+    if (!currentPlan) return false;
+    
+    // Normalize both the current plan and plan.title for comparison
+    const normalizeText = (text) => {
+      if (!text) return '';
+      return text.toLowerCase().trim().replace(/\s+/g, ' ');
+    };
+    
+    const planTitle = normalizeText(plan.title);
+    const planId = normalizeText(plan.planId);
+    const planType = normalizeText(plan.type);
+    const currentPlanNormalized = normalizeText(currentPlan);
+    
+    // Compare normalized values
+    return (
+      planTitle === currentPlanNormalized || 
+      planId === currentPlanNormalized || 
+      planType === currentPlanNormalized ||
+      // Also check for partial matches like "Basic" vs "Basic Check"
+      currentPlanNormalized.includes(planTitle) || 
+      planTitle.includes(currentPlanNormalized)
     );
   };
 
   // Handle plan purchase
   const handlePurchase = async (plan) => {
     try {
-      // Call the onPurchase callback (for immediate UI updates)
-      onPurchase(plan);
+      // Reset status
+      setPurchaseStatus({ loading: true, error: null, success: false, message: 'Processing purchase...' });
       
-      // Generate a safe plan name
-      const planName = plan.title || `${plan.checks} ${plan.checks === 1 ? 'Check' : 'Checks'}`;
+      // Call the onPurchase callback from Dashboard
+      await onPurchase(plan);
       
-      // Process the purchase through the auth context
-      await purchasePlan({
-        planId: plan.planId || `plan-${planName.toLowerCase().replace(/\s+/g, '-')}`,
-        planName: planName,
-        amount: parseFloat(plan.price.toString().replace(/[^0-9.]/g, '')),
-        paymentMethod: 'credit_card',
-        paymentDetails: {
-          plan: planName,
-          checks: plan.checksAllowed || plan.checks || 'unlimited'
-        }
+      // Update success status
+      setPurchaseStatus({ 
+        loading: false, 
+        error: null, 
+        success: true, 
+        message: `Successfully purchased ${plan.title}!` 
       });
       
-      // Force reload the page to update UI
-      window.location.reload();
+      // No need to fetch user data here as it's already done in the Dashboard component
+      
     } catch (error) {
       console.error('Error purchasing plan:', error);
+      
+      // Set error status with specific message
+      setPurchaseStatus({ 
+        loading: false, 
+        error: true, 
+        success: false, 
+        message: error.response?.data?.error || 'Failed to purchase plan. Please try again later.' 
+      });
     }
   };
 
-  // Format the current plan name for display
-  const formatPlanName = (planName) => {
-    if (!planName || planName.toLowerCase() === 'free') return 'No Plan';
-    
-    // Capitalize first letter of each word
-    return planName.split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ');
+  // Get plan features based on plan title
+  const getPlanFeatures = (plan) => {
+    if (plan.title === "Basic Check") {
+      return "1 check";
+    } else if (plan.title === "Standard Pack") {
+      return "5 checks";
+    } else if (plan.title === "Unlimited Pack") {
+      return "Unlimited checks";
+    }
+    return "";
+  };
+
+  // Toggle plan details
+  const togglePlanDetails = (planId) => {
+    if (expandedPlan === planId) {
+      setExpandedPlan(null);
+    } else {
+      setExpandedPlan(planId);
+    }
   };
 
   return (
     <div id="pricing-section" className="bg-white rounded-xl shadow-md p-6">
-      <h2 className="text-xl font-semibold mb-4">Your Subscription</h2>
+      <h2 className="text-xl font-semibold mb-6">Available Plans</h2>
       
-      {/* Current plan details */}
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="font-semibold text-gray-800 capitalize">{formatPlanName(currentPlan)} Plan</h3>
-            {planEndDate && (
-              <p className="text-sm text-gray-600 mt-1">
-                Valid until: {formatDate(planEndDate)}
-              </p>
-            )}
-          </div>
-          <div className="text-right">
-            <span className="inline-block px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              {hasUnlimitedChecks ? 'Unlimited Checks' : `${remainingChecks} checks remaining`}
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* Purchase status message */}
+      <AnimatePresence>
+        {purchaseStatus.message && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className={`mb-4 p-3 rounded-lg text-center flex items-center justify-center ${
+              purchaseStatus.loading ? 'bg-blue-100 text-blue-700' :
+              purchaseStatus.error ? 'bg-red-100 text-red-700' :
+              purchaseStatus.success ? 'bg-green-100 text-green-700' : ''
+            }`}
+          >
+            {purchaseStatus.success && <CheckCircleIcon className="w-5 h-5 mr-2" />}
+            {purchaseStatus.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
       
-      <h2 className="text-xl font-semibold mb-4">Upgrade Your Plan</h2>
       <div className="space-y-4">
         {plans.map((plan, index) => {
           const isCurrentPlan = isPlanCurrent(plan);
+          const planId = getPlanIdentifier(plan);
+          const isExpanded = expandedPlan === planId;
+          const planFeatures = getPlanFeatures(plan);
           
           return (
-            <motion.div 
-              key={index} 
-              className={`border rounded-lg p-4 hover:border-primary transition-colors ${
-                isCurrentPlan ? 'bg-primary/5 border-primary' : ''
-              }`}
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-lg font-semibold">{plan.title || `${plan.checks || plan.checksAllowed} ${(plan.checks === 1 || plan.checksAllowed === 1) ? 'Check' : 'Checks'}`}</p>
-                  {plan.description && <p className="text-sm text-gray-600 mt-1">{plan.description}</p>}
-                  <div className="flex items-baseline mt-1">
-                    <p className="text-2xl font-bold text-primary">{plan.currency === 'INR' ? '₹' : '$'}{plan.price}</p>
-                    <span className="text-gray-600 ml-1">{plan.period ? `/${plan.period}` : ''}</span>
+            <div key={index}>
+              <motion.div 
+                className="border rounded-lg p-4 hover:border-indigo-500 transition-colors"
+                whileHover={{ scale: 1.002 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <h3 className="font-medium text-gray-800 mr-2">{plan.title}</h3>
+                    <button 
+                      onClick={() => togglePlanDetails(planId)}
+                      className="text-gray-400 hover:text-indigo-500 transition-colors"
+                    >
+                      <InformationCircleIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-baseline">
+                      <span className="text-lg font-medium text-indigo-500 mr-1">₹</span>
+                      <span className="text-2xl font-bold text-indigo-500">{plan.price}</span>
+                    </div>
+                    
+                    <motion.button 
+                      onClick={() => handlePurchase(plan)} 
+                      className={`${
+                        isCurrentPlan 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : purchaseStatus.loading 
+                            ? 'bg-indigo-400 cursor-wait' 
+                            : 'bg-indigo-500 hover:bg-indigo-600'
+                      } text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200`}
+                      whileTap={{ scale: 0.98 }}
+                      disabled={isCurrentPlan || purchaseStatus.loading}
+                    >
+                      {isCurrentPlan ? 'Current Plan' : 
+                       purchaseStatus.loading ? 'Processing...' : 'Purchase'}
+                    </motion.button>
                   </div>
                 </div>
-                <motion.button 
-                  onClick={() => handlePurchase(plan)} 
-                  className={`${
-                    isCurrentPlan 
-                      ? 'bg-gray-300 cursor-not-allowed' 
-                      : 'bg-primary hover:bg-primary/90'
-                  } text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200`}
-                  whileTap={{ scale: 0.95 }}
-                  disabled={isCurrentPlan}
-                >
-                  {isCurrentPlan ? 'Current Plan' : 'Upgrade'}
-                </motion.button>
-              </div>
-            </motion.div>
+                
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-3 mt-3 border-t text-sm text-gray-600">
+                        <p><span className="font-medium">Includes:</span> {planFeatures}</p>
+                        {plan.period && (
+                          <p className="mt-1"><span className="font-medium">Duration:</span> {plan.period} {plan.period === 1 ? 'month' : 'months'}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </div>
           );
         })}
       </div>
