@@ -3,10 +3,38 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { InformationCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
-export default function PlanSection({ plans, onPurchase, currentPlan }) {
-  const { fetchUserData } = useAuth();
+export default function PlanSection({ plans, onPurchase, currentPlan, remainingChecks, hasUnlimitedChecks, planEndDate }) {
+  const { fetchUserData, currentUser } = useAuth();
   const [expandedPlan, setExpandedPlan] = useState(null);
   const [purchaseStatus, setPurchaseStatus] = useState({ loading: false, error: null, success: false, message: '' });
+  const [localUserData, setLocalUserData] = useState({
+    currentPlan: currentPlan || 'free',
+    remainingChecks: remainingChecks || 0,
+    hasUnlimitedChecks: hasUnlimitedChecks || false,
+    planEndDate: planEndDate || null
+  });
+  
+  // Update local state when props change
+  useEffect(() => {
+    setLocalUserData({
+      currentPlan: currentPlan || 'free',
+      remainingChecks: remainingChecks || 0,
+      hasUnlimitedChecks: hasUnlimitedChecks || false,
+      planEndDate: planEndDate || null
+    });
+  }, [currentPlan, remainingChecks, hasUnlimitedChecks, planEndDate]);
+  
+  // Update local state when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      setLocalUserData({
+        currentPlan: currentUser.currentPlan || currentUser.plan || 'no_plan',
+        remainingChecks: currentUser.remainingChecks || 0,
+        hasUnlimitedChecks: currentUser.hasUnlimitedChecks || false,
+        planEndDate: currentUser.planEndDate ? new Date(currentUser.planEndDate) : null
+      });
+    }
+  }, [currentUser]);
   
   // Reset purchase status if notification closed
   useEffect(() => {
@@ -32,7 +60,7 @@ export default function PlanSection({ plans, onPurchase, currentPlan }) {
 
   // Check if current plan matches the plan in the list
   const isPlanCurrent = (plan) => {
-    if (!currentPlan) return false;
+    if (!localUserData.currentPlan || localUserData.currentPlan === 'no_plan') return false;
     
     // Normalize both the current plan and plan.title for comparison
     const normalizeText = (text) => {
@@ -43,7 +71,7 @@ export default function PlanSection({ plans, onPurchase, currentPlan }) {
     const planTitle = normalizeText(plan.title);
     const planId = normalizeText(plan.planId);
     const planType = normalizeText(plan.type);
-    const currentPlanNormalized = normalizeText(currentPlan);
+    const currentPlanNormalized = normalizeText(localUserData.currentPlan);
     
     // Compare normalized values
     return (
@@ -52,7 +80,9 @@ export default function PlanSection({ plans, onPurchase, currentPlan }) {
       planType === currentPlanNormalized ||
       // Also check for partial matches like "Basic" vs "Basic Check"
       currentPlanNormalized.includes(planTitle) || 
-      planTitle.includes(currentPlanNormalized)
+      planTitle.includes(currentPlanNormalized) ||
+      // Special case for unlimited
+      (plan.title === "Unlimited Pack" && localUserData.hasUnlimitedChecks)
     );
   };
 
@@ -73,7 +103,21 @@ export default function PlanSection({ plans, onPurchase, currentPlan }) {
         message: `Successfully purchased ${plan.title}!` 
       });
       
-      // No need to fetch user data here as it's already done in the Dashboard component
+      // Refresh user data to ensure up-to-date information
+      try {
+        const updatedUserData = await fetchUserData();
+        if (updatedUserData) {
+          console.log('User data refreshed in PlanSection after purchase');
+          setLocalUserData({
+            currentPlan: updatedUserData.currentPlan || updatedUserData.plan || 'free',
+            remainingChecks: updatedUserData.remainingChecks || 0,
+            hasUnlimitedChecks: updatedUserData.hasUnlimitedChecks || false,
+            planEndDate: updatedUserData.planEndDate ? new Date(updatedUserData.planEndDate) : null
+          });
+        }
+      } catch (refreshError) {
+        console.error('Failed to refresh user data after purchase:', refreshError);
+      }
       
     } catch (error) {
       console.error('Error purchasing plan:', error);
@@ -90,14 +134,14 @@ export default function PlanSection({ plans, onPurchase, currentPlan }) {
 
   // Get plan features based on plan title
   const getPlanFeatures = (plan) => {
-    if (plan.title === "Basic Check") {
+    if (plan.title === "One-Time Check" || plan.title === "Basic Check") {
       return "1 check";
-    } else if (plan.title === "Standard Pack") {
+    } else if (plan.title === "Boost Pack" || plan.title === "Standard Pack") {
       return "5 checks";
     } else if (plan.title === "Unlimited Pack") {
       return "Unlimited checks";
     }
-    return "";
+    return plan.checksAllowed ? `${plan.checksAllowed} checks` : "";
   };
 
   // Toggle plan details
@@ -108,10 +152,50 @@ export default function PlanSection({ plans, onPurchase, currentPlan }) {
       setExpandedPlan(planId);
     }
   };
+  
+  // Format remaining time for display
+  const formatRemainingTime = (endDate) => {
+    if (!endDate) return '';
+    
+    const now = new Date();
+    const end = new Date(endDate);
+    
+    if (now > end) return 'Expired';
+    
+    const diffTime = Math.abs(end - now);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 1 ? `${diffDays} days left` : 'Expires today';
+  };
 
   return (
     <div id="pricing-section" className="bg-white rounded-xl shadow-md p-6">
-      <h2 className="text-xl font-semibold mb-6">Available Plans</h2>
+      <h2 className="text-xl font-semibold mb-2">Your Current Plan</h2>
+      
+      {/* Current plan status */}
+      <div className="mb-6 bg-indigo-50 p-3 rounded-lg">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-medium text-indigo-800">
+              {localUserData.hasUnlimitedChecks ? 'Unlimited Pack' : 
+               localUserData.currentPlan === 'no_plan' ? 'No Plan' : 
+               localUserData.currentPlan}
+            </h3>
+            <p className="text-sm text-indigo-600">
+              {localUserData.hasUnlimitedChecks ? 'Unlimited resume checks' : 
+               localUserData.currentPlan === 'no_plan' ? 'Purchase a plan to analyze resumes' :
+               `${localUserData.remainingChecks} ${localUserData.remainingChecks === 1 ? 'check' : 'checks'} remaining`}
+            </p>
+          </div>
+          {localUserData.planEndDate && (
+            <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
+              {formatRemainingTime(localUserData.planEndDate)}
+            </span>
+          )}
+        </div>
+      </div>
+      
+      <h3 className="text-lg font-medium mb-4">Available Plans</h3>
       
       {/* Purchase status message */}
       <AnimatePresence>
@@ -143,7 +227,9 @@ export default function PlanSection({ plans, onPurchase, currentPlan }) {
           return (
             <div key={index}>
               <motion.div 
-                className="border rounded-lg p-4 hover:border-indigo-500 transition-colors"
+                className={`border rounded-lg p-4 transition-colors ${
+                  isCurrentPlan ? 'border-indigo-500 bg-indigo-50' : 'hover:border-indigo-500'
+                }`}
                 whileHover={{ scale: 1.002 }}
                 transition={{ duration: 0.2 }}
               >
@@ -194,7 +280,10 @@ export default function PlanSection({ plans, onPurchase, currentPlan }) {
                       <div className="pt-3 mt-3 border-t text-sm text-gray-600">
                         <p><span className="font-medium">Includes:</span> {planFeatures}</p>
                         {plan.period && (
-                          <p className="mt-1"><span className="font-medium">Duration:</span> {plan.period} {plan.period === 1 ? 'month' : 'months'}</p>
+                          <p className="mt-1"><span className="font-medium">Duration:</span> {plan.period === 'one-time' ? 'One-time purchase' : 
+                           plan.period === 'monthly' ? '1 month' :
+                           plan.period === 'quarterly' ? '3 months' :
+                           plan.period === 'yearly' ? '1 year' : plan.period}</p>
                         )}
                       </div>
                     </motion.div>

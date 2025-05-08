@@ -74,10 +74,14 @@ router.post('/', auth, async (req, res) => {
     // Set plan benefits
     if (plan.unlimitedChecks) {
       user.hasUnlimitedChecks = true;
+      user.remainingChecks = 999; // Set a high number for UI display
     } else {
       user.hasUnlimitedChecks = false;
-      user.remainingChecks = plan.checksAllowed || 1;
+      user.remainingChecks = (user.remainingChecks || 0) + (plan.checksAllowed || 1);
     }
+    
+    // Set subscription to active
+    user.isSubscriptionActive = true;
 
     // Add payment to user's payment history
     user.paymentHistory.push(payment._id);

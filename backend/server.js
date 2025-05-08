@@ -53,6 +53,7 @@ const configureRoutes = () => {
   });
   app.use('/api/auth', authRouter);
   app.use('/api/payments', require('./routes/payments'));
+  app.use('/payments', require('./routes/payments'));
   app.use('/api/users', require('./routes/users'));
   app.use('/api/plans', require('./routes/plans'));
 };

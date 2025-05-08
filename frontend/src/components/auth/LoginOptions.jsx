@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { auth, googleProvider } from '../../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import axios from 'axios';
@@ -10,177 +10,138 @@ import { useLoading } from '../../App';
 export default function LoginOptions({ onPhoneLogin, onError, onSuccessNavigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const { setLoading, setLoadingMessage } = useLoading();
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Clean up loading state when component unmounts
-  useEffect(() => {
-    return () => {
-      // Only clear loading if not navigating to dashboard
-      const currentPath = window.location.pathname;
-      if (currentPath.includes('/login')) {
-        setLoading(false);
-      }
-    };
-  }, [setLoading]);
-
-  const handleGoogleSignIn = async (e) => {
-    e.preventDefault();
+  // Use useCallback to prevent recreating this function on every render
+  const handleGoogleSignIn = useCallback(async () => {
+    if (isLoading) return; // Prevent multiple clicks
+    
     setIsLoading(true);
     setError('');
+    setLoading(true);
+    setLoadingMessage('Setting up your account...');
     
-    // Add navigation protection to prevent double clicks
-    if (isLoading) return;
-
     try {
-      // Sign in with Google
       const result = await signInWithPopup(auth, googleProvider);
-      
-      // Get the ID token
       const idToken = await result.user.getIdToken();
       
-      // Send token to backend for verification
-      const response = await axios.post('/api/auth/google', { 
-        idToken,
-        headers: {
-          'Cache-Control': 'no-cache' // Prevent caching on this critical request
-        } 
-      });
+      // Backend authentication
+      const response = await axios.post('/api/auth/google', { idToken });
       
-      // Handle successful authentication
-      await login(response.data.user, response.data.token);
-      
-      // Set loading message
-      setLoadingMessage(`Preparing dashboard...`);
-      
-      // Enable loading overlay for a very brief moment
-      setLoading(true);
-      
-      // Notify parent about navigation
+      // Success
+      await login(response.data.token);
       if (onSuccessNavigation) onSuccessNavigation();
-      
-      // Navigate to dashboard immediately - the animation will be handled there
-      // We don't need any setTimeout delay here
-      navigate('/dashboard', { 
-        state: { 
-          justLoggedIn: true,
-          loginMethod: 'google',
-          userName: response.data.user.name
-        } 
-      });
-    } catch (error) {
-      console.error('Google auth error:', error);
-      
-      // Extract the response error if available
-      const serverError = error.response?.data?.error || '';
-      const serverDetails = error.response?.data?.details || '';
-      console.log('Server error details:', serverError, serverDetails);
-      
-      // Provide specific error messages
-      let errorMessage = 'Failed to sign in with Google. Please try again.';
-      
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign-in popup was closed. Please try again.';
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = 'Sign-in popup was blocked. Please enable popups and try again.';
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        errorMessage = 'Another authentication popup is already open.';
-      } else if (error.code === 'auth/account-exists-with-different-credential') {
-        errorMessage = 'An account already exists with the same email address but different sign-in credentials.';
-      } else if (error.response?.status === 429) {
-        errorMessage = 'Too many login attempts. Please wait a moment and try again.';
-      } else if (serverError.includes('duplicate key') || serverDetails.includes('duplicate key')) {
-        // Handle MongoDB duplicate key errors
-        errorMessage = 'There was an issue with your account information. Please try again or contact support.';
-        
-        // Retry sign-in automatically after a short delay
-        setTimeout(() => {
-          handleGoogleSignIn(new Event('retryEvent'));
-        }, 1500);
-        
-        // Show temporary message
-        errorMessage = 'Account information is being updated. Please wait...';
-      }
-      
-      // Set error locally and also pass to parent if provided
-      setError(errorMessage);
-      if (onError) onError(errorMessage);
-      
-      // Reset loading state
+      navigate('/dashboard');
+    } catch (err) {
       setLoading(false);
-    } finally {
       setIsLoading(false);
+      
+      console.error('Google sign-in error:', err);
+      
+      // Handle specific error types
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in was cancelled. Please try again.');
+      } else if (err.response && err.response.data && err.response.data.error) {
+        if (err.response.data.error.includes('duplicate key')) {
+          // This is a server-side duplicate key error (likely on phone field)
+          if (retryCount < 3) {
+            // Auto-retry a few times
+            setRetryCount(prev => prev + 1);
+            setError('Account information is being updated. Please wait...');
+            setTimeout(() => handleGoogleSignIn(), 1500);
+            return;
+          } else {
+            setError('Unable to create account. Please try again later or contact support.');
+          }
+        } else {
+          setError(err.response.data.error);
+        }
+      } else {
+        setError('Error signing in with Google. Please try again.');
+      }
     }
-  };
+  }, [isLoading, navigate, login, onSuccessNavigation, retryCount, setLoading, setLoadingMessage, onError]);
 
   return (
-    <div>
+    <div className="space-y-4">
       {error && (
-        <div className="mb-6 p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
-          <p className="text-red-700">{error}</p>
+        <div className="bg-red-50 p-3 rounded-lg border-l-4 border-red-500 mb-4">
+          <p className="text-red-700 text-sm">{error}</p>
         </div>
       )}
       
-      <div className="mb-6">
-        <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800">
-          Choose your preferred sign-in method. Both options work with your ResumeZen account.
-        </div>
+      <h2 className="text-xl font-semibold mb-6">Sign in</h2>
+      
+      {/* Google login button */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className={`w-full flex items-center justify-center py-3 px-4 rounded-xl ${
+          isLoading ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
+        } border border-gray-300 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+        onClick={handleGoogleSignIn}
+        disabled={isLoading}
+      >
+        <span className="mr-3">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4"
+            />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              fill="#EA4335"
+            />
+          </svg>
+        </span>
+        <span className="text-sm font-medium">
+          {isLoading ? 'Signing in...' : 'Continue with Google'}
+        </span>
+      </motion.button>
+      
+      {/* Divider */}
+      <div className="flex items-center my-6">
+        <div className="flex-1 border-t border-gray-300"></div>
+        <div className="mx-4 text-sm text-gray-500">or</div>
+        <div className="flex-1 border-t border-gray-300"></div>
       </div>
-
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Phone Login Option */}
-          <motion.button
-            onClick={onPhoneLogin}
-            disabled={isLoading}
-            className="flex flex-col items-center justify-center w-full px-4 py-6 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary/30 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.03, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-blue-500/10 rounded-full flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-              </svg>
-            </div>
-            <span className="font-medium text-gray-800">Phone Number</span>
-            <span className="text-xs text-gray-500 mt-1">Verify with SMS code</span>
-          </motion.button>
-
-          {/* Google Login Option */}
-          <motion.button
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-            className="flex flex-col items-center justify-center w-full px-4 py-6 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary/30 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.03, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-blue-500/10 rounded-full flex items-center justify-center mb-3">
-              <img 
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
-                alt="Google" 
-                className="w-6 h-6" 
-              />
-            </div>
-            <span className="font-medium text-gray-800">Google</span>
-            <span className="text-xs text-gray-500 mt-1">Sign in with your Google account</span>
-            {isLoading && (
-              <svg className="animate-spin mt-2 h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            )}
-          </motion.button>
-        </div>
-        
-        <div className="pt-6 text-center">
-          <p className="text-xs text-gray-500">
-            By continuing, you agree to ResumeZen's <a href="#" className="text-primary hover:underline">Terms of Service</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>.
-          </p>
-        </div>
-      </div>
+      
+      {/* Phone login button */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className={`w-full flex items-center justify-center py-3 px-4 rounded-xl ${
+          isLoading ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
+        } border border-gray-300 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+        onClick={onPhoneLogin}
+        disabled={isLoading}
+      >
+        <span className="mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+        </span>
+        <span className="text-sm font-medium">Sign in with Phone</span>
+      </motion.button>
+      
+      {/* Terms */}
+      <p className="text-xs text-center text-gray-500 mt-6">
+        By signing in, you agree to our 
+        <a href="#" className="text-primary hover:underline mx-1">Terms of Service</a>
+        and
+        <a href="#" className="text-primary hover:underline mx-1">Privacy Policy</a>
+      </p>
     </div>
   );
 } 

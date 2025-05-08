@@ -4,8 +4,7 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     sparse: true,
-    unique: true,
-    default: undefined
+    default: null
   },
   isPhoneVerified: {
     type: Boolean,
@@ -40,23 +39,30 @@ const userSchema = new mongoose.Schema({
   // Subscription related fields
   currentPlan: {
     type: String,
-    enum: ['free', 'basic', 'pro', 'premium'],
-    default: 'free'
+    enum: ['no_plan', 'basic', 'pro', 'premium'],
+    default: 'no_plan'
   },
   currentPlanId: {
     type: String,
+    default: null
   },
   planStartDate: {
     type: Date,
+    default: null
   },
   planEndDate: {
     type: Date,
+    default: null
   },
   remainingChecks: {
     type: Number,
-    default: 3 // Default free checks
+    default: 0
   },
   hasUnlimitedChecks: {
+    type: Boolean,
+    default: false
+  },
+  isSubscriptionActive: {
     type: Boolean,
     default: false
   },
@@ -84,11 +90,11 @@ userSchema.pre('save', function(next) {
 });
 
 // Virtual for checking if subscription is active
-userSchema.virtual('isSubscriptionActive').get(function() {
-  if (this.currentPlan === 'free') return true;
-  if (!this.planEndDate) return false;
-  return this.planEndDate > new Date();
-});
+// userSchema.virtual('isSubscriptionActive').get(function() {
+//   if (this.currentPlan === 'free') return true;
+//   if (!this.planEndDate) return false;
+//   return this.planEndDate > new Date();
+// });
 
 // Add custom methods
 userSchema.methods.canPerformCheck = function() {
@@ -104,5 +110,26 @@ userSchema.methods.decrementCheck = function() {
   }
   return false;
 };
+
+// Add method to check if subscription is active
+userSchema.methods.isSubscriptionValid = function() {
+  return this.hasUnlimitedChecks || this.remainingChecks > 0 || (this.planEndDate && this.planEndDate > new Date());
+};
+
+// Add a virtual property to get plan status
+userSchema.virtual('planStatus').get(function() {
+  if (this.hasUnlimitedChecks) {
+    return 'unlimited';
+  } else if (this.remainingChecks > 0) {
+    return `${this.remainingChecks} checks remaining`;
+  } else {
+    return 'No Plan';
+  }
+});
+
+// Add it with a different name
+userSchema.virtual('subscriptionStatus').get(function() {
+  return this.isSubscriptionValid();
+});
 
 module.exports = mongoose.model('User', userSchema); 

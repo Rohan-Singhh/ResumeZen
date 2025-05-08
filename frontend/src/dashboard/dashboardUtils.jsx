@@ -15,8 +15,8 @@ export function handleProfileUpdate({ name, photo }, setIsEditProfileOpen) {
   setIsEditProfileOpen(false);
 }
 
-export function handleFileSelect(file, remainingChecks, isPlanUnlimited, setShowPlanAlert, setSelectedFile) {
-  if (remainingChecks <= 0 && !isPlanUnlimited) {
+export function handleFileSelect(file, remainingChecks, isPlanUnlimited, setShowPlanAlert, setSelectedFile, userPlan) {
+  if (userPlan === 'no_plan' || (remainingChecks <= 0 && !isPlanUnlimited)) {
     setShowPlanAlert(true);
     return;
   }
@@ -139,6 +139,25 @@ export function handleViewFeedback(resume, setSelectedResume, setShowFeedback) {
 export function clearUploadArea(setSelectedFile, setUploadComponent) {
   setSelectedFile(null);
   setUploadComponent(prev => prev + 1); // Force re-render of upload component
+  
+  // Also clear any file input elements
+  try {
+    // Find and clear any file inputs in the document
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+      input.value = '';
+    });
+    
+    // Clear any file previews or thumbnails that might be visible
+    const previewElements = document.querySelectorAll('.file-preview, [data-file-preview]');
+    previewElements.forEach(el => {
+      if (el && el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    });
+  } catch (error) {
+    console.error('Error cleaning up file inputs:', error);
+  }
 }
 
 // Add other handlers: handleFileSelect, handleUploadConfirm, handlePurchasePlan, handleViewFeedback, clearUploadArea, etc. 

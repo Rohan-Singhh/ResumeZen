@@ -4,17 +4,26 @@ import { ExclamationTriangleIcon, InformationCircleIcon, CheckCircleIcon, XMarkI
 
 export default function AlertModal({ type, ...props }) {
   if (type === 'plan') {
+    // Destructure plan-related props
+    const { onCancel, onViewPlans, planType = 'no_plan' } = props;
+    
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
           <div className="flex items-center gap-3 text-yellow-600 mb-4">
             <ExclamationTriangleIcon className="w-6 h-6" />
-            <h3 className="text-xl font-semibold">No Checks Remaining</h3>
+            <h3 className="text-xl font-semibold">
+              {planType === 'no_plan' ? 'No Active Plan' : 'No Checks Remaining'}
+            </h3>
           </div>
-          <p className="text-gray-600 mb-6">You've used all your resume checks. Purchase more checks to continue using our ATS optimization service.</p>
+          <p className="text-gray-600 mb-6">
+            {planType === 'no_plan' 
+              ? "You don't have an active plan. Purchase a plan to analyze your resume and get ATS optimization feedback."
+              : "You've used all your resume checks. Purchase more checks to continue using our ATS optimization service."}
+          </p>
           <div className="flex justify-end gap-3">
-            <button onClick={props.onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-            <button onClick={props.onViewPlans} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">View Plans</button>
+            <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+            <button onClick={onViewPlans} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">View Plans</button>
           </div>
         </div>
       </motion.div>

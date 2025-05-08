@@ -165,6 +165,31 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('lastPlanUpdate');
     localStorage.removeItem('dashboardPlanUpdate');
     
+    // Clear any file-related data
+    try {
+      // Clear any file input elements
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+      fileInputs.forEach(input => {
+        if (input) input.value = '';
+      });
+      
+      // Clear any file previews
+      const previewElements = document.querySelectorAll('.file-preview, [data-file-preview]');
+      previewElements.forEach(el => {
+        if (el && el.parentNode) {
+          el.style.display = 'none';
+        }
+      });
+      
+      // Force hide any loading/overlay elements
+      const loadingElements = document.querySelectorAll('.loading-element, .overlay, #loading-overlay');
+      loadingElements.forEach(el => {
+        if (el) el.style.display = 'none';
+      });
+    } catch (e) {
+      console.error('Error cleaning up UI elements during logout:', e);
+    }
+    
     // Clear auth headers
     delete axios.defaults.headers.common['x-auth-token'];
     
@@ -177,10 +202,10 @@ export const AuthProvider = ({ children }) => {
     apiCache.lastFetch.userData = 0;
     apiCache.lastFetch.paymentHistory = 0;
     
-    // Clear the logout flag after a short delay
+    // Clear the logout flag after a longer delay to ensure cleanup is complete
     setTimeout(() => {
       sessionStorage.removeItem('logoutInProgress');
-    }, 1000);
+    }, 2000);
   };
 
   // Function to fetch user data with caching
@@ -284,33 +309,24 @@ export const AuthProvider = ({ children }) => {
       // Log the request for debugging
       console.log('Sending plan purchase request:', planDetails);
       
-      // Check if the API endpoint is configured
-      if (!axios.defaults.baseURL && !window.location.hostname.includes('localhost')) {
-        console.log('Setting base URL for API requests');
-        axios.defaults.baseURL = '/api';
-      }
-      
       // Make sure auth token is set
       const token = localStorage.getItem('token');
       if (token) {
         axios.defaults.headers.common['x-auth-token'] = token;
       }
       
-      // Ensure the API endpoint is correctly configured (handle both /api/payments and /payments)
-      let response;
-      try {
-        // First try with /api/payments
-        response = await axios.post('/api/payments', planDetails);
-      } catch (error) {
-        // If that fails with 404, try with /payments
-        if (error.response && error.response.status === 404) {
-          console.log('Retrying with different API path');
-          response = await axios.post('/payments', planDetails);
-        } else {
-          // For other errors, rethrow
-          throw error;
-        }
-      }
+      // Get the current baseURL to determine the correct API path
+      const currentBaseURL = axios.defaults.baseURL || '';
+      console.log('Current axios baseURL:', currentBaseURL);
+      
+      // Determine if baseURL already includes /api or not
+      const apiPrefix = currentBaseURL.endsWith('/api') || currentBaseURL.includes('/api/') ? '' : '/api';
+      const paymentEndpoint = `${apiPrefix}/payments`;
+      
+      console.log('Using payment endpoint:', paymentEndpoint);
+      
+      // Make the payment request with the correct endpoint
+      const response = await axios.post(paymentEndpoint, planDetails);
       
       console.log('Plan purchase response:', response.data);
       

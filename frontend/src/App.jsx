@@ -26,7 +26,8 @@ export function LoadingProvider({ children }) {
   // Check for logout in progress flag
   useEffect(() => {
     const checkLogoutFlag = () => {
-      if (sessionStorage.getItem('logoutInProgress') === 'true') {
+      const isLogoutInProgress = sessionStorage.getItem('logoutInProgress') === 'true';
+      if (isLogoutInProgress) {
         // Logout is in progress, disable loading transitions
         setTransitionsDisabled(true);
         setIsLoading(false);
@@ -145,10 +146,26 @@ function AnimatedRoutes() {
     if (lastPathRef.current.includes('/dashboard') && location.pathname === '/') {
       // This is a logout navigation - disable all loading transitions
       console.log('Detected logout navigation, disabling loading transitions');
+      
+      // Set logout flag to prevent loading screens
+      sessionStorage.setItem('logoutInProgress', 'true');
+      
+      // Disable all loading transitions
       disableLoadingTransitions(true);
       
       // Prevent any loading states
       setLoading(false);
+      
+      // Force hide any loading overlays that might be visible
+      const loadingElements = document.querySelectorAll('.loading-element, .overlay, #loading-overlay');
+      loadingElements.forEach(el => {
+        if (el) el.style.display = 'none';
+      });
+      
+      // Clear the flag after a delay
+      setTimeout(() => {
+        sessionStorage.removeItem('logoutInProgress');
+      }, 2000);
     }
     
     // Update the last path for future comparisons
@@ -157,6 +174,12 @@ function AnimatedRoutes() {
   
   // Reset loading state on route changes and handle transitions
   useEffect(() => {
+    // Skip effect if we're navigating away from dashboard (logout case)
+    const isLogoutNavigation = lastPathRef.current.includes('/dashboard') && location.pathname === '/';
+    if (isLogoutNavigation) {
+      return; // Don't do anything during logout navigation
+    }
+    
     // If navigating to dashboard, clear loading immediately
     // This allows the dashboard's welcome animation to show without flashing
     if (location.pathname === '/dashboard') {
@@ -165,16 +188,13 @@ function AnimatedRoutes() {
       setLoading(false);
     } else {
       // For other routes, add a small delay for smooth transitions
-      // EXCEPT for logout navigation (dashboard -> home)
-      if (!(lastPathRef.current.includes('/dashboard') && location.pathname === '/')) {
-        const timer = setTimeout(() => {
-          setLoading(false);
-        }, 500);
-        
-        return () => clearTimeout(timer);
-      }
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [location.pathname, setLoading, lastPathRef]);
+  }, [location.pathname, setLoading]); // Only depend on location.pathname and setLoading, not the ref
   
   return (
     <AnimatePresence mode="wait">
