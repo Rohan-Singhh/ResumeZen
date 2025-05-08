@@ -3,6 +3,11 @@ node_modules/
 
 # Ignore .env file
 .env
+.env.*
 
 # Add the firebase service account JSON
 firebase-service-account.json
+
+# Ignore Firebase service account files
+*-firebase-adminsdk-*.json
+resumezen-7d5f2-firebase-adminsdk-fbsvc-0d1d6acd61.json
