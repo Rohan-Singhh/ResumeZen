@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Pricing() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, purchasePlan } = useAuth();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -108,42 +108,47 @@ export default function Pricing() {
     try {
       setPaymentLoading(true);
       
-      // In production environment, make the actual API call
-      if (import.meta.env.PROD) {
-        try {
-          const response = await axios.post('/api/payments', {
-            planId,
-            paymentMethod: 'credit_card',
-            paymentDetails: {
-              source: 'direct_payment'
-            }
-          });
-          
-          // Show success message
-          alert('Payment successful! Your plan has been updated.');
-          
-          // Reload the page to refresh the auth context with new plan data
-          window.location.reload();
-          
-          // Redirect to dashboard
-          navigate('/dashboard');
-          return;
-        } catch (apiErr) {
-          console.error('Payment API error:', apiErr);
-          // Fall through to development handling below
-        }
+      // Get the selected plan details
+      const selectedPlan = plans.find(p => p.planId === planId);
+      if (!selectedPlan) {
+        throw new Error('Plan not found');
       }
       
-      // Development/testing mode behavior
-      console.log('Development mode: Simulating payment for plan:', planId);
-      setTimeout(() => {
-        alert('Development mode: Payment simulation successful!');
-        navigate('/dashboard');
-      }, 1500);
+      // Prepare plan details for API
+      const planDetails = {
+        planId: selectedPlan.planId,
+        planName: selectedPlan.title,
+        amount: selectedPlan.price,
+        currency: selectedPlan.currency || 'INR',
+        paymentMethod: 'credit_card',
+        paymentDetails: {
+          source: 'direct_payment',
+          plan: selectedPlan.title,
+          checks: selectedPlan.title === "Unlimited Pack" ? 'unlimited' : 
+                 selectedPlan.title === "Boost Pack" ? 5 : 1
+        }
+      };
       
+      // Use the AuthContext purchasePlan function
+      const { user: updatedUser } = await purchasePlan(planDetails);
+      
+      if (updatedUser) {
+        // Show success message
+        alert('Payment successful! Your plan has been updated.');
+        
+        // Navigate to dashboard
+        navigate('/dashboard', {
+          state: { 
+            planUpdated: true,
+            planName: selectedPlan.title
+          }
+        });
+      } else {
+        throw new Error('Failed to update plan');
+      }
     } catch (err) {
       console.error('Payment failed:', err);
-      alert('Payment failed. Please try again later.');
+      alert(`Payment failed: ${err.message || 'Please try again later.'}`);
     } finally {
       setPaymentLoading(false);
     }

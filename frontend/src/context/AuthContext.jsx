@@ -165,6 +165,31 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('lastPlanUpdate');
     localStorage.removeItem('dashboardPlanUpdate');
     
+    // Clear any file-related data
+    try {
+      // Clear any file input elements
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+      fileInputs.forEach(input => {
+        if (input) input.value = '';
+      });
+      
+      // Clear any file previews
+      const previewElements = document.querySelectorAll('.file-preview, [data-file-preview]');
+      previewElements.forEach(el => {
+        if (el && el.parentNode) {
+          el.style.display = 'none';
+        }
+      });
+      
+      // Force hide any loading/overlay elements
+      const loadingElements = document.querySelectorAll('.loading-element, .overlay, #loading-overlay');
+      loadingElements.forEach(el => {
+        if (el) el.style.display = 'none';
+      });
+    } catch (e) {
+      console.error('Error cleaning up UI elements during logout:', e);
+    }
+    
     // Clear auth headers
     delete axios.defaults.headers.common['x-auth-token'];
     
@@ -177,10 +202,10 @@ export const AuthProvider = ({ children }) => {
     apiCache.lastFetch.userData = 0;
     apiCache.lastFetch.paymentHistory = 0;
     
-    // Clear the logout flag after a short delay
+    // Clear the logout flag after a longer delay to ensure cleanup is complete
     setTimeout(() => {
       sessionStorage.removeItem('logoutInProgress');
-    }, 1000);
+    }, 2000);
   };
 
   // Function to fetch user data with caching

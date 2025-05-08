@@ -3,27 +3,36 @@ import { motion } from 'framer-motion';
 import '../components/auth/welcomeAnimation.css';
 
 const LoadingOverlay = ({ message = "Loading your dashboard..." }) => {
+  // Enhanced check for logout in progress
+  const isLogoutInProgress = sessionStorage.getItem('logoutInProgress') === 'true';
+  
   // Check for logout in progress and prevent rendering if needed
   useEffect(() => {
     // This is a safety check to ensure the overlay doesn't show during logout
-    if (sessionStorage.getItem('logoutInProgress') === 'true') {
+    if (isLogoutInProgress) {
       // Immediately apply display:none style to the overlay
       const overlayElement = document.getElementById('loading-overlay');
       if (overlayElement) {
         overlayElement.style.display = 'none';
       }
+      
+      // Force hide all loading-related elements
+      const loadingElements = document.querySelectorAll('.loading-element, .overlay');
+      loadingElements.forEach(el => {
+        if (el) el.style.display = 'none';
+      });
     }
-  }, []);
+  }, [isLogoutInProgress]);
 
   // Don't render at all if logout is in progress
-  if (sessionStorage.getItem('logoutInProgress') === 'true') {
+  if (isLogoutInProgress) {
     return null;
   }
 
   return (
     <motion.div 
       id="loading-overlay"
-      className="fixed inset-0 animated-gradient welcome-animation-backdrop flex items-center justify-center z-50"
+      className="fixed inset-0 animated-gradient welcome-animation-backdrop flex items-center justify-center z-50 loading-element"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -59,14 +68,14 @@ const LoadingOverlay = ({ message = "Loading your dashboard..." }) => {
         
         <h2 className="text-2xl font-semibold text-white shimmer-text mb-3">{message}</h2>
         <p className="text-blue-100 text-sm">
-          Retrieving your profile information...
+          {isLogoutInProgress ? "Logging out..." : "Retrieving your profile information..."}
         </p>
         
         {/* Decorative elements with smoother animations */}
         {[...Array(5)].map((_, i) => (
           <motion.div 
             key={`bubble-${i}`}
-            className="absolute particle"
+            className="absolute particle loading-element"
             style={{
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,

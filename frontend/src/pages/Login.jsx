@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import LoginOptions from '../components/auth/LoginOptions';
@@ -29,66 +29,54 @@ export default function Login() {
   const navigatingRef = useRef(false);
   const { setLoading } = useLoading();
 
-  // Ensure loading is off when login page mounts and prevent residual loading
+  // Consolidated useEffect to handle both loading state management and cleanup
   useEffect(() => {
-    // Give the page time to render smoothly
-    const timer = setTimeout(() => {
+    // Only turn off loading if not navigation was initiated and we're mounting
+    if (!navigatingRef.current) {
+      setLoading(false);
+    }
+    
+    // Add click outside handler
+    const handleClickOutside = (event) => {
+      if (loginBoxRef.current && !loginBoxRef.current.contains(event.target)) {
+        navigate('/');
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Cleanup function for unmounting
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      
+      // Only turn off loading if we're not navigating to dashboard
       if (!navigatingRef.current) {
         setLoading(false);
       }
-    }, 200);
-    
-    return () => {
-      clearTimeout(timer);
     };
-  }, [setLoading]);
+  }, [navigate, setLoading]);
 
-  const handlePhoneLoginToggle = () => {
+  // Memoized handlers to avoid recreating them on every render
+  const handlePhoneLoginToggle = useCallback(() => {
     setShowPhoneLogin(true);
     setError('');
-  };
+  }, []);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setShowPhoneLogin(false);
     setError('');
-  };
+  }, []);
 
-  const handleError = (message) => {
+  const handleError = useCallback((message) => {
     setError(message);
     // Turn off loading if there's an error
     setLoading(false);
-  };
-
-  const handleClickOutside = (event) => {
-    if (loginBoxRef.current && !loginBoxRef.current.contains(event.target)) {
-      navigate('/');
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [navigate]);
+  }, [setLoading]);
   
   // Mark when we're navigating away to prevent turning off global loading
-  const handleNavigate = () => {
+  const handleNavigate = useCallback(() => {
     navigatingRef.current = true;
-  };
-  
-  // Listen for navigation events
-  useEffect(() => {
-    return () => {
-      // If we're navigating to the dashboard, don't turn off loading
-      if (navigatingRef.current) {
-        // Do nothing, let the destination page handle loading state
-      } else {
-        // If we're navigating elsewhere, ensure loading is off
-        setLoading(false);
-      }
-    };
-  }, [setLoading]);
+  }, []);
 
   // Decorative elements for visual appeal
   const Decorations = () => (

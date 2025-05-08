@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -22,21 +22,70 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
   const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading();
   const navigate = useNavigate();
   const { login } = useAuth();
+  const isNavigatingRef = useRef(false);
+  const countdownIntervalRef = useRef(null);
+  
+  // Handle countdown for resend with useRef to prevent re-renders
+  useEffect(() => {
+    // Clear any existing interval
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    
+    // Only set interval if countdown is active
+    if (countdown > 0) {
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdown(prevCount => {
+          if (prevCount <= 1) {
+            // Clear interval when we reach zero
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+            return 0;
+          }
+          return prevCount - 1;
+        });
+      }, 1000);
+    }
+    
+    // Cleanup on unmount or when countdown changes
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, [countdown]);
 
-  // Clean up loading state on unmount
+  // Combined cleanup function for unmounting
   useEffect(() => {
     return () => {
-      // Only if we're not navigating to dashboard
-      const currentPath = window.location.pathname;
-      if (currentPath.includes('/login')) {
+      // Clear any running intervals
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      
+      // Clear reCAPTCHA
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
+        } catch (e) {
+          console.error('Error clearing reCAPTCHA on unmount:', e);
+        }
+      }
+      
+      // Only clear global loading if we're not navigating to dashboard
+      if (!isNavigatingRef.current && window.location.pathname.includes('/login')) {
         setGlobalLoading(false);
       }
     };
-  }, [setGlobalLoading]);
+  }, []); // Empty dependency array as this should only run on unmount
 
-  // Handle sending verification code
-  const handleSendCode = async (e) => {
-    e.preventDefault();
+  // Memoized handlers to avoid recreation on every render
+  const handleSendCode = useCallback(async (e) => {
+    if (e) e.preventDefault();
     
     // Prevent multiple submissions
     if (loading) return;
@@ -130,11 +179,11 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loading, phoneNumber, onError, setError, setLoading]);
 
   // Handle verifying the code
-  const handleVerifyCode = async (e) => {
-    e.preventDefault();
+  const handleVerifyCode = useCallback(async (e) => {
+    if (e) e.preventDefault();
     
     // Prevent multiple submissions
     if (loading) return;
@@ -183,94 +232,117 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
       // Get the ID token
       const idToken = await result.user.getIdToken();
       
-      // Send the ID token to the backend for verification
-      const response = await axios.post('/api/auth/phone', { 
-        idToken,
-        headers: {
-          'Cache-Control': 'no-cache' // Prevent caching on this critical request
-        }
-      });
-      console.log('Backend authentication successful:', response.data);
-      
-      // Handle authentication
-      await login(response.data.user, response.data.token);
-      
-      // Set welcome message with user's first name if available
-      const firstName = response.data.user.name?.split(' ')[0] || 'User';
-      setLoadingMessage(`Welcome, ${firstName}!`);
-      
-      // Enable global loading state
-      setGlobalLoading(true);
-      
-      // Notify parent about navigation if provided
-      if (onSuccessNavigation) onSuccessNavigation();
-      
-      // Navigate to dashboard after consistent delay
-      setTimeout(() => {
+      try {
+        // Send the ID token to the backend for verification
+        const response = await axios.post('/api/auth/phone', { idToken });
+        console.log('Backend authentication successful:', response.data);
+        
+        // Set navigating flag to prevent clearing loading state on unmount
+        isNavigatingRef.current = true;
+        
+        // Handle authentication
+        await login(response.data.user, response.data.token);
+        
+        // Set welcome message with user's first name if available
+        const firstName = response.data.user.name?.split(' ')[0] || 'User';
+        setLoadingMessage(`Welcome, ${firstName}!`);
+        
+        // Set global loading state
+        setGlobalLoading(true);
+        
+        // Notify parent if successful navigation
+        if (onSuccessNavigation) onSuccessNavigation();
+        
+        // Navigate to dashboard
         navigate('/dashboard', { 
           state: { 
             justLoggedIn: true,
-            authMethod: 'phone' 
+            loginMethod: 'phone',
+            userName: response.data.user.name || 'User'
           } 
         });
-      }, 2000);
-      
-      return; // Stop execution here to prevent setting loading to false
-    } catch (firebaseError) {
-      console.error('Error verifying code:', firebaseError);
-      
-      try {
-        // Clean up reCAPTCHA
-        if (window.recaptchaVerifier) {
-          try {
-            window.recaptchaVerifier.clear();
-            window.recaptchaVerifier = null;
-          } catch (e) {
-            console.error('Error clearing reCAPTCHA:', e);
-          }
+      } catch (apiError) {
+        console.error('API error during phone verification:', apiError);
+        
+        // Check for duplicate key error
+        const isDuplicateKeyError = 
+          apiError.response?.data?.details?.includes('duplicate key error') ||
+          apiError.response?.data?.details?.includes('E11000');
+        
+        if (isDuplicateKeyError) {
+          // Wait a bit and retry once for duplicate key errors
+          setError('Account information is being synchronized. Please wait...');
+          
+          setTimeout(async () => {
+            try {
+              // Retry the request
+              const retryResponse = await axios.post('/api/auth/phone', { idToken });
+              
+              // If successful, proceed with login
+              isNavigatingRef.current = true;
+              await login(retryResponse.data.user, retryResponse.data.token);
+              setGlobalLoading(true);
+              
+              if (onSuccessNavigation) onSuccessNavigation();
+              
+              navigate('/dashboard', { 
+                state: { 
+                  justLoggedIn: true,
+                  loginMethod: 'phone',
+                  userName: retryResponse.data.user.name || 'User'
+                } 
+              });
+            } catch (retryError) {
+              // If retry fails, show appropriate error
+              const errorMessage = 'There was an issue with your account. Please try again in a few minutes or contact support.';
+              setError(errorMessage);
+              if (onError) onError(errorMessage);
+              setLoading(false);
+            }
+          }, 2000);
+          return;
         }
         
-        // Handle specific error cases
-        let errorMessage = 'Failed to verify code. ';
-        if (firebaseError.code === 'auth/invalid-verification-code') {
-          errorMessage = 'The verification code is not valid. Please check and try again.';
-        } else if (firebaseError.code === 'auth/code-expired') {
-          errorMessage = 'The verification code has expired. Please request a new code.';
-        } else if (firebaseError.code === 'auth/missing-verification-code') {
-          errorMessage = 'Please enter the verification code.';
-        } else if (firebaseError.code === 'auth/invalid-verification-id') {
-          errorMessage = 'Verification session expired. Please request a new code.';
-          setStep(1); // Go back to phone input
-        } else if (firebaseError.response?.status === 429) {
-          errorMessage = 'Too many login attempts. Please wait a moment and try again.';
-          // Start a longer countdown to prevent immediate retries
-          setCountdown(30);
-        } else if (firebaseError.response?.data?.error) {
-          errorMessage = firebaseError.response.data.error;
+        // Handle other API errors
+        let errorMessage = 'Server error during verification.';
+        
+        if (apiError.response?.status === 401) {
+          errorMessage = 'Verification failed. Please check the code and try again.';
+        } else if (apiError.response?.status === 429) {
+          errorMessage = 'Too many login attempts. Please try again in a few minutes.';
         } else {
-          errorMessage += firebaseError.message || 'Please try again.';
+          errorMessage = apiError.response?.data?.error || 'Server error during verification. Please try again.';
         }
         
         setError(errorMessage);
         if (onError) onError(errorMessage);
-        
-        // Reset global loading
-        setGlobalLoading(false);
-      } catch (e) {
-        setError('An unexpected error occurred. Please try again.');
-        console.error('Error handling verification code error:', e);
-        if (onError) onError('An unexpected error occurred. Please try again.');
-        
-        // Reset global loading
-        setGlobalLoading(false);
+        setLoading(false);
       }
-    } finally {
+    } catch (firebaseError) {
+      console.error('Firebase verification error:', firebaseError);
+      
+      // Handle specific Firebase errors
+      let errorMessage = 'Verification failed. ';
+      
+      if (firebaseError.code === 'auth/invalid-verification-code') {
+        errorMessage = 'The verification code is invalid. Please check and try again.';
+      } else if (firebaseError.code === 'auth/code-expired') {
+        errorMessage = 'The verification code has expired. Please request a new one.';
+        setStep(1);
+      } else if (firebaseError.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else {
+        errorMessage += firebaseError.message || 'Please try again.';
+      }
+      
+      setError(errorMessage);
+      if (onError) onError(errorMessage);
       setLoading(false);
     }
-  };
+  }, [loading, verificationCode, previousCode, attempts, verificationId, navigate, login, onSuccessNavigation, onError, setGlobalLoading, setLoadingMessage]);
 
   // Handle resending code
-  const handleResendCode = async () => {
+  const handleResendCode = useCallback(async () => {
     if (countdown > 0) return;
     
     setLoading(true);
@@ -338,33 +410,11 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [countdown, phoneNumber, onError]);
 
-  // Handle countdown for resend
-  useEffect(() => {
-    let interval = null;
-    if (countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [countdown]);
-
-  // Clear reCAPTCHA when unmounting
-  useEffect(() => {
-    return () => {
-      if (window.recaptchaVerifier) {
-        try {
-          window.recaptchaVerifier.clear();
-          window.recaptchaVerifier = null;
-        } catch (e) {
-          console.error('Error clearing reCAPTCHA on unmount:', e);
-        }
-      }
-    };
+  // Memoized handler for going back to step 1
+  const handleBackToStep1 = useCallback(() => {
+    setStep(1);
   }, []);
 
   return (
@@ -479,7 +529,7 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
           <div className="flex flex-col-reverse sm:flex-row sm:justify-between space-y-4 space-y-reverse sm:space-y-0">
             <motion.button
               type="button"
-              onClick={() => setStep(1)}
+              onClick={handleBackToStep1}
               className="w-full sm:w-auto px-4 py-3 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
               whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
               whileTap={{ scale: 0.98 }}

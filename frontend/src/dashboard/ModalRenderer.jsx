@@ -42,6 +42,7 @@ export default function ModalRenderer(props) {
           type="plan" 
           onCancel={() => setShowPlanAlert(false)}
           onViewPlans={handleViewPlans}
+          planType={user?.currentPlan || user?.plan}
         />
       )}
       

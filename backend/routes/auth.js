@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const admin = require('firebase-admin');
+const admin = require('firebase-admin')
 const rateLimit = require('express-rate-limit');
 const serviceAccount = require('../resumezen-7d5f2-firebase-adminsdk-fbsvc-0d1d6acd61.json');
+const mongoose = require('mongoose');
 
 // Ensure Firebase Admin is initialized
 if (!admin.apps.length) {
@@ -194,32 +195,62 @@ router.post('/google', async (req, res) => {
       if (!user) {
         console.log('Creating new user for email:', email);
         try {
+          // Explicitly set phone: null to avoid unique constraint issues
           user = await User.create({ 
             email, 
             name: name || email.split('@')[0],
             profilePicture: picture,
             isEmailVerified: true,
-            phone: undefined  // Explicitly set to undefined instead of null
+            phone: null  // Explicitly set to null
           });
         } catch (createError) {
           console.error('Error creating user:', createError);
           
-          // Try to diagnose the issue
+          // Handle the duplicate key error differently
           if (createError.code === 11000) {
-            // Duplicate key error - try to work around it
-            console.log('Attempting to work around duplicate key error...');
-            
-            // Create with random suffix to ensure uniqueness
-            const timestamp = Date.now();
-            user = await User.create({ 
-              email: `${email}+${timestamp}`, // Add a unique suffix
-              name: name || email.split('@')[0],
-              profilePicture: picture,
-              isEmailVerified: true,
-              phone: undefined
-            });
-            
-            console.log('Successfully created user with modified email');
+            if (createError.keyPattern && createError.keyPattern.phone) {
+              console.log('Phone duplicate key error detected. Trying to find user by email...');
+              
+              // Try alternative approach - first remove any documents with null phone
+              try {
+                // Check if there's another approach we can take
+                // First try to find the user again, there might be a race condition
+                user = await User.findOne({ email });
+                
+                if (!user) {
+                  // Try to use findOneAndUpdate to upsert the user which can handle this better
+                  user = await User.findOneAndUpdate(
+                    { email },
+                    { 
+                      email,
+                      name: name || email.split('@')[0],
+                      profilePicture: picture,
+                      isEmailVerified: true,
+                      $setOnInsert: { phone: null }
+                    },
+                    { 
+                      new: true,
+                      upsert: true,
+                      setDefaultsOnInsert: true
+                    }
+                  );
+                  console.log('Successfully created user using findOneAndUpdate');
+                } else {
+                  console.log('Found existing user by email after retry');
+                }
+              } catch (error) {
+                console.error('Error in alternative user creation approach:', error);
+                return res.status(500).json({ error: 'Cannot create user due to database constraint issues' });
+              }
+            } else {
+              // For email duplicate, try to find and return existing user
+              console.log('Email duplicate key error. Trying to find existing user...');
+              user = await User.findOne({ email });
+              
+              if (!user) {
+                throw new Error('Cannot find or create user with this email');
+              }
+            }
           } else {
             // Re-throw any other errors
             throw createError;
