@@ -1,21 +1,37 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { auth, googleProvider } from '../../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useLoading } from '../../App';
 
-export default function LoginOptions({ onPhoneLogin }) {
+export default function LoginOptions({ onPhoneLogin, onError, onSuccessNavigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { setLoading, setLoadingMessage } = useLoading();
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Clean up loading state when component unmounts
+  useEffect(() => {
+    return () => {
+      // Only clear loading if not navigating to dashboard
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('/login')) {
+        setLoading(false);
+      }
+    };
+  }, [setLoading]);
 
   const handleGoogleSignIn = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    
+    // Add navigation protection to prevent double clicks
+    if (isLoading) return;
 
     try {
       // Sign in with Google
@@ -25,18 +41,45 @@ export default function LoginOptions({ onPhoneLogin }) {
       const idToken = await result.user.getIdToken();
       
       // Send token to backend for verification
-      const response = await axios.post('/api/auth/google', { idToken });
+      const response = await axios.post('/api/auth/google', { 
+        idToken,
+        headers: {
+          'Cache-Control': 'no-cache' // Prevent caching on this critical request
+        } 
+      });
       
       // Handle successful authentication
       await login(response.data.user, response.data.token);
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Set loading message
+      setLoadingMessage(`Preparing dashboard...`);
+      
+      // Enable loading overlay for a very brief moment
+      setLoading(true);
+      
+      // Notify parent about navigation
+      if (onSuccessNavigation) onSuccessNavigation();
+      
+      // Navigate to dashboard immediately - the animation will be handled there
+      // We don't need any setTimeout delay here
+      navigate('/dashboard', { 
+        state: { 
+          justLoggedIn: true,
+          loginMethod: 'google',
+          userName: response.data.user.name
+        } 
+      });
     } catch (error) {
       console.error('Google auth error:', error);
+      
+      // Extract the response error if available
+      const serverError = error.response?.data?.error || '';
+      const serverDetails = error.response?.data?.details || '';
+      console.log('Server error details:', serverError, serverDetails);
+      
+      // Provide specific error messages
       let errorMessage = 'Failed to sign in with Google. Please try again.';
       
-      // Provide more specific error messages
       if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in popup was closed. Please try again.';
       } else if (error.code === 'auth/popup-blocked') {
@@ -47,9 +90,27 @@ export default function LoginOptions({ onPhoneLogin }) {
         errorMessage = 'Another authentication popup is already open.';
       } else if (error.code === 'auth/account-exists-with-different-credential') {
         errorMessage = 'An account already exists with the same email address but different sign-in credentials.';
+      } else if (error.response?.status === 429) {
+        errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+      } else if (serverError.includes('duplicate key') || serverDetails.includes('duplicate key')) {
+        // Handle MongoDB duplicate key errors
+        errorMessage = 'There was an issue with your account information. Please try again or contact support.';
+        
+        // Retry sign-in automatically after a short delay
+        setTimeout(() => {
+          handleGoogleSignIn(new Event('retryEvent'));
+        }, 1500);
+        
+        // Show temporary message
+        errorMessage = 'Account information is being updated. Please wait...';
       }
       
+      // Set error locally and also pass to parent if provided
       setError(errorMessage);
+      if (onError) onError(errorMessage);
+      
+      // Reset loading state
+      setLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +136,7 @@ export default function LoginOptions({ onPhoneLogin }) {
           <motion.button
             onClick={onPhoneLogin}
             disabled={isLoading}
-            className="flex flex-col items-center justify-center w-full px-4 py-6 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary/30 transition-colors"
+            className="flex flex-col items-center justify-center w-full px-4 py-6 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary/30 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             whileHover={{ scale: 1.03, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
             whileTap={{ scale: 0.98 }}
           >
@@ -92,7 +153,7 @@ export default function LoginOptions({ onPhoneLogin }) {
           <motion.button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="flex flex-col items-center justify-center w-full px-4 py-6 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary/30 transition-colors"
+            className="flex flex-col items-center justify-center w-full px-4 py-6 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary/30 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             whileHover={{ scale: 1.03, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
             whileTap={{ scale: 0.98 }}
           >

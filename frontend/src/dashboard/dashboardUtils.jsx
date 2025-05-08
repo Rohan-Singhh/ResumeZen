@@ -4,6 +4,9 @@
 import dummyData from './dashboardData';
 
 export function getFirstName(fullName) {
+  // Add safety check to handle undefined or null fullName
+  if (!fullName) return "User";
+  
   return fullName.split(' ')[0];
 }
 

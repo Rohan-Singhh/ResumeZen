@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import LoginOptions from '../components/auth/LoginOptions';
 import PhoneLogin from '../components/auth/PhoneLogin';
+import { useLoading } from '../App';
 
 // Page transition variants
 const pageVariants = {
@@ -25,6 +26,22 @@ export default function Login() {
   const [showPhoneLogin, setShowPhoneLogin] = useState(false);
   const [error, setError] = useState('');
   const loginBoxRef = useRef(null);
+  const navigatingRef = useRef(false);
+  const { setLoading } = useLoading();
+
+  // Ensure loading is off when login page mounts and prevent residual loading
+  useEffect(() => {
+    // Give the page time to render smoothly
+    const timer = setTimeout(() => {
+      if (!navigatingRef.current) {
+        setLoading(false);
+      }
+    }, 200);
+    
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [setLoading]);
 
   const handlePhoneLoginToggle = () => {
     setShowPhoneLogin(true);
@@ -38,6 +55,8 @@ export default function Login() {
 
   const handleError = (message) => {
     setError(message);
+    // Turn off loading if there's an error
+    setLoading(false);
   };
 
   const handleClickOutside = (event) => {
@@ -52,6 +71,24 @@ export default function Login() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [navigate]);
+  
+  // Mark when we're navigating away to prevent turning off global loading
+  const handleNavigate = () => {
+    navigatingRef.current = true;
+  };
+  
+  // Listen for navigation events
+  useEffect(() => {
+    return () => {
+      // If we're navigating to the dashboard, don't turn off loading
+      if (navigatingRef.current) {
+        // Do nothing, let the destination page handle loading state
+      } else {
+        // If we're navigating elsewhere, ensure loading is off
+        setLoading(false);
+      }
+    };
+  }, [setLoading]);
 
   // Decorative elements for visual appeal
   const Decorations = () => (
@@ -134,7 +171,7 @@ export default function Login() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <PhoneLogin onBack={handleBack} onError={handleError} />
+                  <PhoneLogin onBack={handleBack} onError={handleError} onSuccessNavigation={handleNavigate} />
                 </motion.div>
               ) : (
                 <motion.div
@@ -144,7 +181,11 @@ export default function Login() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <LoginOptions onPhoneLogin={handlePhoneLoginToggle} onError={handleError} />
+                  <LoginOptions 
+                    onPhoneLogin={handlePhoneLoginToggle} 
+                    onError={handleError}
+                    onSuccessNavigation={handleNavigate} 
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
