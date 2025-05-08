@@ -40,8 +40,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = useDashboardState();
-  const { currentUser, loading: authLoading, logout, fetchUserData, purchasePlan } = useAuth();
-  const { setLoading, isLoading } = useLoading();
+  const { currentUser, loading: authLoading, fetchUserData, purchasePlan } = useAuth();
+  const { setLoading, isLoading, disableLoadingTransitions } = useLoading();
   
   // Dashboard state
   const [payments, setPayments] = useState([]);
@@ -79,7 +79,7 @@ export default function Dashboard() {
     
     return {
       ...userData,
-      plan: userData.currentPlan || userData.plan || 'free',
+      plan: userData.currentPlan || userData.plan || 'no_plan',
       remainingChecks: userData.remainingChecks || 0,
       hasUnlimitedChecks: userData.hasUnlimitedChecks || false,
       planEndDate: userData.planEndDate ? new Date(userData.planEndDate) : null,
@@ -92,7 +92,7 @@ export default function Dashboard() {
     name: 'Guest User',
     email: 'Not logged in',
     phone: '',
-    plan: 'no plan',
+    plan: 'no_plan',
     initials: 'GU',
     remainingChecks: 0,
     hasUnlimitedChecks: false,
@@ -298,16 +298,6 @@ export default function Dashboard() {
   
   // ========== EVENT HANDLERS ==========
   
-  // Handle logout
-  const handleLogout = () => {
-    // Clear request queue before logout
-    requestQueue.current = [];
-    isProcessingQueue.current = false;
-    
-    logout();
-    navigate('/');
-  };
-  
   // UI Event handlers
   const onEditProfile = () => state.setIsEditProfileOpen(true);
   const onFileSelect = file => handleFileSelect(
@@ -315,7 +305,8 @@ export default function Dashboard() {
     state.remainingChecks,
     state.isPlanUnlimited,
     state.setShowPlanAlert,
-    state.setSelectedFile
+    state.setSelectedFile,
+    user.plan
   );
   const onUploadConfirm = () => handleUploadConfirm({
     selectedFile: state.selectedFile,
@@ -472,6 +463,31 @@ export default function Dashboard() {
   };
   
   // ========== EFFECTS ==========
+  
+  // Check for plan updates from URL state (when redirected from purchase)
+  useEffect(() => {
+    if (location.state?.planUpdated && currentUser) {
+      console.log('Plan update detected from purchase redirect');
+      
+      // Force immediate UI update
+      setPlanUpdated(prev => prev + 1);
+      
+      // Force refresh user data from server to ensure latest plan info
+      const refreshUserData = async () => {
+        try {
+          await fetchUserData();
+          console.log('User data refreshed after plan purchase');
+        } catch (error) {
+          console.error('Error refreshing user data after plan purchase:', error);
+        }
+      };
+      
+      refreshUserData();
+      
+      // Clear the state to prevent repeated refreshes
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, currentUser, fetchUserData]);
   
   // Debug log for plan information - only log once when user data changes
   useEffect(() => {
@@ -790,18 +806,10 @@ export default function Dashboard() {
                     Hey {user && user.name ? getFirstName(user.name) : 'User'} 👋
                   </h2>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center">
                   <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold">
                     {user.initials}
                   </div>
-                  <motion.button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 text-gray-600 hover:text-primary"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Logout
-                  </motion.button>
                 </div>
               </div>
             </div>

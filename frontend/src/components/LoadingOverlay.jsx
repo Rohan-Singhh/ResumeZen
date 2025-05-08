@@ -1,10 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import '../components/auth/welcomeAnimation.css';
 
 const LoadingOverlay = ({ message = "Loading your dashboard..." }) => {
+  // Check for logout in progress and prevent rendering if needed
+  useEffect(() => {
+    // This is a safety check to ensure the overlay doesn't show during logout
+    if (sessionStorage.getItem('logoutInProgress') === 'true') {
+      // Immediately apply display:none style to the overlay
+      const overlayElement = document.getElementById('loading-overlay');
+      if (overlayElement) {
+        overlayElement.style.display = 'none';
+      }
+    }
+  }, []);
+
+  // Don't render at all if logout is in progress
+  if (sessionStorage.getItem('logoutInProgress') === 'true') {
+    return null;
+  }
+
   return (
     <motion.div 
+      id="loading-overlay"
       className="fixed inset-0 animated-gradient welcome-animation-backdrop flex items-center justify-center z-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
