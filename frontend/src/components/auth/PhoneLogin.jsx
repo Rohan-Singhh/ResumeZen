@@ -1,157 +1,464 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
+import { auth } from '../../firebase';
+import { signInWithPhoneNumber, RecaptchaVerifier } from 'firebase/auth';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
-import styles from './PhoneLogin.module.css';
 
-export default function PhoneLogin({ onBack, onError }) {
+export default function PhoneLogin({ onBack }) {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationId, setVerificationId] = useState(null);
+  const [step, setStep] = useState(1); // 1: phone input, 2: code verification
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [countdown, setCountdown] = useState(0);
+  const [attempts, setAttempts] = useState(0);
+  const [previousCode, setPreviousCode] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const validatePhoneNumber = (number) => {
-    // The library handles validation internally
-    return number.length >= 10;
-  };
-
-  const handleSubmit = async (e) => {
+  // Handle sending verification code
+  const handleSendCode = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     
-    if (!validatePhoneNumber(phoneNumber)) {
-      onError('Please enter a valid phone number');
+    // Validate phone number
+    if (!phoneNumber || phoneNumber.length < 8) {
+      setError('Please enter a valid phone number');
+      setLoading(false);
       return;
     }
-
-    setIsLoading(true);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Format the phone number with country code - already done by the component
+      const formattedPhone = `+${phoneNumber}`;
       
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/auth/phone', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ phoneNumber })
-      // });
+      // Set up invisible reCAPTCHA
+      if (!window.recaptchaVerifier) {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          'size': 'invisible',
+          'callback': (response) => {
+            // reCAPTCHA solved, allow signInWithPhoneNumber.
+            console.log('reCAPTCHA verified:', response);
+          },
+          'expired-callback': () => {
+            // Response expired. Ask user to solve reCAPTCHA again.
+            console.log('reCAPTCHA expired');
+            setError('Verification timeout. Please try again.');
+          }
+        });
+      }
+
+      // Use Firebase phone auth flow
+      const confirmationResultObj = await signInWithPhoneNumber(
+        auth,
+        formattedPhone, 
+        window.recaptchaVerifier
+      );
       
-      // if (!response.ok) throw new Error('Failed to send OTP');
+      // Store the confirmationResult
+      setVerificationId(confirmationResultObj);
       
-      // Navigate to OTP verification page
-      // navigate('/verify-otp');
+      // Move to step 2: entering verification code
+      setStep(2);
+      
+      // Start countdown for resend
+      setCountdown(60);
+      
+      // Reset verification attempts
+      setAttempts(0);
+      setPreviousCode('');
+      setVerificationCode('');
     } catch (error) {
-      onError(error.message || 'Failed to send OTP. Please try again.');
+      console.error('Error sending verification code:', error);
+      
+      // Handle specific error cases
+      let errorMessage = 'Failed to send verification code. ';
+      if (error.code === 'auth/invalid-phone-number') {
+        errorMessage = 'The phone number is not valid. Please check and try again.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.code === 'auth/captcha-check-failed') {
+        errorMessage = 'CAPTCHA verification failed. Please try again.';
+      } else if (error.code === 'auth/quota-exceeded') {
+        errorMessage = 'Too many verification attempts. Please try again later.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (error.code === 'auth/missing-phone-number') {
+        errorMessage = 'Please enter a phone number.';
+      } else {
+        errorMessage += error.message || 'Please try again.';
+      }
+      
+      setError(errorMessage);
+      
+      // Reset reCAPTCHA
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
+        } catch (e) {
+          console.error('Error clearing reCAPTCHA:', e);
+        }
+      }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
+  // Handle verifying the code
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    if (!verificationCode || verificationCode.length !== 6) {
+      setError('Please enter a valid 6-digit verification code');
+      setLoading(false);
+      return;
+    }
+    
+    // Prevent repeated submissions of the same code
+    if (verificationCode === previousCode) {
+      setError('Please enter a different code. This one was already tried.');
+      setLoading(false);
+      return;
+    }
+    
+    // Track attempts and codes
+    setAttempts(prev => prev + 1);
+    setPreviousCode(verificationCode);
+    
+    // If too many attempts, suggest requesting a new code
+    if (attempts >= 3) {
+      setError('Too many failed attempts. Please request a new verification code.');
+      setStep(1);
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      // Check if verificationId is valid
+      if (!verificationId) {
+        setError('Verification session expired. Please request a new code.');
+        setStep(1);
+        setLoading(false);
+        return;
+      }
+      
+      // Confirm the verification code with Firebase
+      const result = await verificationId.confirm(verificationCode);
+      console.log('Authentication successful with Firebase');
+      
+      // Get the ID token
+      const idToken = await result.user.getIdToken();
+      
+      // Send the ID token to the backend for verification
+      const response = await axios.post('/api/auth/phone', { idToken });
+      console.log('Backend authentication successful:', response.data);
+      
+      // Handle authentication
+      await login(response.data.user, response.data.token);
+      
+      // Keep loading state active during redirect to prevent flickering
+      // Don't set loading to false here - keep the loading UI visible
+      setError('');
+      
+      // Navigate to dashboard immediately without the temporary message
+      navigate('/dashboard', { 
+        state: { 
+          justLoggedIn: true,
+          authMethod: 'phone' 
+        } 
+      });
+      
+      return; // Stop execution here to prevent setting loading to false
+    } catch (firebaseError) {
+      console.error('Error verifying code:', firebaseError);
+      
+      try {
+        // Clean up reCAPTCHA
+        if (window.recaptchaVerifier) {
+          try {
+            window.recaptchaVerifier.clear();
+            window.recaptchaVerifier = null;
+          } catch (e) {
+            console.error('Error clearing reCAPTCHA:', e);
+          }
+        }
+        
+        // Handle specific error cases
+        let errorMessage = 'Failed to verify code. ';
+        if (firebaseError.code === 'auth/invalid-verification-code') {
+          errorMessage = 'The verification code is not valid. Please check and try again.';
+        } else if (firebaseError.code === 'auth/code-expired') {
+          errorMessage = 'The verification code has expired. Please request a new code.';
+        } else if (firebaseError.code === 'auth/missing-verification-code') {
+          errorMessage = 'Please enter the verification code.';
+        } else if (firebaseError.code === 'auth/invalid-verification-id') {
+          errorMessage = 'Verification session expired. Please request a new code.';
+          setStep(1); // Go back to phone input
+        } else if (firebaseError.response?.status === 429) {
+          errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+          // Start a longer countdown to prevent immediate retries
+          setCountdown(30);
+        } else if (firebaseError.response?.data?.error) {
+          errorMessage = firebaseError.response.data.error;
+        } else {
+          errorMessage += firebaseError.message || 'Please try again.';
+        }
+        
+        setError(errorMessage);
+      } catch (e) {
+        setError('An unexpected error occurred. Please try again.');
+        console.error('Error handling verification code error:', e);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle resending code
+  const handleResendCode = async () => {
+    if (countdown > 0) return;
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      // Reset reCAPTCHA
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (e) {
+          console.error('Error clearing reCAPTCHA:', e);
+        }
+      }
+      
+      // Recreate reCAPTCHA verifier
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+          console.log('reCAPTCHA verified:', response);
+        },
+        'expired-callback': () => {
+          console.log('reCAPTCHA expired');
+          setError('Verification timeout. Please try again.');
+        }
+      });
+      
+      // Format phone number
+      const formattedPhone = `+${phoneNumber}`;
+      
+      // Resend verification code
+      const confirmationResultObj = await signInWithPhoneNumber(
+        auth,
+        formattedPhone, 
+        window.recaptchaVerifier
+      );
+      
+      // Update verification ID
+      setVerificationId(confirmationResultObj);
+      
+      // Start countdown
+      setCountdown(60);
+      
+      // Reset verification attempts
+      setAttempts(0);
+      setPreviousCode('');
+      setVerificationCode('');
+      
+      setError('');
+    } catch (error) {
+      console.error('Error resending code:', error);
+      
+      let errorMessage = 'Failed to resend verification code. ';
+      if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many attempts. Please try again later.';
+      } else {
+        errorMessage += error.message || 'Please try again.';
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle countdown for resend
+  useEffect(() => {
+    let interval = null;
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [countdown]);
+
+  // Clear reCAPTCHA when unmounting
+  useEffect(() => {
+    return () => {
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
+        } catch (e) {
+          console.error('Error clearing reCAPTCHA on unmount:', e);
+        }
+      }
+    };
+  }, []);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="w-full"
-    >
-      <motion.button
-        onClick={onBack}
-        className={`${styles.backButton} ${styles.backButtonHover}`}
-        whileHover={{ x: -4 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <ChevronLeftIcon className={styles.backIcon} />
-        <span className={styles.backText}>Back to login options</span>
-      </motion.button>
+    <div>
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit} className={styles.formWrapper}>
-        <motion.div 
-          className={`${styles.inputSection}`}
-          animate={{ y: isFocused ? -4 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <motion.label 
-            htmlFor="phone" 
-            className={styles.inputLabel}
-            animate={{ color: isFocused ? '#1D4ED8' : '#1F2937' }}
-          >
-            Enter your phone number
-          </motion.label>
-          <div className={`${styles.phoneInputContainer} ${styles.phoneInputWrapper}`}>
-            <PhoneInput
-              country={'us'}
-              value={phoneNumber}
-              onChange={setPhoneNumber}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              inputProps={{
-                id: 'phone',
-                disabled: isLoading,
-                className: 'w-full !text-gray-900 !bg-transparent',
-                style: {
-                  height: '3.5rem',
-                  fontSize: '1rem',
-                  lineHeight: '1.5rem',
-                  backgroundColor: 'transparent',
-                  color: '#111827',
-                  paddingLeft: '72px'
-                }
-              }}
-              containerClass="!w-full"
-              buttonClass="!h-14 !bg-transparent !border-0 !w-[60px] !pl-4"
-              dropdownClass="!shadow-lg !mt-1"
-              searchClass="!border-0 !mx-2 !mt-2"
-              enableSearch
-              disableSearchIcon
-              searchPlaceholder="Search countries..."
-              searchNotFound="No matches found"
-              countryCodeEditable={false}
-              preferredCountries={['us', 'gb', 'ca', 'au']}
-              enableAreaCodes={true}
-              enableAreaCodeStretch
-              autoFormat
-            />
-            <div 
-              className={`${styles.inputRing} ${isFocused ? styles.inputRingFocused : ''}`}
-            />
+      {step === 1 ? (
+        <form onSubmit={handleSendCode} className="space-y-6">
+          <div>
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+              Enter your phone number
+            </label>
+            <div className="relative">
+              <PhoneInput
+                country={'us'}
+                value={phoneNumber}
+                onChange={setPhoneNumber}
+                inputProps={{
+                  id: 'phoneNumber',
+                  name: 'phoneNumber',
+                  required: true,
+                  disabled: loading,
+                  placeholder: 'Enter your phone number',
+                }}
+                containerClass="w-full"
+                buttonClass="rounded-l-xl"
+                dropdownClass="shadow-lg rounded-lg"
+                enableSearch
+                disableSearchIcon
+                searchPlaceholder="Search countries"
+                inputClass="!bg-white !text-black !w-full !rounded-xl !border !border-gray-200"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">We'll send a verification code to this number</p>
           </div>
-          <AnimatePresence>
-            {!isLoading && (
-              <motion.p 
-                className={styles.helperText}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                We'll send you a one-time code to verify your number. Standard message rates may apply.
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </motion.div>
 
-        <motion.button
-          type="submit"
-          disabled={isLoading || !phoneNumber}
-          className={`${styles.submitButton}`}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <motion.span 
-            className={`${styles.submitButtonText}`}
-            animate={{ opacity: isLoading ? 0 : 1 }}
-          >
-            Send Code
-          </motion.span>
-          <motion.span 
-            className={`${styles.loadingSpinner}`}
-            animate={{ opacity: isLoading ? 1 : 0 }}
-          >
-            <svg className={styles.spinnerIcon} viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-          </motion.span>
-        </motion.button>
-      </form>
-    </motion.div>
+          <div id="recaptcha-container"></div>
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between space-y-4 space-y-reverse sm:space-y-0">
+            <motion.button
+              type="button"
+              onClick={onBack}
+              className="w-full sm:w-auto px-4 py-3 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+              whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+              whileTap={{ scale: 0.98 }}
+              disabled={loading}
+            >
+              Back
+            </motion.button>
+            <motion.button
+              type="submit"
+              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-primary to-blue-600 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+              whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(99,102,241,0.15)" }}
+              whileTap={{ scale: 0.98 }}
+              disabled={loading || phoneNumber.length < 8}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Sending...
+                </div>
+              ) : (
+                'Send Code'
+              )}
+            </motion.button>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleVerifyCode} className="space-y-6">
+          <div>
+            <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-2">
+              Enter verification code
+            </label>
+            <input
+              id="verificationCode"
+              type="text"
+              inputMode="numeric"
+              maxLength="6"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="123456"
+              className="w-full px-4 py-4 border border-gray-200 rounded-xl shadow-sm focus:ring-primary focus:border-primary text-center text-xl tracking-wider bg-white text-gray-900 font-medium transition-colors"
+              disabled={loading}
+            />
+            <p className="text-xs text-gray-500 mt-2">Enter the 6-digit code sent to your phone</p>
+          </div>
+
+          {countdown > 0 ? (
+            <p className="text-sm text-gray-600">
+              Resend code in <span className="font-medium text-primary">{countdown}</span> seconds
+            </p>
+          ) : (
+            <motion.button
+              type="button"
+              onClick={handleResendCode}
+              className="text-primary hover:text-primary-dark text-sm font-medium"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={loading}
+            >
+              Resend Code
+            </motion.button>
+          )}
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between space-y-4 space-y-reverse sm:space-y-0">
+            <motion.button
+              type="button"
+              onClick={() => setStep(1)}
+              className="w-full sm:w-auto px-4 py-3 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+              whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+              whileTap={{ scale: 0.98 }}
+              disabled={loading}
+            >
+              Back
+            </motion.button>
+            <motion.button
+              type="submit"
+              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-primary to-blue-600 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+              whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(99,102,241,0.15)" }}
+              whileTap={{ scale: 0.98 }}
+              disabled={loading || verificationCode.length !== 6}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Verifying...
+                </div>
+              ) : (
+                'Verify Code'
+              )}
+            </motion.button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 } 

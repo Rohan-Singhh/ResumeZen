@@ -1,5 +1,6 @@
-// Essential imports
 require('dotenv').config();
+const PORT = process.env.PORT || 5000;
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -7,71 +8,77 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
-const winston = require('winston');
+const authRouter = require('./routes/auth');
 
-// Initialize express app
 const app = express();
 
-// Create a logger
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' })
-  ]
-});
-
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.simple()
-  }));
-}
-
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 30 * 60 * 1000, // 30 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 150, // increase the limit to 150 requests per window
+  message: {
+    error: 'Too many requests from this IP, please try again after 30 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
-// Middleware
-app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
-app.use(morgan('dev')); // Logging
-app.use(limiter); // Rate limiting
-app.use(bodyParser.json()); // Parse JSON bodies
-app.use(bodyParser.urlencoded({ extended: true }));
+const configureMiddleware = () => {
+  app.use(helmet());
+  
+  // Configure CORS to allow requests from frontend
+  app.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:5173'], // Include both common dev ports
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  }));
+  
+  app.use(morgan('dev'));
+  app.use(limiter);
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
+};
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/resumezen', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => logger.info('Connected to MongoDB'))
-.catch((err) => logger.error('MongoDB connection error:', err));
+const connectDatabase = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to MongoDB');
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err);
+  }
+};
 
-// Basic route
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to ResumeZen API' });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  logger.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
+const configureRoutes = () => {
+  app.get('/', (req, res) => {
+    res.json({ message: 'Welcome to ResumeZen API' });
   });
-});
+  app.use('/api/auth', authRouter);
+  app.use('/api/payments', require('./routes/payments'));
+  app.use('/api/users', require('./routes/users'));
+  app.use('/api/plans', require('./routes/plans'));
+};
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-});
+const configureErrorHandling = () => {
+  app.use((err, req, res, next) => {
+    console.error('❌ Error:', err.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Something went wrong!',
+      error: process.env.NODE_ENV === 'development' ? err.message : {}
+    });
+  });
+};
 
-module.exports = app; // For testing purposes 
+const startServer = () => {
+  configureMiddleware();
+  connectDatabase();
+  configureRoutes();
+  configureErrorHandling();
+  
+  app.listen(PORT, () => {
+    console.log(`✅ Server is running on port ${PORT}`);
+  });
+};
+
+startServer();
+
+module.exports = app;

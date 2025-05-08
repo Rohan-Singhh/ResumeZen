@@ -3,8 +3,8 @@ import { AnimatePresence } from 'framer-motion';
 import AlertModal from './modals/AlertModal';
 import SupportModal from './modals/SupportModal';
 import VlogModal from '../components/VlogModal';
-import EditProfileModal from '../components/EditProfileModal';
-import { clearUploadArea, handleProfileUpdate } from './dashboardUtils';
+import EditProfileModal from './modals/EditProfileModal';
+import { clearUploadArea } from './dashboardUtils';
 
 export default function ModalRenderer(props) {
   // Destructure modal state and handlers from props
@@ -25,6 +25,7 @@ export default function ModalRenderer(props) {
     selectedResume,
     setSelectedFile,
     setUploadComponent,
+    user
   } = props;
 
   // View Plans handler for the plan alert modal
@@ -109,9 +110,9 @@ export default function ModalRenderer(props) {
       
       {isEditProfileOpen && (
         <EditProfileModal
-          user={props.user}
+          isOpen={isEditProfileOpen}
+          user={user}
           onClose={() => setIsEditProfileOpen(false)}
-          onSave={(data) => handleProfileUpdate(data, setIsEditProfileOpen)}
         />
       )}
     </AnimatePresence>

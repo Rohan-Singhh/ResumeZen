@@ -164,8 +164,16 @@ const dummyData = {
     }
   ],
   plans: [
-    { price: "₹19", checks: 1 },
-    { price: "₹70", checks: 5 },
+    { 
+      price: "₹19", 
+      checks: 1,
+      title: "Basic Check"
+    },
+    { 
+      price: "₹70", 
+      checks: 5,
+      title: "Standard Pack" 
+    },
     { 
       price: "₹500",
       title: "Unlimited Pack",

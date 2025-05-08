@@ -13,12 +13,51 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Improve page transitions */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   background-color: #ffffff;
   color: #213547;
+}
+
+/* Smooth transitions for navigation */
+.page-transition-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Add smooth transitions for all interactive elements */
+a, button, input, select, textarea {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Smooth loading transitions */
+.loading-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Prevent FOUC (Flash of Unstyled Content) */
+.no-fouc {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.fouc {
+  visibility: hidden;
+  opacity: 0;
 }
 
 /* Phone Input Custom Styles */
@@ -83,4 +122,79 @@ body {
 
 .phone-input-container .flag-dropdown {
   @apply border-0;
+}
+
+/* Emoji flag support */
+.country-flag {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* Additional react-phone-input-2 styles */
+.react-tel-input .form-control {
+  @apply bg-white text-gray-900 border-gray-200;
+  color: #000 !important;
+  height: 56px !important;
+  width: 100% !important;
+  font-size: 16px !important;
+  padding-left: 70px !important;
+}
+
+.react-tel-input .selected-flag {
+  @apply bg-white;
+  background-color: white !important;
+  width: 60px !important;
+  padding: 0 0 0 15px !important;
+}
+
+.react-tel-input .flag-dropdown {
+  background-color: white !important;
+  border-right: 1px solid #e5e7eb !important;
+}
+
+.react-tel-input .country-list {
+  @apply bg-white text-gray-900;
+  width: 300px !important;
+}
+
+.react-tel-input .country-list .country {
+  display: flex !important;
+  align-items: center !important;
+  padding: 12px 10px !important;
+}
+
+.react-tel-input .country-list .country .country-name {
+  margin-left: 10px !important;
+  font-size: 14px !important;
+}
+
+.react-tel-input .country-list .country .dial-code {
+  color: #6b7280 !important;
+  font-size: 13px !important;
+}
+
+.react-tel-input .country-list .country.highlight,
+.react-tel-input .country-list .country:hover {
+  @apply bg-gray-50;
+}
+
+.react-tel-input .flag-dropdown.open .selected-flag {
+  @apply bg-gray-50;
+  background-color: #f9fafb !important;
+}
+
+.react-tel-input .selected-flag:hover,
+.react-tel-input .selected-flag:focus {
+  @apply bg-gray-50;
+  background-color: #f9fafb !important;
+}
+
+.react-tel-input .selected-flag .flag {
+  transform: scale(1.2);
+  margin-right: 8px !important;
+}
+
+.react-tel-input .selected-flag .arrow {
+  left: 38px !important;
 }
