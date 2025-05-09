@@ -9,17 +9,27 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
 const authRouter = require('./routes/auth');
+const purchasesRouter = require('./routes/purchases'); // Updated to use the renamed file
 
 const app = express();
 
 const limiter = rateLimit({
   windowMs: 30 * 60 * 1000, // 30 minutes
-  max: 150, // increase the limit to 150 requests per window
+  max: 300, // increase the limit to 300 requests per window
   message: {
     error: 'Too many requests from this IP, please try again after 30 minutes'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Add key generator to track by IP
+  keyGenerator: (req) => {
+    return req.ip || req.connection.remoteAddress;
+  },
+  // Skip rate limiting for some low-risk endpoints
+  skip: (req) => {
+    // Allow unlimited access to static and public endpoints
+    return req.path.startsWith('/api/plans') || req.path === '/';
+  }
 });
 
 const configureMiddleware = () => {
@@ -42,6 +52,10 @@ const connectDatabase = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB');
+    
+    // Run the seed script with the existing connection
+    const seedPlans = require('./scripts/seed-plans');
+    await seedPlans(true); // Pass true to use existing connection
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
   }
@@ -52,10 +66,13 @@ const configureRoutes = () => {
     res.json({ message: 'Welcome to ResumeZen API' });
   });
   app.use('/api/auth', authRouter);
-  app.use('/api/payments', require('./routes/payments'));
-  app.use('/payments', require('./routes/payments'));
+  app.use('/api/purchases', purchasesRouter);
+  app.use('/api/payments', purchasesRouter); // Keep the old endpoint for backward compatibility
   app.use('/api/users', require('./routes/users'));
   app.use('/api/plans', require('./routes/plans'));
+  
+  // New routes for the Resume model
+  app.use('/api/resumes', require('./routes/resumes'));
 };
 
 const configureErrorHandling = () => {

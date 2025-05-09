@@ -13,8 +13,12 @@ module.exports = function(req, res, next) {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Add user to request
-    req.user = decoded;
+    // Add user data to request
+    req.user = {
+      userId: decoded.userId,
+      firebaseUID: decoded.firebaseUID
+    };
+    
     next();
   } catch (err) {
     res.status(401).json({ error: 'Token is not valid' });

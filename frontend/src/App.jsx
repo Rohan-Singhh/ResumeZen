@@ -25,6 +25,9 @@ export function LoadingProvider({ children }) {
 
   // Check for logout in progress flag
   useEffect(() => {
+    // Store the current loadingTimerId value to avoid closure issues
+    const currentTimerId = loadingTimerId;
+    
     const checkLogoutFlag = () => {
       const isLogoutInProgress = sessionStorage.getItem('logoutInProgress') === 'true';
       if (isLogoutInProgress) {
@@ -32,8 +35,8 @@ export function LoadingProvider({ children }) {
         setTransitionsDisabled(true);
         setIsLoading(false);
         
-        if (loadingTimerId) {
-          clearTimeout(loadingTimerId);
+        if (currentTimerId) {
+          clearTimeout(currentTimerId);
           setLoadingTimerId(null);
         }
       }
@@ -48,7 +51,7 @@ export function LoadingProvider({ children }) {
     return () => {
       clearInterval(intervalId);
     };
-  }, [loadingTimerId]);
+  }, []); // Empty dependency array since we use the sessionStorage directly
 
   // Improved loading state setter with debounce to prevent flickering
   const setLoading = useCallback((loading, duration = 0) => {
@@ -175,8 +178,7 @@ function AnimatedRoutes() {
   // Reset loading state on route changes and handle transitions
   useEffect(() => {
     // Skip effect if we're navigating away from dashboard (logout case)
-    const isLogoutNavigation = lastPathRef.current.includes('/dashboard') && location.pathname === '/';
-    if (isLogoutNavigation) {
+    if (lastPathRef.current.includes('/dashboard') && location.pathname === '/') {
       return; // Don't do anything during logout navigation
     }
     
@@ -194,7 +196,11 @@ function AnimatedRoutes() {
       
       return () => clearTimeout(timer);
     }
-  }, [location.pathname, setLoading]); // Only depend on location.pathname and setLoading, not the ref
+    
+    // After the effect runs, update the lastPathRef for next time
+    // This needs to be done after the effect to prevent infinite loops
+    lastPathRef.current = location.pathname;
+  }, [location.pathname, setLoading]); // Depend only on pathname and setLoading
   
   return (
     <AnimatePresence mode="wait">

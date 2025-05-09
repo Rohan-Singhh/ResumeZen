@@ -1,74 +1,86 @@
 const mongoose = require('mongoose');
 
 const planSchema = new mongoose.Schema({
+  name: { 
+    type: String, 
+    required: true 
+  },
+  // Add customId field for non-MongoDB ObjectId identifiers
+  customId: {
+    type: String,
+    index: true,
+    sparse: true
+  },
+  // String ID with format like 'plan_basic_123xyz'
   planId: {
     type: String,
+    index: true,
+    sparse: true
+  },
+  price: { 
+    type: Number, 
     required: true,
-    unique: true
+    validate: {
+      validator: function(v) {
+        return v >= 0; // Price must be non-negative
+      },
+      message: props => `${props.value} is not a valid price - must be non-negative`
+    } 
   },
-  title: {
-    type: String,
-    required: true
+  type: { 
+    type: String, 
+    enum: ['count', 'duration'], 
+    required: true 
   },
-  price: {
-    type: Number,
-    required: true
+  value: { 
+    type: Number, 
+    required: true,
+    validate: {
+      validator: function(v) {
+        return v > 0; // Value must be positive
+      },
+      message: props => `${props.value} is not a valid value - must be positive`
+    }
   },
   currency: {
     type: String,
     default: 'INR'
   },
-  period: {
-    type: String,
-    enum: ['one-time', 'monthly', 'quarterly', 'yearly'],
-    default: 'one-time'
-  },
-  durationDays: {
-    type: Number,
-    default: 30 // Default to 30 days
-  },
-  type: {
-    type: String,
-    enum: ['free', 'basic', 'pro', 'premium'],
-    default: 'basic'
-  },
-  checksAllowed: {
-    type: Number,
-    default: 1
-  },
-  unlimitedChecks: {
+  isPopular: {
     type: Boolean,
     default: false
   },
   features: [{
     type: String
   }],
-  isPopular: {
-    type: Boolean,
-    default: false
-  },
-  isSpecial: {
-    type: Boolean,
-    default: false
-  },
   active: {
     type: Boolean,
     default: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
   }
-});
+}, { timestamps: true });
 
-// Pre-save hook to update updatedAt field
-planSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
+// Method to convert price to string with currency
+planSchema.methods.getPriceString = function() {
+  return `${this.currency} ${this.price}`;
+};
+
+// Static method to find active plans
+planSchema.statics.findActive = function() {
+  return this.find({ active: true });
+};
+
+// Find by custom ID or regular ID
+planSchema.statics.findByAnyId = function(id) {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return this.findById(id);
+  }
+  return this.findOne({
+    $or: [
+      { customId: id },
+      { planId: id },
+      { name: id }
+    ]
+  });
+};
 
 module.exports = mongoose.model('Plan', planSchema); 
