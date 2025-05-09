@@ -40,7 +40,18 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = useDashboardState();
-  const { currentUser, loading: authLoading, fetchUserData, purchasePlan } = useAuth();
+  const { 
+    currentUser, 
+    loading: authLoading, 
+    logout, 
+    fetchResumeHistory, 
+    fetchPurchaseHistory, 
+    purchasePlan, 
+    fetchUserData,
+    uploadResume,
+    updateResumeScore,
+    fetchAllUserData
+  } = useAuth();
   const { setLoading, isLoading, disableLoadingTransitions } = useLoading();
   
   // Dashboard state
@@ -60,6 +71,25 @@ export default function Dashboard() {
   const isProcessingQueue = useRef(false);
   const animationTimer = useRef(null);
   
+  // Add this state for mobile menu
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Add a handler to close mobile menu when clicked outside
+  const mobileMenuRef = useRef(null);
+  
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setMobileMenuOpen(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [mobileMenuRef]);
+  
   // ========== HELPER FUNCTIONS ==========
   
   // Map the backend user model to the frontend user model
@@ -76,14 +106,37 @@ export default function Dashboard() {
         initials = nameParts[0][0].toUpperCase();
       }
     }
+
+    // Build plan information from activePurchase data
+    let hasUnlimitedChecks = false;
+    let remainingChecks = 0;
+    let planName = 'No Plan';
+    let planType = null;
+    let planEndDate = null;
+
+    if (userData.activePurchase) {
+      if (userData.activePurchase.type === 'duration') {
+        hasUnlimitedChecks = true;
+        planName = userData.activePurchase.planName || 'Unlimited';
+        planType = 'duration';
+        planEndDate = userData.activePurchase.expiresAt;
+      } else if (userData.activePurchase.type === 'count') {
+        remainingChecks = userData.activePurchase.checksRemaining || 0;
+        planName = userData.activePurchase.planName || `${remainingChecks} Checks`;
+        planType = 'count';
+      }
+    }
     
     return {
       ...userData,
-      plan: userData.currentPlan || userData.plan || 'no_plan',
-      remainingChecks: userData.remainingChecks || 0,
-      hasUnlimitedChecks: userData.hasUnlimitedChecks || false,
-      planEndDate: userData.planEndDate ? new Date(userData.planEndDate) : null,
-      initials: initials
+      plan: planName,
+      planType: planType,
+      remainingChecks: remainingChecks,
+      hasUnlimitedChecks: hasUnlimitedChecks,
+      planEndDate: planEndDate ? new Date(planEndDate) : null,
+      planExpiresAt: userData.planExpiresAt ? new Date(userData.planExpiresAt) : null,
+      initials: initials,
+      isSubscriptionActive: userData.isSubscriptionActive || false
     };
   };
   
@@ -93,10 +146,12 @@ export default function Dashboard() {
     email: 'Not logged in',
     phone: '',
     plan: 'no_plan',
+    planType: null,
     initials: 'GU',
     remainingChecks: 0,
     hasUnlimitedChecks: false,
-    planEndDate: null
+    planEndDate: null,
+    isSubscriptionActive: false
   };
   
   // Get user initials for avatar
@@ -169,9 +224,10 @@ export default function Dashboard() {
       
       // Respect rate limiting with a minimum delay between requests
       const timeSinceLastRequest = now - lastFetchAttempt.current;
-      if (timeSinceLastRequest < 1000) {
-        // Wait before processing the next request
-        await new Promise(resolve => setTimeout(resolve, 1000 - timeSinceLastRequest));
+      // Increase minimum delay between requests to avoid rate limiting
+      if (timeSinceLastRequest < 2000) {
+        // Wait longer before processing the next request
+        await new Promise(resolve => setTimeout(resolve, 2000 - timeSinceLastRequest));
       }
       
       lastFetchAttempt.current = Date.now();
@@ -190,9 +246,21 @@ export default function Dashboard() {
         retryCount.current++;
         console.log(`Rate limited, retry #${retryCount.current}`);
         
-        // Implement exponential backoff for retries
-        const delayMs = Math.min(2000 * Math.pow(2, retryCount.current - 1), 30000);
+        // Implement stronger exponential backoff for retries
+        const baseDelay = 5000; // Start with 5 seconds
+        const maxDelay = 60000; // Cap at 60 seconds
+        const delayMs = Math.min(baseDelay * Math.pow(2, retryCount.current - 1), maxDelay);
+        
+        console.log(`Backing off for ${delayMs/1000} seconds before retry`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
+        
+        // Move this request to the end of the queue if we've retried too many times
+        if (retryCount.current > 3) {
+          const failedRequest = requestQueue.current.shift();
+          requestQueue.current.push(failedRequest);
+          retryCount.current = 0;
+          console.log('Moving request to end of queue after multiple retries');
+        }
       } else {
         // For other errors, remove the request from the queue
         requestQueue.current.shift();
@@ -201,9 +269,12 @@ export default function Dashboard() {
     } finally {
       isProcessingQueue.current = false;
       
-      // Continue processing queue if items remain
+      // Continue processing queue if items remain but add a delay
       if (requestQueue.current.length > 0) {
-        processQueue();
+        // Add a small delay between processing items
+        setTimeout(() => {
+          processQueue();
+        }, 500);
       }
     }
   }, []);
@@ -230,7 +301,20 @@ export default function Dashboard() {
     try {
       queueRequest(async () => {
         try {
-          await fetchUserData();
+          // Use the batch fetching function instead of individual API calls
+          const result = await fetchAllUserData(false);
+          
+          // Update state with the returned data
+          if (result.purchaseHistory) {
+            setPayments(result.purchaseHistory || []);
+          }
+          
+          if (result.resumeHistory) {
+            state.setResumes(result.resumeHistory || []);
+          }
+          
+          // Mark as fetched to prevent duplicate requests
+          setDataFetched(true);
         } catch (err) {
           console.error('Error fetching user data:', err);
           
@@ -247,12 +331,12 @@ export default function Dashboard() {
       console.error('Error fetching user data:', error);
       
       if (error.response?.status === 429) {
-        console.log('Rate limited, will retry later');
+        console.log('Rate limited, will retry with exponential backoff');
       } else {
         setFetchError('Failed to fetch user data. Please try refreshing the page.');
       }
     }
-  }, [currentUser, fetchUserData, dataFetched, queueRequest]);
+  }, [currentUser, fetchAllUserData, dataFetched, queueRequest, state.setResumes]);
 
   // Fetch payment history
   const fetchPaymentHistory = useCallback(async () => {
@@ -262,13 +346,8 @@ export default function Dashboard() {
       setLoadingPayments(true);
       
       queueRequest(async () => {
-        const response = await axios.get('/api/users/me/payments', {
-          // Add cache headers
-          headers: {
-            'Cache-Control': 'max-age=300' // Cache for 5 minutes
-          }
-        });
-        setPayments(response.data.payments || []);
+        const purchases = await fetchPurchaseHistory();
+        setPayments(purchases || []);
         setDataFetched(true);
         setLoadingPayments(false);
       });
@@ -276,7 +355,7 @@ export default function Dashboard() {
       console.error('Error queueing payment history fetch:', error);
       setLoadingPayments(false);
     }
-  }, [currentUser, loadingPayments, dataFetched, queueRequest]);
+  }, [currentUser, loadingPayments, dataFetched, queueRequest, fetchPurchaseHistory]);
   
   // Retry data fetch
   const handleRetryFetch = () => {
@@ -308,17 +387,76 @@ export default function Dashboard() {
     state.setSelectedFile,
     user.plan
   );
-  const onUploadConfirm = () => handleUploadConfirm({
-    selectedFile: state.selectedFile,
-    resumes: state.resumes,
-    setResumes: state.setResumes,
-    setAnalysisResult: state.setAnalysisResult,
-    setIsProcessing: state.setIsProcessing,
-    setShowAnalysis: state.setShowAnalysis,
-    isPlanUnlimited: state.isPlanUnlimited,
-    remainingChecks: state.remainingChecks,
-    setRemainingChecks: state.setRemainingChecks
-  });
+  const onUploadConfirm = async () => {
+    try {
+      // Check if a file is selected
+      if (!state.uploadFile) {
+        state.setUploadError('Please select a file first');
+        return;
+      }
+
+      // Show loading state
+      state.setUploadInProgress(true);
+      state.setUploadError(null);
+
+      // Simulate file upload to storage
+      // In a real app, you would upload to Firebase Storage, S3, etc.
+      const fileURL = `https://storage.example.com/uploads/${Date.now()}_${state.uploadFile.name}`;
+
+      // Create resume entry with file URL
+      const uploadResult = await uploadResume({
+        fileURL,
+        fileName: state.uploadFile.name,
+        fileSize: state.uploadFile.size,
+        jobTitle: state.jobTitle || 'Not specified',
+        industry: state.industry || 'Not specified'
+      });
+
+      if (uploadResult.success) {
+        console.log('Resume uploaded successfully!', uploadResult);
+        
+        // Update UI with success message
+        state.setUploadSuccess(true);
+        state.setUploadMessage('Resume uploaded successfully! ATS processing started...');
+        
+        // Simulate ATS scoring (this would be done by backend in real app)
+        setTimeout(async () => {
+          const score = Math.floor(Math.random() * 100) + 1; // Random score for demo
+          
+          // Update the resume with the ATS score
+          await updateResumeScore(uploadResult.resume._id, score);
+          
+          // Update UI to show score
+          state.setAtsScore(score);
+          state.setProcessingComplete(true);
+          
+          // Update remaining checks in UI if needed
+          if (typeof uploadResult.remainingChecks === 'number') {
+            state.setRemainingChecks(uploadResult.remainingChecks);
+          }
+          
+          // Refresh user data
+          await fetchUserData();
+        }, 3000);
+        
+        // Clear the upload form
+        clearUploadArea(state);
+      } else {
+        console.error('Resume upload failed:', uploadResult.error);
+        state.setUploadError(uploadResult.error || 'Upload failed. Please try again.');
+        
+        // Check if we need to prompt for purchase
+        if (uploadResult.needsPurchase) {
+          state.setPurchaseRequired(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading resume:', error);
+      state.setUploadError(error.message || 'Upload failed. Please try again.');
+    } finally {
+      state.setUploadInProgress(false);
+    }
+  };
   const onViewFeedback = resume => handleViewFeedback(resume, state.setSelectedResume, state.setShowFeedback);
   const onVlogSelect = vlog => state.setSelectedVlog(vlog);
   const onEmail = () => window.location = 'mailto:support@resumezen.com';
@@ -329,136 +467,100 @@ export default function Dashboard() {
   // Plan purchase handler
   const onPurchasePlan = async (plan) => {
     try {
-      // Show loading state
-      state.setPurchaseMessage("Processing purchase...");
-      state.setShowPurchaseSuccess(true);
+      console.log('Purchasing plan:', plan);
       
-      // Check if user is authenticated
-      if (!currentUser || !currentUser._id) {
-        state.setPurchaseMessage("You need to be logged in to purchase a plan. Please refresh the page and try again.");
-        setTimeout(() => state.setShowPurchaseSuccess(false), 3000);
-        return;
+      // Validate plan data before sending
+      if (!plan) {
+        console.error('Invalid plan data: Plan object is null or undefined');
+        return { 
+          success: false, 
+          error: 'Invalid plan data. Please try again or select a different plan.' 
+        };
       }
       
-      // Prepare plan details
-      const planDetails = {
-        planId: plan.planId || `plan-${plan.title.toLowerCase().replace(/\s+/g, '-')}`,
-        planName: plan.title,
-        amount: parseFloat(plan.price.toString().replace(/[^0-9.]/g, '')),
+      // Extract the plan ID, ensuring we get a valid MongoDB ObjectId string
+      let planId = null;
+      
+      // Check various possible properties where the ID might be stored
+      if (plan._id) {
+        planId = typeof plan._id === 'string' ? plan._id : plan._id.toString();
+      } else if (plan.id) {
+        planId = typeof plan.id === 'string' ? plan.id : plan.id.toString();
+      } else if (plan.planId) {
+        planId = typeof plan.planId === 'string' ? plan.planId : plan.planId.toString();
+      }
+      
+      if (!planId) {
+        console.error('Cannot extract a valid plan ID:', plan);
+        return { 
+          success: false, 
+          error: 'Missing plan ID. Please select a valid plan.' 
+        };
+      }
+      
+      // Map the plan data to match what backend expects
+      const planForPurchase = {
+        planId: planId,
+        name: plan.name || plan.title,
+        type: plan.type || (plan.title === "Unlimited Pack" ? 'duration' : 'count'),
+        value: plan.value || plan.checks || (plan.title === "Unlimited Pack" ? 90 : 1), // 90 days for unlimited plan
+        price: typeof plan.price === 'string' ? plan.price.replace(/[^\d.]/g, "") : plan.price, // Remove currency symbol and other non-numeric characters
         paymentMethod: 'credit_card',
         paymentDetails: {
-          plan: plan.title,
-          checks: plan.checks || (plan.title === "Basic Check" ? 1 : 
-                                 plan.title === "Standard Pack" ? 5 : 
-                                 'unlimited')
+          cardholderName: 'Test User',
+          paymentIntent: 'Success'
         }
       };
-      
-      console.log('Processing payment for plan:', planDetails);
-      
-      // Flag to track if we used simulation
-      let usedSimulation = false;
-      let response;
-      
-      // Process payment - wrapped in try-catch to handle API errors safely
-      try {
-        response = await purchasePlan(planDetails);
-        console.log('Purchase response:', response);
-      } catch (apiError) {
-        console.error('API Error during purchase:', apiError);
+
+      console.log('Sending purchase request with data:', planForPurchase);
+
+      // Purchase the plan using AuthContext function
+      const result = await purchasePlan(planForPurchase);
+
+      if (result && result.success) {
+        console.log('Plan purchased successfully!', result);
         
-        // Check if we're in development environment
-        const isDev = process.env.NODE_ENV === 'development' || !window.location.hostname.includes('.');
-        
-        if (isDev) {
-          // Use simulation in development when API fails
-          console.log('Falling back to simulated purchase in development');
-          response = simulateSuccessfulPurchase(plan, currentUser);
-          usedSimulation = true;
-        } else {
-          // In production, show error message
-          state.setPurchaseMessage("Payment failed. Please try again later.");
-          setTimeout(() => state.setShowPurchaseSuccess(false), 3000);
-          return;
+        // Update the derived plan information based on plan type and response data
+        if (result.user) {
+          // Use values from the response if available
+          if (result.user.hasUnlimitedChecks) {
+            state.setIsPlanUnlimited(true);
+          } else if (typeof result.user.remainingChecks === 'number') {
+            state.setRemainingChecks(result.user.remainingChecks);
+          } else {
+            // Fallback to plan data if response doesn't have the derived fields
+            if (plan.type === 'duration' || plan.title === 'Unlimited Pack') {
+              state.setIsPlanUnlimited(true);
+            } else if (plan.type === 'count' || plan.checks) {
+              const checkCount = plan.value || plan.checks || 1;
+              state.setRemainingChecks(checkCount);
+            }
+          }
         }
-      }
-      
-      // DIRECT UI UPDATE - Don't wait for fetchUserData which might be delayed
-      let updatedUserData;
-      
-      // Immediately update the UI with the purchased plan info
-      if (plan.title === "Unlimited Pack") {
-        // Update state for unlimited plan
-        state.setIsPlanUnlimited(true);
-        state.setPurchaseMessage(usedSimulation ? 
-          "Successfully upgraded to Unlimited Plan! (Simulated)" : 
-          "Successfully upgraded to Unlimited Plan!");
-          
-        // Create updated user object
-        updatedUserData = {
-          ...currentUser,
-          plan: plan.title,
-          currentPlan: plan.title,
-          hasUnlimitedChecks: true,
-          remainingChecks: 999
-        };
+        
+        // Force refresh user data to get the latest plan info
+        try {
+          await fetchUserData(true); // Force refresh to ensure we have the latest data
+          console.log('User data refreshed after successful purchase');
+        } catch (refreshError) {
+          console.error('Error refreshing user data after purchase:', refreshError);
+          // Continue anyway since the purchase was successful
+        }
+        
+        // Return success to the calling component
+        return { success: true, user: result.user };
       } else {
-        // For limited plans
-        const addedChecks = plan.checks || (plan.title === "Basic Check" ? 1 : plan.title === "Standard Pack" ? 5 : 0);
-        const newTotal = (currentUser?.remainingChecks || 0) + addedChecks;
-        
-        state.setRemainingChecks(newTotal);
-        state.setPurchaseMessage(usedSimulation ?
-          `Successfully added ${addedChecks} checks to your plan! (Simulated)` :
-          `Successfully added ${addedChecks} checks to your plan!`);
-          
-        // Create updated user object
-        updatedUserData = {
-          ...currentUser,
-          plan: plan.title,
-          currentPlan: plan.title,
-          remainingChecks: newTotal
-        };
-      }
-      
-      // Save updated user data to localStorage for persistence
-      try {
-        localStorage.setItem('dashboardPlanUpdate', JSON.stringify({
-          timestamp: Date.now(),
-          planDetails: planDetails,
-          updatedUser: updatedUserData
-        }));
-      } catch (e) {
-        console.error('Could not save plan update to localStorage:', e);
-      }
-      
-      // Apply the update to currentUser to force immediate UI update
-      Object.assign(currentUser, updatedUserData);
-        
-      // Force a re-render of components that use the plan
-      setPlanUpdated(prev => prev + 1);
-      
-      // Show success message
-      state.setShowPurchaseSuccess(true);
-      
-      // Now try to refresh the user data from backend
-      try {
-        const updatedUser = await fetchUserData();
-        console.log('Updated user data from backend:', updatedUser);
-        
-        // Don't reload the page - it's unnecessary and causes extra rendering
-        // The UI is already updated through the setPlanUpdated state and the object updates
-        
-      } catch (userDataError) {
-        console.error('Error fetching updated user data:', userDataError);
-        // Still continue with the UI updates we already have - no need to reload
+        console.error('Plan purchase failed:', result.error);
+        // Return error to the calling component
+        return { success: false, error: result.error || 'Failed to purchase plan. Please try again.' };
       }
     } catch (error) {
-      // Global error handler
-      console.error("Purchase failed:", error);
-      state.setPurchaseMessage("An unexpected error occurred. Please try again.");
-      state.setShowPurchaseSuccess(true);
-      setTimeout(() => state.setShowPurchaseSuccess(false), 3000);
+      console.error('Error purchasing plan:', error);
+      // Return error to the calling component
+      return { 
+        success: false, 
+        error: error.message || error.response?.data?.error || 'Failed to purchase plan. Please try again.' 
+      };
     }
   };
   
@@ -592,7 +694,7 @@ export default function Dashboard() {
       
       // Try to fetch payments in parallel
       try {
-        const paymentResponse = await axios.get('/api/users/me/payments', {
+        const paymentResponse = await axios.get('/api/users/me/purchases', {
           headers: { 'Cache-Control': 'max-age=300' }
         });
         setPayments(paymentResponse.data.payments || []);
@@ -640,23 +742,18 @@ export default function Dashboard() {
     }
   }, [welcomeAnimation, currentUser, preloaded, preloadDashboardData]);
 
-  // Fetch user data and payment history only once on mount
+  // Fetch resumes and payment history after user data
   useEffect(() => {
-    if (!currentUser && !authLoading) {
-      // If not logged in and not loading, redirect to login
-      navigate('/');
-    } else if (currentUser && !dataFetched) {
-      // If logged in and data not yet fetched, fetch data
+    if (currentUser && !dataFetched) {
+      // Fetch all user data in a single batch operation
       fetchUserDataSafely();
       
-      // Wait a bit before fetching payment history to avoid rate limiting
-      const timer = setTimeout(() => {
-        fetchPaymentHistory();
-      }, 1500);
-      
-      return () => clearTimeout(timer);
+      // No need for separate fetch operations since fetchAllUserData handles everything
+      return () => {
+        // Cleanup for any pending operations
+      };
     }
-  }, [currentUser, authLoading, navigate, dataFetched, fetchUserDataSafely, fetchPaymentHistory]);
+  }, [currentUser, dataFetched, fetchUserDataSafely]);
   
   // Clean up the request queue on unmount
   useEffect(() => {
@@ -713,6 +810,25 @@ export default function Dashboard() {
       }
     }
   }, [currentUser?.plan, currentUser?.currentPlan, user?.plan]);
+  
+  // Initialize resumes data
+  useEffect(() => {
+    const fetchResumeData = async () => {
+      try {
+        // Fetch resume history
+        const resumes = await fetchResumeHistory();
+        if (resumes && resumes.length > 0) {
+          state.setResumes(resumes);
+        }
+      } catch (error) {
+        console.error('Failed to fetch resume data:', error);
+      }
+    };
+    
+    if (currentUser) {
+      fetchResumeData();
+    }
+  }, [currentUser, fetchResumeHistory, state.setResumes]);
   
   // ========== RENDER ==========
   
@@ -801,14 +917,59 @@ export default function Dashboard() {
                   <span className="text-2xl font-bold text-primary">ResumeZen</span>
                   <span className="text-2xl">🚀</span>
                 </div>
-                <div className="flex-1 mx-8 text-right">
+                <div className="hidden md:block flex-1 mx-8 text-right">
                   <h2 className="text-xl text-gray-700">
                     Hey {user && user.name ? getFirstName(user.name) : 'User'} 👋
                   </h2>
                 </div>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold">
-                    {user.initials}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={logout}
+                    className="hidden md:flex items-center gap-1 text-gray-700 hover:text-indigo-600 transition-colors px-3 py-1 rounded-md hover:bg-gray-100"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Logout</span>
+                  </button>
+                  
+                  {/* Mobile user greeting */}
+                  <span className="md:hidden text-sm text-gray-600 mr-1">
+                    Hi, {user && user.name ? getFirstName(user.name) : 'User'}
+                  </span>
+                  
+                  <div className="relative" ref={mobileMenuRef}>
+                    <div 
+                      className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    >
+                      {user.initials}
+                    </div>
+                    
+                    {/* Mobile menu dropdown */}
+                    {mobileMenuOpen && (
+                      <div className="md:hidden absolute right-0 mt-2 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50">
+                        <div className="px-4 py-2 text-sm font-medium text-gray-900 border-b border-gray-100">
+                          {user.name || 'User Profile'}
+                        </div>
+                        <div className="px-4 py-2 text-xs text-gray-500">
+                          {user.email}
+                        </div>
+                        <hr className="my-1" />
+                        <button
+                          onClick={() => {
+                            setMobileMenuOpen(false);
+                            logout();
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          Logout
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -818,8 +979,8 @@ export default function Dashboard() {
           {/* Main Content */}
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left Column */}
-              <div className="space-y-8">
+              {/* Left Column - Made responsive with proper stacking on mobile */}
+              <div className="space-y-6 md:space-y-8 order-2 lg:order-1">
                 <ProfileCard 
                   key={`profile-card-${planUpdated}`}
                   user={user} 
@@ -837,8 +998,8 @@ export default function Dashboard() {
                 <HelpSection onEmail={onEmail} onLiveChat={onLiveChat} onFAQ={onFAQ} onSchedule={onSchedule} />
               </div>
 
-              {/* Center Column */}
-              <div className="lg:col-span-2 space-y-8">
+              {/* Center Column - Made responsive to take full width on mobile */}
+              <div className="lg:col-span-2 space-y-6 md:space-y-8 order-1 lg:order-2">
                 <UploadBox 
                   key={state.uploadComponent}
                   onFileSelect={onFileSelect} 

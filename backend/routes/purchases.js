@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Purchase = require('../models/Purchase');
 const Plan = require('../models/Plan');
 const auth = require('../middleware/auth');
+const mongoose = require('mongoose');
 
 // GET /api/purchases
 // Get all purchases for the authenticated user
@@ -28,20 +29,84 @@ router.post('/', auth, async (req, res) => {
     const { planId, paymentMethod, paymentDetails } = req.body;
     const userId = req.user.userId;
 
+    // Enhanced logging
+    console.log('Purchase request received:', { 
+      body: req.body, 
+      planId: typeof planId === 'string' ? planId : JSON.stringify(planId),
+      userId 
+    });
+
+    // Validate required fields
     if (!planId || !paymentMethod) {
-      return res.status(400).json({ error: 'Missing required purchase details' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Missing required purchase details',
+        details: { 
+          missingPlanId: !planId,
+          missingPaymentMethod: !paymentMethod 
+        }
+      });
     }
+
+    console.log('Creating purchase with data:', { planId, paymentMethod, userId });
 
     // Find the user
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'User not found' 
+      });
     }
 
-    // Find the plan
-    const plan = await Plan.findById(planId);
-    if (!plan || !plan.active) {
-      return res.status(404).json({ error: 'Plan not found or inactive' });
+    // Find the plan - first check if it's a MongoDB ObjectId
+    let plan;
+    if (mongoose.Types.ObjectId.isValid(planId)) {
+      // If it's a valid ObjectId, look it up directly
+      plan = await Plan.findById(planId);
+    } else {
+      // If not a valid ObjectId, try to find by custom ID fields
+      plan = await Plan.findOne({ 
+        $or: [
+          { customId: planId },
+          { planId: planId },
+          { name: planId }
+        ] 
+      });
+    }
+
+    if (!plan) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Plan not found',
+        details: { 
+          providedPlanId: planId,
+          isValidObjectId: mongoose.Types.ObjectId.isValid(planId)
+        }
+      });
+    }
+    
+    if (!plan.active) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Plan is currently inactive' 
+      });
+    }
+
+    // Ensure plan has valid type and value
+    if (!['count', 'duration'].includes(plan.type)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid plan type',
+        details: { providedType: plan.type }  
+      });
+    }
+    if (typeof plan.value !== 'number' || plan.value <= 0) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid plan value',
+        details: { providedValue: plan.value }  
+      });
     }
 
     // Calculate activation and expiration times
@@ -59,14 +124,14 @@ router.post('/', auth, async (req, res) => {
       checksRemaining = plan.value;
     }
 
-    // Create new purchase
+    // Create new purchase with sanitized data
     const purchase = new Purchase({
       user: userId,
       plan: plan._id,
       amount: plan.price,
-      currency: plan.currency,
+      currency: plan.currency || 'INR',
       paymentMethod,
-      paymentDetails,
+      paymentDetails: paymentDetails || {},
       paymentStatus: 'success', // Assume payment is successful for now
       transactionId: `txn_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`,
       activatedAt,
@@ -75,6 +140,7 @@ router.post('/', auth, async (req, res) => {
     });
 
     await purchase.save();
+    console.log('Purchase created successfully:', purchase._id);
 
     // Update user's current plan
     user.currentPlan = plan._id;
@@ -85,21 +151,55 @@ router.post('/', auth, async (req, res) => {
     }
     
     await user.save();
+    console.log('User updated successfully with new plan');
+
+    // Create a clean response object with plan details included
+    const userResponse = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      currentPlan: plan.name, // Include plan name directly
+      planType: plan.type,    // Include plan type
+      planValue: plan.value,  // Include plan value
+      planExpiresAt: user.planExpiresAt,
+      // Add derived fields for easier frontend handling
+      hasUnlimitedChecks: plan.type === 'duration',
+      remainingChecks: plan.type === 'count' ? plan.value : null
+    };
 
     res.status(201).json({ 
-      purchase,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        currentPlan: plan,
-        planExpiresAt: user.planExpiresAt
-      }
+      success: true,
+      purchase: {
+        _id: purchase._id,
+        amount: purchase.amount,
+        currency: purchase.currency,
+        paymentStatus: purchase.paymentStatus,
+        activatedAt: purchase.activatedAt,
+        expiresAt: purchase.expiresAt,
+        checksRemaining: purchase.checksRemaining
+      },
+      user: userResponse
     });
   } catch (err) {
     console.error('Error creating purchase:', err);
-    res.status(500).json({ error: 'Server error', details: err.message });
+    // Provide more context in the error message
+    let errorMessage = err.message;
+    let statusCode = 500;
+    
+    if (err.name === 'CastError' && err.path === '_id') {
+      errorMessage = 'Invalid plan ID format'; 
+      statusCode = 400;
+    } else if (err.name === 'ValidationError') {
+      errorMessage = 'Validation error: ' + Object.values(err.errors).map(e => e.message).join(', ');
+      statusCode = 400;
+    }
+    
+    res.status(statusCode).json({ 
+      success: false,
+      error: 'Server error during purchase creation', 
+      details: errorMessage
+    });
   }
 });
 

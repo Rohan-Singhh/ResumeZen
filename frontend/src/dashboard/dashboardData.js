@@ -165,20 +165,38 @@ const dummyData = {
   ],
   plans: [
     { 
+      _id: "plan_basic_" + Math.random().toString(36).substring(2, 10),
       price: "₹19", 
       checks: 1,
-      title: "Basic Check"
+      value: 1,
+      type: "count",
+      title: "Basic Check",
+      name: "Basic Check",
+      currency: "INR",
+      features: ["One resume check", "ATS compatibility report", "Basic improvement tips"]
     },
     { 
+      _id: "plan_standard_" + Math.random().toString(36).substring(2, 10),
       price: "₹70", 
       checks: 5,
-      title: "Standard Pack" 
+      value: 5,
+      type: "count",
+      title: "Standard Pack",
+      name: "Standard Pack",
+      currency: "INR",
+      features: ["Five resume checks", "ATS compatibility report", "Detailed improvement tips", "Keyword optimization"]
     },
     { 
+      _id: "plan_unlimited_" + Math.random().toString(36).substring(2, 10),
       price: "₹500",
       title: "Unlimited Pack",
+      name: "Unlimited Pack",
+      type: "duration",
+      value: 90, // 3 months in days
+      currency: "INR",
       period: "3 months",
-      description: "Unlimited resume checks with premium features"
+      description: "Unlimited resume checks with premium features",
+      features: ["Unlimited resume checks for 3 months", "Premium formatting suggestions", "Industry-specific keyword recommendations", "Priority support"]
     }
   ]
 };

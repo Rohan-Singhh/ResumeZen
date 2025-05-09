@@ -24,8 +24,8 @@ if (!admin.apps.length) {
 // Check if we're in development mode (using emulator)
 const isDevelopmentMode = process.env.NODE_ENV === 'development';
 
-// Create a specific rate limiter for phone authentication
-const phoneAuthLimiter = rateLimit({
+// Create a specific rate limiter for authentication
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // limit each IP to 5 requests per windowMs
   message: {
@@ -36,9 +36,49 @@ const phoneAuthLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
-// POST /api/auth/phone
-// Expects: { idToken: string }
-router.post('/phone', phoneAuthLimiter, async (req, res) => {
+// Helper function to create or update user and generate token
+const handleAuthUser = async (firebaseUID, userData) => {
+  // Find user by firebaseUID
+  let user = await User.findOne({ firebaseUID });
+  
+  if (!user) {
+    // Create new user if not found
+    user = await User.create({
+      firebaseUID,
+      ...userData
+    });
+    console.log('Created new user with firebaseUID:', firebaseUID);
+  } else {
+    // Update existing user data if needed
+    let needsUpdate = false;
+    
+    // Check if any fields need updating
+    Object.keys(userData).forEach(key => {
+      if (userData[key] && user[key] !== userData[key]) {
+        user[key] = userData[key];
+        needsUpdate = true;
+      }
+    });
+    
+    if (needsUpdate) {
+      await user.save();
+      console.log('Updated existing user data for:', firebaseUID);
+    }
+  }
+  
+  // Generate JWT token
+  const token = jwt.sign(
+    { userId: user._id, firebaseUID }, 
+    process.env.JWT_SECRET, 
+    { expiresIn: '7d' }
+  );
+  
+  return { user, token };
+};
+
+// POST /api/auth/verify-token
+// Unified endpoint for verifying Firebase tokens
+router.post('/verify-token', authLimiter, async (req, res) => {
   const { idToken } = req.body;
   if (!idToken) return res.status(400).json({ error: 'idToken is required' });
 
@@ -49,74 +89,58 @@ router.post('/phone', phoneAuthLimiter, async (req, res) => {
     if (isDevelopmentMode && idToken.startsWith('emulator-token-')) {
       console.log('Detected emulator token, using development verification flow');
       
-      // In development mode with emulator, we can bypass token verification
-      // Extract phone number from a custom header or the token itself
-      // For our mock emulator, we'll just use a default phone number
-      const phone = '+15555555555'; // Default phone for development
+      // For development mode, we'll create a fake UID and user data
+      const firebaseUID = 'dev-' + Date.now();
+      const userData = {
+        name: 'Test User',
+        email: 'test@example.com',
+        phone: '+15555555555'
+      };
       
-      console.log('Development mode: Using phone number:', phone);
+      const { user, token } = await handleAuthUser(firebaseUID, userData);
       
-      // Find or create user
-      let user = await User.findOne({ phone });
-      if (!user) {
-        console.log('Creating new user for phone:', phone);
-        user = await User.create({ phone, isPhoneVerified: true });
-      } else if (!user.isPhoneVerified) {
-        user.isPhoneVerified = true;
-        await user.save();
-      }
-      
-      // Issue JWT
-      const token = jwt.sign({ userId: user._id, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      console.log('JWT token issued successfully for development mode');
-      
-      // Return success
       return res.json({ 
         token, 
         user: { 
-          phone: user.phone, 
-          isPhoneVerified: user.isPhoneVerified, 
-          _id: user._id 
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone
         },
         developmentMode: true
       });
     }
     
-    // Regular production flow: Verify the Firebase ID token
+    // Production flow: Verify the Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     console.log('Token verified successfully');
     
-    // In emulator, the token format might be different
-    // so we need to handle both formats
+    // Extract user data from token
+    const firebaseUID = decodedToken.uid;
+    const email = decodedToken.email;
     const phone = decodedToken.phone_number || decodedToken.phoneNumber;
+    const name = decodedToken.name || email?.split('@')[0] || 'User';
     
-    if (!phone) {
-      console.error('No phone number in token:', decodedToken);
-      return res.status(400).json({ error: 'Invalid phone number' });
-    }
+    // Prepare user data from token
+    const userData = {
+      name,
+      email,
+      phone
+    };
     
-    console.log('Phone authentication successful for:', phone);
-
-    // Find or create user
-    let user = await User.findOne({ phone });
-    if (!user) {
-      console.log('Creating new user for phone:', phone);
-      user = await User.create({ phone, isPhoneVerified: true });
-    } else if (!user.isPhoneVerified) {
-      user.isPhoneVerified = true;
-      await user.save();
-    }
-
-    // Issue JWT
-    const token = jwt.sign({ userId: user._id, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    console.log('JWT token issued successfully');
+    // Handle authentication (create/update user and generate token)
+    const { user, token } = await handleAuthUser(firebaseUID, userData);
     
+    // Return user data and token
     res.json({ 
       token, 
       user: { 
-        phone: user.phone, 
-        isPhoneVerified: user.isPhoneVerified, 
-        _id: user._id 
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        currentPlan: user.currentPlan,
+        planExpiresAt: user.planExpiresAt
       } 
     });
   } catch (err) {
@@ -125,218 +149,136 @@ router.post('/phone', phoneAuthLimiter, async (req, res) => {
   }
 });
 
-// POST /api/auth/google
-// Expects: { idToken: string }
-router.post('/google', async (req, res) => {
-  const { idToken } = req.body;
-  if (!idToken) return res.status(400).json({ error: 'idToken is required' });
-
+// For backwards compatibility - replace the redirects with direct handling
+router.post('/phone', async (req, res) => {
+  console.log('Phone auth endpoint called');
   try {
-    console.log('Received Google ID token for verification');
-    
-    // Check if this is an emulator token in development mode
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ error: 'idToken is required' });
+    }
+
+    // Development mode handling
     if (isDevelopmentMode && idToken.startsWith('emulator-token-')) {
-      console.log('Detected emulator token for Google auth, using development verification flow');
+      console.log('Detected emulator token, using development verification flow');
       
-      // For development mode, we can use a mock Google account
-      const email = 'test@example.com';
-      const name = 'Test User';
+      // For development mode, we'll create a fake UID and user data
+      const firebaseUID = 'dev-' + Date.now();
+      const userData = {
+        name: 'Test User',
+        email: 'test@example.com',
+        phone: '+15555555555'
+      };
       
-      console.log('Development mode: Using email:', email);
+      const { user, token } = await handleAuthUser(firebaseUID, userData);
       
-      // Find or create user by email
-      let user = await User.findOne({ email });
-      if (!user) {
-        console.log('Creating new user for email:', email);
-        user = await User.create({ 
-          email, 
-          name,
-          isEmailVerified: true 
-        });
-      }
-      
-      // Issue JWT
-      const token = jwt.sign({ 
-        userId: user._id, 
-        email: user.email 
-      }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      
-      console.log('JWT token issued successfully for development mode Google auth');
-      
-      // Return success
       return res.json({ 
         token, 
         user: { 
-          email: user.email, 
+          _id: user._id,
           name: user.name,
-          _id: user._id 
+          email: user.email,
+          phone: user.phone
         },
         developmentMode: true
       });
     }
     
-    try {
-      // Regular production flow: Verify the Firebase ID token
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-      console.log('Google token verified successfully');
-      
-      // Get user data from token
-      const { email, name, picture } = decodedToken;
-      
-      if (!email) {
-        console.error('No email in token:', decodedToken);
-        return res.status(400).json({ error: 'Invalid email' });
-      }
-      
-      console.log('Google authentication successful for:', email);
-
-      // Find or create user by email
-      let user = await User.findOne({ email });
-      if (!user) {
-        console.log('Creating new user for email:', email);
-        try {
-          // Explicitly set phone: null to avoid unique constraint issues
-          user = await User.create({ 
-            email, 
-            name: name || email.split('@')[0],
-            profilePicture: picture,
-            isEmailVerified: true,
-            phone: null  // Explicitly set to null
-          });
-        } catch (createError) {
-          console.error('Error creating user:', createError);
-          
-          // Handle the duplicate key error differently
-          if (createError.code === 11000) {
-            if (createError.keyPattern && createError.keyPattern.phone) {
-              console.log('Phone duplicate key error detected. Trying to find user by email...');
-              
-              // Try alternative approach - first remove any documents with null phone
-              try {
-                // Check if there's another approach we can take
-                // First try to find the user again, there might be a race condition
-                user = await User.findOne({ email });
-                
-                if (!user) {
-                  // Try to use findOneAndUpdate to upsert the user which can handle this better
-                  user = await User.findOneAndUpdate(
-                    { email },
-                    { 
-                      email,
-                      name: name || email.split('@')[0],
-                      profilePicture: picture,
-                      isEmailVerified: true,
-                      $setOnInsert: { phone: null }
-                    },
-                    { 
-                      new: true,
-                      upsert: true,
-                      setDefaultsOnInsert: true
-                    }
-                  );
-                  console.log('Successfully created user using findOneAndUpdate');
-                } else {
-                  console.log('Found existing user by email after retry');
-                }
-              } catch (error) {
-                console.error('Error in alternative user creation approach:', error);
-                return res.status(500).json({ error: 'Cannot create user due to database constraint issues' });
-              }
-            } else {
-              // For email duplicate, try to find and return existing user
-              console.log('Email duplicate key error. Trying to find existing user...');
-              user = await User.findOne({ email });
-              
-              if (!user) {
-                throw new Error('Cannot find or create user with this email');
-              }
-            }
-          } else {
-            // Re-throw any other errors
-            throw createError;
-          }
-        }
-      } else {
-        // Update profile data if needed
-        let needsUpdate = false;
-        
-        if (name && user.name !== name) {
-          user.name = name;
-          needsUpdate = true;
-        }
-        
-        if (picture && user.profilePicture !== picture) {
-          user.profilePicture = picture;
-          needsUpdate = true;
-        }
-        
-        if (!user.isEmailVerified) {
-          user.isEmailVerified = true;
-          needsUpdate = true;
-        }
-        
-        if (needsUpdate) {
-          await user.save();
-        }
-      }
-
-      // Issue JWT
-      const token = jwt.sign({ 
-        userId: user._id, 
-        email: user.email 
-      }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      
-      console.log('JWT token issued successfully for Google auth');
-      
-      res.json({ 
-        token, 
-        user: { 
-          email: user.email, 
-          name: user.name,
-          profilePicture: user.profilePicture,
-          _id: user._id 
-        } 
-      });
-    } catch (verifyError) {
-      console.error('Error verifying Google token:', verifyError);
-      return res.status(401).json({ 
-        error: 'Invalid Google ID token', 
-        details: verifyError.message 
-      });
-    }
-  } catch (err) {
-    console.error('Google authentication error:', err);
-    res.status(500).json({ 
-      error: 'Server error during Google authentication', 
-      details: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    console.log('Phone token verified successfully');
+    
+    // Extract user data from token
+    const firebaseUID = decodedToken.uid;
+    const phone = decodedToken.phone_number || null;
+    const name = decodedToken.name || 'User';
+    
+    // Prepare user data from token - important to include null checks
+    const userData = {
+      name: name || null,
+      phone: phone || null
+    };
+    
+    // Handle authentication (create/update user and generate token)
+    const { user, token } = await handleAuthUser(firebaseUID, userData);
+    
+    // Return user data and token
+    res.json({ 
+      token, 
+      user: { 
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        currentPlan: user.currentPlan,
+        planExpiresAt: user.planExpiresAt
+      } 
     });
+  } catch (err) {
+    console.error('Phone auth error:', err);
+    res.status(500).json({ error: 'Server error during phone authentication', details: err.message });
   }
 });
 
-// Diagnostic route for admins only - check database indexes
+router.post('/google', async (req, res) => {
+  console.log('Google auth endpoint called');
+  try {
+    // Same implementation as verify-token but specific for Google
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ error: 'idToken is required' });
+    }
+    
+    // Verify the token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    
+    // Extract user data
+    const firebaseUID = decodedToken.uid;
+    const email = decodedToken.email || null;
+    const name = decodedToken.name || email?.split('@')[0] || 'User';
+    
+    // Create/update user
+    const userData = {
+      name,
+      email,
+    };
+    
+    const { user, token } = await handleAuthUser(firebaseUID, userData);
+    
+    // Return response
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        currentPlan: user.currentPlan,
+        planExpiresAt: user.planExpiresAt
+      }
+    });
+  } catch (err) {
+    console.error('Google auth error:', err);
+    res.status(500).json({ error: 'Server error during Google authentication', details: err.message });
+  }
+});
+
+// Diagnostic route for admins only - check database
 if (process.env.NODE_ENV === 'development') {
-  router.get('/debug/indexes', async (req, res) => {
+  router.get('/debug/users', async (req, res) => {
     try {
       const User = require('../models/User');
-      
-      // Get collection info
-      const collection = User.collection;
-      const indexes = await collection.indexes();
-      
-      // Find and count documents with null phone
-      const nullPhoneCount = await User.countDocuments({ phone: null });
       
       // Get a sample of users
       const users = await User.find().limit(10).lean();
       
       res.json({
-        message: 'MongoDB index diagnostic information',
-        indexes,
-        nullPhoneCount,
+        message: 'User diagnostic information',
         sampleUsers: users.map(u => ({
           id: u._id,
+          firebaseUID: u.firebaseUID,
           email: u.email,
-          phone: u.phone === null ? 'NULL' : (u.phone || 'undefined'),
+          phone: u.phone,
           name: u.name
         }))
       });

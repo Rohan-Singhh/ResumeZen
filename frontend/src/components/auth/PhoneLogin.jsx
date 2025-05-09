@@ -59,6 +59,10 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
 
   // Combined cleanup function for unmounting
   useEffect(() => {
+    // Store a local ref to the navigating state to avoid closure issues
+    const isNavigating = isNavigatingRef.current;
+    const pathname = window.location.pathname;
+    
     return () => {
       // Clear any running intervals
       if (countdownIntervalRef.current) {
@@ -77,11 +81,11 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
       }
       
       // Only clear global loading if we're not navigating to dashboard
-      if (!isNavigatingRef.current && window.location.pathname.includes('/login')) {
+      if (!isNavigating && pathname.includes('/login')) {
         setGlobalLoading(false);
       }
     };
-  }, []); // Empty dependency array as this should only run on unmount
+  }, []); // Empty dependency array since we use refs for state values
 
   // Memoized handlers to avoid recreation on every render
   const handleSendCode = useCallback(async (e) => {
@@ -104,22 +108,41 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
       // Format the phone number with country code - already done by the component
       const formattedPhone = `+${phoneNumber}`;
       
-      // Set up invisible reCAPTCHA
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'invisible',
-          'callback': (response) => {
-            // reCAPTCHA solved, allow signInWithPhoneNumber.
-            console.log('reCAPTCHA verified:', response);
+      // Ensure the recaptcha container exists and clear any previous instances
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
+        } catch (e) {
+          console.error('Error clearing existing reCAPTCHA:', e);
+        }
+      }
+      
+      // Set up invisible reCAPTCHA with a defined container ID
+      const recaptchaContainerId = 'recaptcha-container';
+      
+      // Make sure the container exists
+      if (!document.getElementById(recaptchaContainerId)) {
+        console.error('reCAPTCHA container not found in DOM');
+        throw new Error('reCAPTCHA container not found');
+      }
+      
+      // Create new reCAPTCHA verifier
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        auth, 
+        recaptchaContainerId, 
+        {
+          size: 'invisible',
+          callback: (response) => {
+            console.log('reCAPTCHA verified:', response ? 'success' : 'no response');
           },
           'expired-callback': () => {
-            // Response expired. Ask user to solve reCAPTCHA again.
             console.log('reCAPTCHA expired');
             setError('Verification timeout. Please try again.');
             if (onError) onError('Verification timeout. Please try again.');
           }
-        });
-      }
+        }
+      );
 
       // Use Firebase phone auth flow
       const confirmationResultObj = await signInWithPhoneNumber(
@@ -160,6 +183,12 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
         errorMessage = 'Please enter a phone number.';
       } else if (error.response?.status === 429) {
         errorMessage = 'Too many login attempts. Please try again in a few minutes.';
+        // Handle rate limiting with a longer countdown
+        setCountdown(180); // 3 minutes
+        // Show a more specific message with countdown
+        setError(`Rate limit reached. Please try again in ${Math.ceil(countdown/60)} minutes.`);
+        // Track in session to prevent repeated attempts
+        sessionStorage.setItem('phoneAuthRateLimited', Date.now().toString());
       } else {
         errorMessage += error.message || 'Please try again.';
       }
@@ -179,7 +208,7 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
     } finally {
       setLoading(false);
     }
-  }, [loading, phoneNumber, onError, setError, setLoading]);
+  }, [loading, phoneNumber, onError, setError, setLoading, countdown]);
 
   // Handle verifying the code
   const handleVerifyCode = useCallback(async (e) => {
@@ -425,6 +454,9 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
         </div>
       )}
 
+      {/* Dedicated reCAPTCHA container - must be visible in DOM */}
+      <div id="recaptcha-container" className="invisible h-0"></div>
+
       {step === 1 ? (
         <form onSubmit={handleSendCode} className="space-y-6">
           <div>
@@ -454,8 +486,6 @@ export default function PhoneLogin({ onBack, onError, onSuccessNavigation }) {
             </div>
             <p className="text-xs text-gray-500 mt-2">We'll send a verification code to this number</p>
           </div>
-
-          <div id="recaptcha-container"></div>
 
           <div className="flex flex-col-reverse sm:flex-row sm:justify-between space-y-4 space-y-reverse sm:space-y-0">
             <motion.button

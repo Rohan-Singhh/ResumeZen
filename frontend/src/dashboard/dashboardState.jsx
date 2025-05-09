@@ -22,6 +22,21 @@ export function useDashboardState() {
   const [showLiveChat, setShowLiveChat] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
+  
+  // Purchase related state
+  const [purchaseInProgress, setPurchaseInProgress] = useState(false);
+  const [purchaseError, setPurchaseError] = useState(null);
+  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploadInProgress, setUploadInProgress] = useState(false);
+  const [atsScore, setAtsScore] = useState(null);
+  const [processingComplete, setProcessingComplete] = useState(false);
+  const [purchaseRequired, setPurchaseRequired] = useState(false);
+  const [jobTitle, setJobTitle] = useState("");
+  const [industry, setIndustry] = useState("");
 
   return {
     selectedVlog, setSelectedVlog,
@@ -43,5 +58,19 @@ export function useDashboardState() {
     showLiveChat, setShowLiveChat,
     showSchedule, setShowSchedule,
     showFAQ, setShowFAQ,
+    // Purchase related state
+    purchaseInProgress, setPurchaseInProgress,
+    purchaseError, setPurchaseError,
+    purchaseDialogOpen, setPurchaseDialogOpen,
+    uploadFile, setUploadFile,
+    uploadSuccess, setUploadSuccess,
+    uploadError, setUploadError,
+    uploadMessage, setUploadMessage,
+    uploadInProgress, setUploadInProgress,
+    atsScore, setAtsScore,
+    processingComplete, setProcessingComplete,
+    purchaseRequired, setPurchaseRequired,
+    jobTitle, setJobTitle,
+    industry, setIndustry,
   };
 } 

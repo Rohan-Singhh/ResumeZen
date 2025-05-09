@@ -29,6 +29,7 @@ module.exports = async (req, res, next) => {
     // Set user in request object
     req.user = {
       userId: decoded.userId,
+      firebaseUID: decoded.firebaseUID,
       isAdmin: true
     };
     
