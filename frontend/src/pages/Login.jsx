@@ -31,15 +31,19 @@ export default function Login() {
 
   // Consolidated useEffect to handle both loading state management and cleanup
   useEffect(() => {
+    // Get a ref to the current navigate function to avoid stale closures
+    const navigateFunction = navigate;
+    const handleLoadingState = setLoading;
+    
     // Only turn off loading if not navigation was initiated and we're mounting
     if (!navigatingRef.current) {
-      setLoading(false);
+      handleLoadingState(false);
     }
     
     // Add click outside handler
     const handleClickOutside = (event) => {
       if (loginBoxRef.current && !loginBoxRef.current.contains(event.target)) {
-        navigate('/');
+        navigateFunction('/');
       }
     };
     
@@ -48,13 +52,8 @@ export default function Login() {
     // Cleanup function for unmounting
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      
-      // Only turn off loading if we're not navigating to dashboard
-      if (!navigatingRef.current) {
-        setLoading(false);
-      }
     };
-  }, [navigate, setLoading]);
+  }, []); // Empty dependency array since we capture values at the start
 
   // Memoized handlers to avoid recreating them on every render
   const handlePhoneLoginToggle = useCallback(() => {
