@@ -97,60 +97,16 @@ export default function Pricing() {
     fetchPlans();
   }, []);
 
-  // Handle plan selection and payment
-  const handlePlanSelection = async (planId) => {
+  // Handle plan selection based on authentication status
+  const handleSelectPlan = (plan) => {
     if (!isAuthenticated) {
-      // Redirect to login if not authenticated
+      // If not logged in, redirect to login
       navigate('/login');
-      return;
-    }
-    
-    try {
-      setPaymentLoading(true);
-      
-      // Get the selected plan details
-      const selectedPlan = plans.find(p => p.planId === planId);
-      if (!selectedPlan) {
-        throw new Error('Plan not found');
-      }
-      
-      // Prepare plan details for API
-      const planDetails = {
-        planId: selectedPlan.planId,
-        planName: selectedPlan.title,
-        amount: selectedPlan.price,
-        currency: selectedPlan.currency || 'INR',
-        paymentMethod: 'credit_card',
-        paymentDetails: {
-          source: 'direct_payment',
-          plan: selectedPlan.title,
-          checks: selectedPlan.title === "Unlimited Pack" ? 'unlimited' : 
-                 selectedPlan.title === "Boost Pack" ? 5 : 1
-        }
-      };
-      
-      // Use the AuthContext purchasePlan function
-      const { user: updatedUser } = await purchasePlan(planDetails);
-      
-      if (updatedUser) {
-        // Show success message
-        alert('Payment successful! Your plan has been updated.');
-        
-        // Navigate to dashboard
-        navigate('/dashboard', {
-          state: { 
-            planUpdated: true,
-            planName: selectedPlan.title
-          }
-        });
-      } else {
-        throw new Error('Failed to update plan');
-      }
-    } catch (err) {
-      console.error('Payment failed:', err);
-      alert(`Payment failed: ${err.message || 'Please try again later.'}`);
-    } finally {
-      setPaymentLoading(false);
+    } else {
+      // If logged in, redirect to home page with plan info
+      navigate('/', {
+        state: { selectedPlan: plan }
+      });
     }
   };
 
@@ -228,7 +184,7 @@ export default function Pricing() {
                   ))}
                 </ul>
                 <motion.button 
-                  onClick={() => handlePlanSelection(plan.planId)}
+                  onClick={() => handleSelectPlan(plan)}
                   disabled={paymentLoading}
                   className={`w-full font-semibold py-3 px-8 rounded-lg transition-all duration-300 ${
                     paymentLoading 

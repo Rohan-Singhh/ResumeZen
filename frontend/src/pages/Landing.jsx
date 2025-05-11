@@ -20,6 +20,22 @@ export default function Landing() {
       console.log('Clearing logout flags on landing page');
       sessionStorage.removeItem('logoutInProgress');
       
+      // Remove logout-related classes from body
+      document.body.classList.remove('logout-in-progress');
+      
+      // Force show any elements that might have been hidden
+      const hiddenElements = document.querySelectorAll('[style*="display: none"]');
+      hiddenElements.forEach(el => {
+        if (el.classList.contains('loading-element') || 
+            el.classList.contains('overlay') || 
+            el.id === 'loading-overlay') {
+          // Don't restore loading elements
+          return;
+        }
+        // Restore other elements that might have been hidden
+        el.style.display = '';
+      });
+      
       // Replace the current history entry to remove the fromLogout state
       if (location.state?.fromLogout) {
         navigate('/', { replace: true, state: {} });
