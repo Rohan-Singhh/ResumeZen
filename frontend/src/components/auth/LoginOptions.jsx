@@ -11,7 +11,8 @@ export default function LoginOptions({ onPhoneLogin, onError, onSuccessNavigatio
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
-  const { setLoading, setLoadingMessage } = useLoading();
+  // Keep reference to loading context for backward compatibility
+  const { setLoading } = useLoading();
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -21,8 +22,6 @@ export default function LoginOptions({ onPhoneLogin, onError, onSuccessNavigatio
     
     setIsLoading(true);
     setError('');
-    setLoading(true);
-    setLoadingMessage('Setting up your account...');
     
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -32,11 +31,9 @@ export default function LoginOptions({ onPhoneLogin, onError, onSuccessNavigatio
       const response = await axios.post('/api/auth/google', { idToken });
       
       // Success
-      await login(response.data.token);
+      await login(response.data.user, response.data.token);
       if (onSuccessNavigation) onSuccessNavigation();
-      navigate('/dashboard');
     } catch (err) {
-      setLoading(false);
       setIsLoading(false);
       
       console.error('Google sign-in error:', err);
@@ -63,7 +60,7 @@ export default function LoginOptions({ onPhoneLogin, onError, onSuccessNavigatio
         setError('Error signing in with Google. Please try again.');
       }
     }
-  }, [isLoading, navigate, login, onSuccessNavigation, retryCount, setLoading, setLoadingMessage, onError]);
+  }, [isLoading, login, onSuccessNavigation, retryCount, onError]);
 
   return (
     <div className="space-y-4">
