@@ -5,7 +5,18 @@
       "port": 9099
     },
     "ui": {
-      "enalbed": true
+      "enabled": true,
+      "port": 4000
+    }
+  },
+  "auth": {
+    "phone": {
+      "auto_verification": true,
+      "verification_bypass": true,
+      "test_phone_numbers": {
+        "+11234567890": "123456",
+        "+12223334444": "123456"
+      }
     }
   }
 }
