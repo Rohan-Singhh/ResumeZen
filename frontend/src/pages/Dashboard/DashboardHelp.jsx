@@ -7,12 +7,21 @@ import {
   QuestionMarkCircleIcon,
   DocumentTextIcon,
   VideoCameraIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  PaperClipIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  ArrowUpTrayIcon
 } from '@heroicons/react/24/outline';
+import axios from 'axios';
 
 export default function DashboardHelp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState(null);
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [error, setError] = useState(null);
 
   // Toggle FAQ expansion
   const toggleFaq = (id) => {
@@ -83,6 +92,56 @@ export default function DashboardHelp() {
     item.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.answer.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFile = e.target.files[0];
+      
+      // PDF validation
+      if (selectedFile.type !== 'application/pdf') {
+        setError('Only PDF files are allowed');
+        setFile(null);
+        return;
+      }
+      
+      // Size validation (1MB)
+      if (selectedFile.size > 1048576) {
+        setError('File size must be less than 1MB');
+        setFile(null);
+        return;
+      }
+      
+      setFile(selectedFile);
+      setError(null);
+      setUploadResult(null);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    
+    try {
+      setUploading(true);
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('pdf', file);
+      
+      // Upload file
+      const response = await axios.post('/api/upload/test-pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      setUploadResult(response.data);
+      setFile(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error uploading file');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -235,6 +294,85 @@ export default function DashboardHelp() {
               Start Chat
             </motion.button>
           </div>
+        </div>
+      </div>
+
+      {/* PDF Upload Test Section */}
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <h2 className="text-lg font-semibold mb-4">Test PDF Upload to Cloudinary</h2>
+        
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 flex items-start">
+            <ExclamationCircleIcon className="h-5 w-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+        
+        {uploadResult && (
+          <div className="bg-green-50 text-green-700 p-4 rounded-lg mb-4">
+            <div className="flex items-center mb-2">
+              <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+              <p className="font-medium">Upload Successful!</p>
+            </div>
+            <div className="mt-2 text-sm">
+              <p><span className="font-medium">URL:</span> <a href={uploadResult.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">{uploadResult.url}</a></p>
+              <p><span className="font-medium">Public ID:</span> {uploadResult.public_id}</p>
+            </div>
+          </div>
+        )}
+        
+        <div className={`border-2 border-dashed rounded-lg p-6 text-center ${
+          uploading ? 'border-blue-300 bg-blue-50' : file ? 'border-green-300 bg-green-50' : 'border-gray-300'
+        }`}>
+          {uploading ? (
+            <div className="py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-3 text-sm text-gray-600">Uploading PDF...</p>
+            </div>
+          ) : file ? (
+            <div>
+              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                <PaperClipIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <p className="text-sm font-medium">{file.name}</p>
+              <p className="text-xs text-gray-500 mb-4">{(file.size / 1024).toFixed(2)} KB</p>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleUpload}
+                className="px-4 py-2 bg-primary text-white rounded-lg inline-flex items-center shadow-sm"
+              >
+                <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+                Upload to Cloudinary
+              </motion.button>
+            </div>
+          ) : (
+            <div>
+              <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <PaperClipIcon className="h-6 w-6 text-gray-500" />
+              </div>
+              <p className="text-sm font-medium text-gray-700 mb-1">Drag and drop a PDF file</p>
+              <p className="text-xs text-gray-500 mb-4">or click to browse (Max 1MB)</p>
+              
+              <label htmlFor="test-file-upload" className="cursor-pointer">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg inline-flex items-center"
+                >
+                  Select PDF
+                </motion.div>
+                <input 
+                  id="test-file-upload" 
+                  type="file" 
+                  accept=".pdf" 
+                  className="hidden" 
+                  onChange={handleFileChange}
+                />
+              </label>
+            </div>
+          )}
         </div>
       </div>
     </div>

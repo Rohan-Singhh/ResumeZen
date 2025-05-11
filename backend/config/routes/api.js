@@ -1,6 +1,8 @@
 const authRouter = require('../../routes/authRoutes');
 const profileRouter = require('../../routes/profileRoutes');
 const planRouter = require('../../routes/planRoutes');
+const uploadRouter = require('../../routes/uploadRoutes');
+const resumeRouter = require('../../routes/resumeRoutes');
 
 /**
  * Configure API routes
@@ -18,6 +20,12 @@ const configureApiRoutes = (app) => {
   
   // Mount plan routes
   app.use(`${apiPrefix}/plans`, planRouter);
+  
+  // Mount upload routes
+  app.use(`${apiPrefix}/upload`, uploadRouter);
+  
+  // Mount resume parser and analysis routes
+  app.use(`${apiPrefix}/resume`, resumeRouter);
   
   // Add more API routes here as they are developed
 };

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const AuthContext = createContext();
 
@@ -8,12 +10,18 @@ export const useAuth = () => useContext(AuthContext);
 // Create a simple in-memory cache
 const apiCache = {
   userData: null,
+  userPlans: null,
+  plans: null,
   lastFetch: {
-    userData: 0
+    userData: 0,
+    userPlans: 0,
+    plans: 0
   },
   cacheDuration: 5 * 60 * 1000, // 5 minutes in milliseconds
   requestInProgress: {
-    userData: false
+    userData: false,
+    userPlans: false,
+    plans: false
   }
 };
 
@@ -51,6 +59,12 @@ axios.interceptors.response.use(
 const cachedApiRequest = async (key, apiCall, forceRefresh = false) => {
   const now = Date.now();
   
+  // Create cache entry if it doesn't exist
+  if (apiCache.lastFetch[key] === undefined) {
+    apiCache.lastFetch[key] = 0;
+    apiCache.requestInProgress[key] = false;
+  }
+  
   // If another request for this data is already in progress, wait for it
   if (pendingRequests[key]) {
     console.log(`Request for ${key} already in progress, waiting for result...`);
@@ -61,7 +75,7 @@ const cachedApiRequest = async (key, apiCall, forceRefresh = false) => {
   if (!forceRefresh && 
       apiCache[key] && 
       (now - apiCache.lastFetch[key]) < apiCache.cacheDuration) {
-    console.log(`Using cached ${key} data`);
+    console.log(`Using cached ${key} data from ${Math.round((now - apiCache.lastFetch[key])/1000)}s ago`);
     return apiCache[key];
   }
   
@@ -75,11 +89,16 @@ const cachedApiRequest = async (key, apiCall, forceRefresh = false) => {
     // Wait for the request to complete
     const data = await pendingRequests[key];
     
-    // Update cache
+    // Update cache with fresh data
     apiCache[key] = data;
     apiCache.lastFetch[key] = now;
     
+    console.log(`Updated cache for ${key} at ${new Date(now).toLocaleTimeString()}`);
+    
     return data;
+  } catch (error) {
+    console.error(`Error fetching ${key}:`, error);
+    throw error;
   } finally {
     // Clean up request tracking
     apiCache.requestInProgress[key] = false;
@@ -93,12 +112,52 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [authStatusChecked, setAuthStatusChecked] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState(null);
 
   // Set up default headers for all axios requests
   useEffect(() => {
     // Add cache control header to all requests
     axios.defaults.headers.common['Cache-Control'] = 'max-age=300';
   }, []);
+
+  // Listen for Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      
+      if (user && !currentUser) {
+        console.log("Firebase auth state changed: User is signed in, checking backend session");
+        // User is signed in with Firebase but may not have a backend session
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          try {
+            // Get ID token from Firebase
+            const idToken = await user.getIdToken(true);
+            
+            // Try to authenticate with backend using the Firebase token
+            const response = await axios.post('/api/auth/google', { idToken });
+            
+            if (response.data.success) {
+              console.log("Successfully authenticated with backend using Firebase token");
+              // Save token and update user state
+              localStorage.setItem('token', response.data.token);
+              axios.defaults.headers.common['x-auth-token'] = response.data.token;
+              setCurrentUser(response.data.user);
+              
+              // Fetch user plans
+              fetchUserPlans();
+            }
+          } catch (err) {
+            console.error("Error authenticating with backend:", err);
+            // Don't set error state here to avoid showing error message on initial load
+          }
+        }
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [currentUser]);
 
   // Check if the user is already logged in on mount
   useEffect(() => {
@@ -147,8 +206,11 @@ export const AuthProvider = ({ children }) => {
       // Set the user data
       setCurrentUser(userData);
       
-      // Fetch user plans
-      fetchUserPlans();
+      // Reset loading state explicitly
+      setLoading(false);
+      
+      // Fetch user plans in the background but don't wait for it
+      fetchUserPlans().catch(err => console.error('Error fetching plans:', err));
       
       // Update cache
       apiCache.userData = userData;
@@ -156,15 +218,17 @@ export const AuthProvider = ({ children }) => {
       
       setError(null);
       
+      console.log('Login successful, user data set and loading reset');
       return true;
     } catch (err) {
+      setLoading(false); // Ensure loading is reset on error
       setError('Login failed: ' + err.message);
       return false;
     }
   };
 
   // Function to handle logout
-  const logout = () => {
+  const logout = async () => {
     // Set a flag in sessionStorage to detect logout in progress
     sessionStorage.setItem('logoutInProgress', 'true');
     
@@ -187,6 +251,16 @@ export const AuthProvider = ({ children }) => {
     // Clear cache
     apiCache.userData = null;
     apiCache.lastFetch.userData = 0;
+    
+    // Sign out from Firebase if signed in
+    if (auth.currentUser) {
+      try {
+        await auth.signOut();
+        console.log("Signed out from Firebase");
+      } catch (err) {
+        console.error("Error signing out from Firebase:", err);
+      }
+    }
     
     // Clear the logout flag after a longer delay to ensure cleanup is complete
     setTimeout(() => {
@@ -276,18 +350,88 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Function to use a credit from an active plan
+  const usePlanCredit = async (planId) => {
+    try {
+      const response = await axios.post('/api/plans/use-credit', { planId });
+      
+      // Refresh user plans after using credit
+      fetchUserPlans(true);
+      
+      return { 
+        success: true, 
+        message: 'Credit used successfully',
+        userPlan: response.data.userPlan 
+      };
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to use credit';
+      console.error('Error using plan credit:', errorMessage);
+      
+      return { 
+        success: false, 
+        error: errorMessage
+      };
+    }
+  };
+
   // Function to get all available plans
   const getAvailablePlans = async () => {
     try {
+      // Add a cache key for plans
+      if (!apiCache.plans) {
+        apiCache.plans = null;
+        apiCache.lastFetch.plans = 0;
+      }
+      
+      console.log('Fetching available plans from API');
       const plans = await cachedApiRequest('plans', async () => {
-        const response = await axios.get('/api/plans');
-        return response.data.plans;
-      });
+        const response = await axios.get('/api/plans', {
+          headers: {
+            'Cache-Control': 'no-cache', // Force fresh data
+          },
+          timeout: 10000, // 10 second timeout
+        });
+        
+        console.log('Plans API response:', response.data);
+        
+        if (!response.data || !response.data.plans) {
+          throw new Error('Invalid API response format');
+        }
+        
+        // Map backend plans to frontend format using code as _id
+        const mappedPlans = response.data.plans.map(plan => ({
+          ...plan,
+          _id: plan.code // Use code as _id for frontend lookups
+        }));
+        
+        return mappedPlans;
+      }, true); // Force refresh plans
+      
+      if (!plans || !Array.isArray(plans) || plans.length === 0) {
+        console.warn('API returned empty plans array');
+        return { 
+          success: false, 
+          error: 'No plans available', 
+          plans: [] 
+        };
+      }
       
       return { success: true, plans };
     } catch (err) {
-      setError('Failed to fetch plans: ' + err.message);
-      return { success: false, error: err.message, plans: [] };
+      const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
+      console.error('Failed to fetch plans:', errorMessage, err);
+      
+      return { 
+        success: false, 
+        error: `Failed to fetch plans: ${errorMessage}`, 
+        plans: [],
+        details: {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          message: err.message
+        }
+      };
     }
   };
 
@@ -303,8 +447,10 @@ export const AuthProvider = ({ children }) => {
     fetchUserPlans,
     updateProfile,
     purchasePlan,
+    usePlanCredit,
     getAvailablePlans,
-    authStatusChecked
+    authStatusChecked,
+    firebaseUser
   };
 
   return (
