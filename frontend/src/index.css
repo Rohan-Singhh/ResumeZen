@@ -11,6 +11,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Define primary colors as CSS variables */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-primary-light: #60a5fa;
 }
 
 /* Improve page transitions */
@@ -36,6 +41,60 @@ body {
 /* Add smooth transitions for all interactive elements */
 a, button, input, select, textarea {
   transition: all 0.2s ease-in-out;
+}
+
+/* Utility classes for primary colors */
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-primary-dark {
+  color: var(--color-primary-dark);
+}
+
+.text-primary-light {
+  color: var(--color-primary-light);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-primary-dark {
+  background-color: var(--color-primary-dark);
+}
+
+.bg-primary-light {
+  background-color: var(--color-primary-light);
+}
+
+.border-primary {
+  border-color: var(--color-primary);
+}
+
+.hover\:bg-primary-dark:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.focus\:ring-primary:focus {
+  --tw-ring-color: var(--color-primary);
+}
+
+.from-primary {
+  --tw-gradient-from: var(--color-primary);
+}
+
+.bg-primary\/10 {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Dashboard specific styles */
+.dashboard-sidebar {
+  transition: width 0.3s ease-in-out;
+}
+
+.dashboard-content {
+  transition: margin-left 0.3s ease-in-out;
 }
 
 /* Smooth loading transitions */
@@ -197,4 +256,19 @@ a, button, input, select, textarea {
 
 .react-tel-input .selected-flag .arrow {
   left: 38px !important;
+}
+
+/* Add special handling for logout */
+.logout-in-progress * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Make sure loading overlay is hidden during logout */
+.logout-in-progress #loading-overlay,
+.logout-in-progress .loading-element,
+.logout-in-progress .overlay {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }

@@ -7,7 +7,12 @@
     "dev": "vite --host",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "emulators": "firebase emulators:start",
+    "dev:emulate": "firebase emulators:start & vite",
+    "emulators:auth": "firebase emulators:start --only auth",
+    "dev:full": "concurrently \"npm run emulators\" \"npm run dev\"",
+    "dev:debug": "VITE_DEBUG=true vite"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.1",
@@ -29,6 +34,7 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.1.2",
     "eslint": "^9.9.1",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
