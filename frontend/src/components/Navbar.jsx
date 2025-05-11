@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser, logout } = useAuth();
+  
+  // Check if we're on the landing page
+  const isLandingPage = location.pathname === '/';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +32,11 @@ export default function Navbar() {
         behavior: 'smooth'
       });
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/', { replace: true });
   };
 
   return (
@@ -63,14 +74,39 @@ export default function Navbar() {
                   {item.name}
                 </motion.a>
               ))}
-              <motion.button
-                onClick={() => navigate('/login')}
-                className="bg-primary hover:bg-secondary text-white font-semibold py-2 px-6 rounded-lg transition duration-300 ml-2"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Get Started
-              </motion.button>
+              
+              {currentUser ? (
+                <>
+                  <motion.button
+                    onClick={() => navigate('/dashboard')}
+                    className="bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-6 rounded-lg transition duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Dashboard
+                  </motion.button>
+                  {/* Only show logout button if NOT on landing page */}
+                  {!isLandingPage && (
+                    <motion.button
+                      onClick={handleLogout}
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg transition duration-300"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Logout
+                    </motion.button>
+                  )}
+                </>
+              ) : (
+                <motion.button
+                  onClick={() => navigate('/login')}
+                  className="bg-primary hover:bg-secondary text-white font-semibold py-2 px-6 rounded-lg transition duration-300 ml-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Get Started
+                </motion.button>
+              )}
             </div>
           </div>
         </div>

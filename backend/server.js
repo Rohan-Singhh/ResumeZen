@@ -1,102 +1,62 @@
+/**
+ * ResumeZen API Server
+ * Main application file
+ */
+
+// Load environment variables
 require('dotenv').config();
-const PORT = process.env.PORT || 5000;
 
+// Import dependencies
 const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const bodyParser = require('body-parser');
-const authRouter = require('./routes/auth');
-const purchasesRouter = require('./routes/purchases'); // Updated to use the renamed file
 
+// Import configuration from centralized config
+const config = require('./config');
+
+// Initialize Express app
 const app = express();
 
-const limiter = rateLimit({
-  windowMs: 30 * 60 * 1000, // 30 minutes
-  max: 300, // increase the limit to 300 requests per window
-  message: {
-    error: 'Too many requests from this IP, please try again after 30 minutes'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  // Add key generator to track by IP
-  keyGenerator: (req) => {
-    return req.ip || req.connection.remoteAddress;
-  },
-  // Skip rate limiting for some low-risk endpoints
-  skip: (req) => {
-    // Allow unlimited access to static and public endpoints
-    return req.path.startsWith('/api/plans') || req.path === '/';
+// Get port from environment or use default
+const PORT = process.env.PORT || 5000;
+
+/**
+ * Start server and initialize all components
+ */
+const startServer = async () => {
+  try {
+    // Apply middleware
+    config.middleware(app);
+    
+    // Connect to database
+    await config.database.connect();
+    
+    // Set up API routes
+    config.routes(app);
+    
+    // Configure error handling (must be last)
+    config.errorHandlers(app);
+    
+    // Start the server
+    app.listen(PORT, () => {
+      console.log(`✅ Server is running on port ${PORT}`);
+      console.log(`✅ API available at http://localhost:${PORT}/`);
+      console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
   }
+};
+
+// Set up graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  config.database.disconnect()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
 });
 
-const configureMiddleware = () => {
-  app.use(helmet());
-  
-  // Configure CORS to allow requests from frontend
-  app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'], // Include both common dev ports
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
-  }));
-  
-  app.use(morgan('dev'));
-  app.use(limiter);
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: true }));
-};
-
-const connectDatabase = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
-    
-    // Run the seed script with the existing connection
-    const seedPlans = require('./scripts/seed-plans');
-    await seedPlans(true); // Pass true to use existing connection
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err);
-  }
-};
-
-const configureRoutes = () => {
-  app.get('/', (req, res) => {
-    res.json({ message: 'Welcome to ResumeZen API' });
-  });
-  app.use('/api/auth', authRouter);
-  app.use('/api/purchases', purchasesRouter);
-  app.use('/api/payments', purchasesRouter); // Keep the old endpoint for backward compatibility
-  app.use('/api/users', require('./routes/users'));
-  app.use('/api/plans', require('./routes/plans'));
-  
-  // New routes for the Resume model
-  app.use('/api/resumes', require('./routes/resumes'));
-};
-
-const configureErrorHandling = () => {
-  app.use((err, req, res, next) => {
-    console.error('❌ Error:', err.stack);
-    res.status(500).json({
-      success: false,
-      message: 'Something went wrong!',
-      error: process.env.NODE_ENV === 'development' ? err.message : {}
-    });
-  });
-};
-
-const startServer = () => {
-  configureMiddleware();
-  connectDatabase();
-  configureRoutes();
-  configureErrorHandling();
-  
-  app.listen(PORT, () => {
-    console.log(`✅ Server is running on port ${PORT}`);
-  });
-};
-
+// Launch the application
 startServer();
 
+// For testing purposes
 module.exports = app;

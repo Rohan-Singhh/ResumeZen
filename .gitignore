@@ -15,9 +15,10 @@ yarn-error.log*
 .env.production
 
 # Docker-related files
-.dockerignore
-Dockerfile
 docker-compose.yml
+
+# Firebase service account keys
+*firebase-adminsdk*.json
 
 # npm package lock file (optional, you can choose to include it or not)
 package-lock.json

@@ -1,11 +1,17 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useState, createContext, useContext, useEffect, useCallback, useRef } from 'react';
 import Landing from './pages/Landing';
 import SuccessStoriesPage from './pages/SuccessStoriesPage';
 import Login from './pages/Login';
-import Dashboard from './dashboard/Dashboard';
-import LoadingOverlay from './components/LoadingOverlay';
+import AuthGuard from './components/auth/AuthGuard';
+
+// Dashboard components
+import DashboardLayout from './pages/Dashboard/DashboardLayout';
+import DashboardWelcome from './pages/Dashboard/DashboardWelcome';
+import DashboardProfileEdit from './pages/Dashboard/DashboardProfileEdit';
+import DashboardPlan from './pages/Dashboard/DashboardPlan';
+import DashboardHelp from './pages/Dashboard/DashboardHelp';
 
 // Create a global loading context
 export const LoadingContext = createContext({
@@ -19,197 +25,82 @@ export const LoadingContext = createContext({
 // Loading Provider Component
 export function LoadingProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMsgState] = useState('Loading your dashboard...');
-  const [loadingTimerId, setLoadingTimerId] = useState(null);
-  const [transitionsDisabled, setTransitionsDisabled] = useState(false);
-
-  // Check for logout in progress flag
-  useEffect(() => {
-    // Store the current loadingTimerId value to avoid closure issues
-    const currentTimerId = loadingTimerId;
-    
-    const checkLogoutFlag = () => {
-      const isLogoutInProgress = sessionStorage.getItem('logoutInProgress') === 'true';
-      if (isLogoutInProgress) {
-        // Logout is in progress, disable loading transitions
-        setTransitionsDisabled(true);
-        setIsLoading(false);
-        
-        if (currentTimerId) {
-          clearTimeout(currentTimerId);
-          setLoadingTimerId(null);
-        }
-      }
-    };
-    
-    // Check immediately
-    checkLogoutFlag();
-    
-    // Also set up an interval to check regularly
-    const intervalId = setInterval(checkLogoutFlag, 100);
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []); // Empty dependency array since we use the sessionStorage directly
-
-  // Improved loading state setter with debounce to prevent flickering
-  const setLoading = useCallback((loading, duration = 0) => {
-    // Always check logout flag before showing loading screen
-    if (sessionStorage.getItem('logoutInProgress') === 'true' || transitionsDisabled) {
-      // Never show loading during logout
-      return;
-    }
-    
-    if (loadingTimerId) {
-      clearTimeout(loadingTimerId);
-      setLoadingTimerId(null);
-    }
-
-    if (loading) {
-      setIsLoading(true);
-      
-      if (duration > 0) {
-        const timerId = setTimeout(() => {
-          setIsLoading(false);
-        }, duration);
-        setLoadingTimerId(timerId);
-      }
-    } else {
-      // For dashboard navigation, immediately hide the loading overlay
-      // to prevent visual flash between loading and welcome animation
-      if (window.location.pathname.includes('/dashboard')) {
-        setIsLoading(false);
-      } else {
-        // For other routes, add small delay before hiding to ensure smooth transitions
-        const timerId = setTimeout(() => {
-          setIsLoading(false);
-        }, 300);
-        setLoadingTimerId(timerId);
-      }
-    }
-  }, [loadingTimerId, transitionsDisabled]);
+  const [loadingMessage, setLoadingMsgState] = useState('');
+  const [skipTransitions, setSkipTransitions] = useState(false);
 
   const setLoadingMessage = useCallback((message) => {
     setLoadingMsgState(message);
   }, []);
-  
-  // Special function to disable loading transitions entirely (for logout)
-  const disableLoadingTransitions = useCallback((disable = true) => {
-    setTransitionsDisabled(disable);
-    if (disable) {
-      // Immediately hide any active loading states
-      setIsLoading(false);
-      if (loadingTimerId) {
-        clearTimeout(loadingTimerId);
-        setLoadingTimerId(null);
-      }
-    }
-  }, [loadingTimerId]);
 
-  // Clean up timers on unmount
-  useEffect(() => {
-    return () => {
-      if (loadingTimerId) {
-        clearTimeout(loadingTimerId);
-      }
-    };
-  }, [loadingTimerId]);
+  const setLoading = useCallback((status) => {
+    setIsLoading(status);
+    if (!status) {
+      // Clear the loading message when loading is done
+      setLoadingMsgState('');
+    }
+  }, []);
+
+  const disableLoadingTransitions = useCallback((disable = true) => {
+    setSkipTransitions(disable);
+  }, []);
+
+  // Create the context value
+  const contextValue = {
+    isLoading,
+    loadingMessage,
+    setLoading,
+    setLoadingMessage,
+    skipTransitions,
+    disableLoadingTransitions
+  };
 
   return (
-    <LoadingContext.Provider value={{ 
-      isLoading, 
-      loadingMessage, 
-      setLoading, 
-      setLoadingMessage,
-      disableLoadingTransitions 
-    }}>
-      <AnimatePresence mode="wait">
-        {isLoading && <LoadingOverlay message={loadingMessage} />}
-      </AnimatePresence>
+    <LoadingContext.Provider value={contextValue}>
       {children}
     </LoadingContext.Provider>
   );
 }
 
-// Hook to use loading context
-export const useLoading = () => useContext(LoadingContext);
+// Custom hook to use loading context
+export function useLoading() {
+  return useContext(LoadingContext);
+}
 
-// AnimatedRoutes component with page transitions
+// Animation wrapper component
 function AnimatedRoutes() {
+  const { isLoading, loadingMessage, skipTransitions } = useLoading();
   const location = useLocation();
-  const { setLoading, disableLoadingTransitions } = useLoading();
-  
-  // Use a ref to detect navigation from dashboard to home (logout)
-  const lastPathRef = useRef(location.pathname);
-  
-  // Check if this is a logout navigation (from dashboard to home)
-  useEffect(() => {
-    // Detect logout navigation (from dashboard to home)
-    if (lastPathRef.current.includes('/dashboard') && location.pathname === '/') {
-      // This is a logout navigation - disable all loading transitions
-      console.log('Detected logout navigation, disabling loading transitions');
-      
-      // Set logout flag to prevent loading screens
-      sessionStorage.setItem('logoutInProgress', 'true');
-      
-      // Disable all loading transitions
-      disableLoadingTransitions(true);
-      
-      // Prevent any loading states
-      setLoading(false);
-      
-      // Force hide any loading overlays that might be visible
-      const loadingElements = document.querySelectorAll('.loading-element, .overlay, #loading-overlay');
-      loadingElements.forEach(el => {
-        if (el) el.style.display = 'none';
-      });
-      
-      // Clear the flag after a delay
-      setTimeout(() => {
-        sessionStorage.removeItem('logoutInProgress');
-      }, 2000);
-    }
-    
-    // Update the last path for future comparisons
-    lastPathRef.current = location.pathname;
-  }, [location.pathname, setLoading, disableLoadingTransitions]);
-  
-  // Reset loading state on route changes and handle transitions
-  useEffect(() => {
-    // Skip effect if we're navigating away from dashboard (logout case)
-    if (lastPathRef.current.includes('/dashboard') && location.pathname === '/') {
-      return; // Don't do anything during logout navigation
-    }
-    
-    // If navigating to dashboard, clear loading immediately
-    // This allows the dashboard's welcome animation to show without flashing
-    if (location.pathname === '/dashboard') {
-      // For dashboard, we want to immediately hide the loading overlay
-      // since the dashboard will handle its own welcome animation
-      setLoading(false);
-    } else {
-      // For other routes, add a small delay for smooth transitions
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-    
-    // After the effect runs, update the lastPathRef for next time
-    // This needs to be done after the effect to prevent infinite loops
-    lastPathRef.current = location.pathname;
-  }, [location.pathname, setLoading]); // Depend only on pathname and setLoading
-  
+
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Landing />} />
-        <Route path="/success-stories" element={<SuccessStoriesPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
+    <AnimatePresence mode="wait" initial={false}>
+      {isLoading ? (
+        <div key="loading" className="fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+            {loadingMessage && (
+              <p className="mt-4 text-lg text-gray-600">{loadingMessage}</p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <Routes location={location} key={skipTransitions ? 'no-animation' : location.pathname}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/success-stories" element={<SuccessStoriesPage />} />
+          <Route path="/login" element={<Login />} />
+          
+          {/* Dashboard routes with auth protection */}
+          <Route path="/dashboard" element={
+            <AuthGuard>
+              <DashboardLayout />
+            </AuthGuard>
+          }>
+            <Route index element={<DashboardWelcome />} />
+            <Route path="profile" element={<DashboardProfileEdit />} />
+            <Route path="plans" element={<DashboardPlan />} />
+            <Route path="help" element={<DashboardHelp />} />
+          </Route>
+        </Routes>
+      )}
     </AnimatePresence>
   );
 }

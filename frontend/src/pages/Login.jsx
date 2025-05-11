@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LoginOptions from '../components/auth/LoginOptions';
 import PhoneLogin from '../components/auth/PhoneLogin';
 import { useLoading } from '../App';
@@ -23,22 +23,21 @@ const pageVariants = {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPhoneLogin, setShowPhoneLogin] = useState(false);
   const [error, setError] = useState('');
   const loginBoxRef = useRef(null);
   const navigatingRef = useRef(false);
+  // Keep reference to loading context for backward compatibility
   const { setLoading } = useLoading();
+
+  // Get the redirect location from state, if any
+  const { from } = location.state || { from: { pathname: '/dashboard' } };
 
   // Consolidated useEffect to handle both loading state management and cleanup
   useEffect(() => {
     // Get a ref to the current navigate function to avoid stale closures
     const navigateFunction = navigate;
-    const handleLoadingState = setLoading;
-    
-    // Only turn off loading if not navigation was initiated and we're mounting
-    if (!navigatingRef.current) {
-      handleLoadingState(false);
-    }
     
     // Add click outside handler
     const handleClickOutside = (event) => {
@@ -68,14 +67,14 @@ export default function Login() {
 
   const handleError = useCallback((message) => {
     setError(message);
-    // Turn off loading if there's an error
-    setLoading(false);
-  }, [setLoading]);
+  }, []);
   
   // Mark when we're navigating away to prevent turning off global loading
   const handleNavigate = useCallback(() => {
     navigatingRef.current = true;
-  }, []);
+    // Navigate to the dashboard after login or to the original location if redirected
+    navigate(from.pathname, { replace: true });
+  }, [navigate, from]);
 
   // Decorative elements for visual appeal
   const Decorations = () => (
