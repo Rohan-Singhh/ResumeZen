@@ -12,7 +12,7 @@ import DashboardWelcome from './pages/Dashboard/DashboardWelcome';
 import DashboardProfileEdit from './pages/Dashboard/DashboardProfileEdit';
 import DashboardPlan from './pages/Dashboard/DashboardPlan';
 import DashboardHelp from './pages/Dashboard/DashboardHelp';
-import DashboardAnalysis from './pages/Dashboard/DashboardAnalysis';
+import RecentUploads from './pages/Dashboard/RecentUploads';
 import ResumeAnalysis from './pages/Dashboard/ResumeAnalysis';
 
 // Create a global loading context
@@ -130,7 +130,7 @@ function AnimatedRoutes() {
             <Route path="profile" element={<DashboardProfileEdit />} />
             <Route path="plans" element={<DashboardPlan />} />
             <Route path="help" element={<DashboardHelp />} />
-            <Route path="analysis" element={<DashboardAnalysis />} />
+            <Route path="recent-uploads" element={<RecentUploads />} />
             <Route path="resume-analysis" element={<ResumeAnalysis />} />
           </Route>
         </Routes>

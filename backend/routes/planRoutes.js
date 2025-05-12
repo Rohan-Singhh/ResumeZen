@@ -257,6 +257,73 @@ router.post('/seed', async (req, res) => {
 router.post('/use-credit', authMiddleware, async (req, res) => {
   try {
     const { planId } = req.body;
+    console.log('[use-credit] Incoming planId:', planId, 'userId:', req.user.userId);
+    if (!planId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Plan ID is required',
+        error: 'Missing plan ID in request'
+      });
+    }
+    // Find the user plan
+    const userPlan = await UserPlan.findOne({
+      _id: planId,
+      userId: req.user.userId,
+      isActive: true
+    }).populate('planId');
+    console.log('[use-credit] Found userPlan:', userPlan ? userPlan._id : null, 'creditsLeft:', userPlan ? userPlan.creditsLeft : null);
+    if (!userPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan not found or not active',
+        error: 'The requested user plan does not exist or is not active'
+      });
+    }
+    // If plan is unlimited, no need to decrement credits
+    if (userPlan.planId.isUnlimited) {
+      console.log('[use-credit] Plan is unlimited, no deduction.');
+      return res.json({
+        success: true,
+        message: 'Credit not decremented for unlimited plan',
+        userPlan
+      });
+    }
+    // Check if there are credits left
+    if (userPlan.creditsLeft <= 0) {
+      console.log('[use-credit] No credits left to deduct.');
+      return res.status(400).json({
+        success: false,
+        message: 'No credits remaining',
+        error: 'This plan has no credits left'
+      });
+    }
+    // Decrement credits
+    userPlan.creditsLeft -= 1;
+    console.log('[use-credit] Deducting credit. creditsLeft after deduction:', userPlan.creditsLeft);
+    await userPlan.save();
+    res.json({
+      success: true,
+      message: 'Credit used successfully',
+      userPlan
+    });
+  } catch (err) {
+    console.error('Error using credit:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: 'Failed to process credit usage'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/plans/refund-credit
+ * @desc    Refund a credit back to user's active plan when resume validation fails
+ * @access  Private
+ */
+router.post('/refund-credit', authMiddleware, async (req, res) => {
+  try {
+    const { planId } = req.body;
     
     if (!planId) {
       return res.status(400).json({
@@ -281,39 +348,30 @@ router.post('/use-credit', authMiddleware, async (req, res) => {
       });
     }
     
-    // If plan is unlimited, no need to decrement credits
+    // If plan is unlimited, no need to refund credits
     if (userPlan.planId.isUnlimited) {
       return res.json({
         success: true,
-        message: 'Credit not decremented for unlimited plan',
+        message: 'Credit not refunded for unlimited plan',
         userPlan
       });
     }
     
-    // Check if there are credits left
-    if (userPlan.creditsLeft <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No credits remaining',
-        error: 'This plan has no credits left'
-      });
-    }
-    
-    // Decrement credits
-    userPlan.creditsLeft -= 1;
+    // Add credit back
+    userPlan.creditsLeft += 1;
     await userPlan.save();
     
     res.json({
       success: true,
-      message: 'Credit used successfully',
+      message: 'Credit refunded successfully',
       userPlan
     });
   } catch (err) {
-    console.error('Error using credit:', err);
+    console.error('Error refunding credit:', err);
     res.status(500).json({
       success: false,
       message: 'Server error',
-      error: 'Failed to process credit usage'
+      error: 'Failed to process credit refund'
     });
   }
 });

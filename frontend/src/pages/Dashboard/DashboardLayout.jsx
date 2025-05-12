@@ -22,8 +22,8 @@ function DashboardContent() {
       setPageTitle('Profile Settings');
     } else if (path.includes('/plans')) {
       setPageTitle('Subscription Plans');
-    } else if (path.includes('/analysis')) {
-      setPageTitle('Resume Uploads');
+    } else if (path.includes('/recent-uploads')) {
+      setPageTitle('Recent Uploads');
     } else if (path.includes('/resume-analysis')) {
       setPageTitle('Resume Analysis');
     } else if (path.includes('/help')) {

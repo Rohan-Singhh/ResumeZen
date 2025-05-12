@@ -374,6 +374,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Function to refund a credit back to an active plan
+  const refundPlanCredit = async (planId) => {
+    try {
+      const response = await axios.post('/api/plans/refund-credit', { planId });
+      
+      // Refresh user plans after refunding credit
+      fetchUserPlans(true);
+      
+      return { 
+        success: true, 
+        message: 'Credit refunded successfully',
+        userPlan: response.data.userPlan 
+      };
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to refund credit';
+      console.error('Error refunding plan credit:', errorMessage);
+      
+      return { 
+        success: false, 
+        error: errorMessage
+      };
+    }
+  };
+
   // Function to get all available plans
   const getAvailablePlans = async () => {
     try {
@@ -448,6 +472,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     purchasePlan,
     usePlanCredit,
+    refundPlanCredit,
     getAvailablePlans,
     authStatusChecked,
     firebaseUser
