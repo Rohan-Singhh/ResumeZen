@@ -14,7 +14,8 @@ const configureSecurity = (app) => {
     origin: [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://resume-zen-onpo.vercel.app' // Allow Vercel production frontend
+      'https://resume-zen-onpo.vercel.app',
+      'https://resume-zen.vercel.app' // Main Vercel frontend
     ], // Common dev ports + production
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
