@@ -1,72 +1,128 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { auth, googleProvider } from '../../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useLoading } from '../../App';
 
-export default function LoginOptions({ onPhoneLogin, onError, onSuccessNavigation }) {
+export default function LoginOptions({ onError, onSuccessNavigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [authState, setAuthState] = useState({ isSignedIn: false, user: null });
   // Keep reference to loading context for backward compatibility
   const { setLoading } = useLoading();
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Use useCallback to prevent recreating this function on every render
-  const handleGoogleSignIn = useCallback(async () => {
-    if (isLoading) return; // Prevent multiple clicks
+  // Monitor auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthState({
+        isSignedIn: !!user,
+        user: user
+      });
+      
+      if (user) {
+        console.log("User already signed in with Firebase:", user.email);
+      }
+    });
     
-    setIsLoading(true);
-    setError('');
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
+
+  // Handle Google Sign In
+  const handleGoogleSignIn = useCallback(async () => {
+    // Prevent multiple submissions
+    if (isLoading) return;
     
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const idToken = await result.user.getIdToken();
+      setIsLoading(true);
+      setLoading(true); // Global loading indicator
+      setError('');
       
-      // Backend authentication
+      console.log("Initiating Google sign-in process...");
+      
+      // Sign in with Google using Firebase
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Get credential information
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const user = result.user;
+      
+      console.log("Google sign-in successful for:", user.email);
+      
+      // Get Google token
+      const idToken = await user.getIdToken();
+      
+      console.log("Firebase ID token obtained, sending to backend...");
+      
+      // Send token to our backend to verify and create session
       const response = await axios.post('/api/auth/google', { idToken });
       
-      // Success
+      console.log('Google auth successful:', response.data);
+      
+      // Handle successful authentication
       await login(response.data.user, response.data.token);
-      if (onSuccessNavigation) onSuccessNavigation();
+      
+      // IMPORTANT: Reset loading state
+      setIsLoading(false);
+      setLoading(false);
+      
+      // Navigate to the desired location after login
+      if (onSuccessNavigation) {
+        onSuccessNavigation();
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
+      setLoading(false); // Make sure to turn off global loading
       setIsLoading(false);
       
-      console.error('Google sign-in error:', err);
+      console.error('Google sign in error:', err);
       
-      // Handle specific error types
+      // Handle Firebase errors with detailed messages
       if (err.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in was cancelled. Please try again.');
-      } else if (err.response && err.response.data && err.response.data.error) {
-        if (err.response.data.error.includes('duplicate key')) {
-          // This is a server-side duplicate key error (likely on phone field)
-          if (retryCount < 3) {
-            // Auto-retry a few times
-            setRetryCount(prev => prev + 1);
-            setError('Account information is being updated. Please wait...');
-            setTimeout(() => handleGoogleSignIn(), 1500);
-            return;
-          } else {
-            setError('Unable to create account. Please try again later or contact support.');
-          }
-        } else {
-          setError(err.response.data.error);
-        }
+        setError('You closed the login popup. Please try again.');
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        // This is normal when multiple popups are triggered, so we don't need to show an error
+        console.log('Popup request cancelled due to multiple requests');
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Login popup was blocked by your browser. Please enable popups for this site and try again.');
+      } else if (err.code === 'auth/account-exists-with-different-credential') {
+        setError('An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('A network error occurred. Please check your internet connection and try again.');
+      } else if (err.code === 'auth/internal-error') {
+        setError('An internal error occurred. Please try again later.');
       } else {
-        setError('Error signing in with Google. Please try again.');
+        // For backend/other errors
+        setError(err.response?.data?.error || err.message || 'Authentication failed. Please try again.');
+        if (onError) onError(err.response?.data?.error || err.message || 'Authentication failed. Please try again.');
       }
+      
+      // Track retry count for potential fallback logic
+      setRetryCount(prev => prev + 1);
     }
-  }, [isLoading, login, onSuccessNavigation, retryCount, onError]);
+  }, [isLoading, navigate, login, onSuccessNavigation, onError, setLoading]);
 
   return (
     <div className="space-y-4">
       {error && (
         <div className="bg-red-50 p-3 rounded-lg border-l-4 border-red-500 mb-4">
           <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
+      
+      {authState.isSignedIn && (
+        <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500 mb-4">
+          <p className="text-green-700 text-sm">
+            Already signed in with Google as {authState.user?.email}. 
+            Proceeding to dashboard...
+          </p>
         </div>
       )}
       
@@ -105,31 +161,6 @@ export default function LoginOptions({ onPhoneLogin, onError, onSuccessNavigatio
         <span className="text-sm font-medium">
           {isLoading ? 'Signing in...' : 'Continue with Google'}
         </span>
-      </motion.button>
-      
-      {/* Divider */}
-      <div className="flex items-center my-6">
-        <div className="flex-1 border-t border-gray-300"></div>
-        <div className="mx-4 text-sm text-gray-500">or</div>
-        <div className="flex-1 border-t border-gray-300"></div>
-      </div>
-      
-      {/* Phone login button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`w-full flex items-center justify-center py-3 px-4 rounded-xl ${
-          isLoading ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
-        } border border-gray-300 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
-        onClick={onPhoneLogin}
-        disabled={isLoading}
-      >
-        <span className="mr-3">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-          </svg>
-        </span>
-        <span className="text-sm font-medium">Sign in with Phone</span>
       </motion.button>
       
       {/* Terms */}
