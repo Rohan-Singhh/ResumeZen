@@ -7,12 +7,22 @@ import {
   QuestionMarkCircleIcon,
   DocumentTextIcon,
   VideoCameraIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  PaperClipIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  ArrowUpTrayIcon
 } from '@heroicons/react/24/outline';
+import axios from 'axios';
 
 export default function DashboardHelp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState(null);
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   // Toggle FAQ expansion
   const toggleFaq = (id) => {
@@ -63,8 +73,8 @@ export default function DashboardHelp() {
     },
     {
       id: 4,
-      question: 'Can I create multiple resumes?',
-      answer: 'Yes! The free plan includes one resume template, while our paid plans allow you to create multiple resumes tailored to different job applications. This helps you customize your approach for each position you apply to.'
+      question: 'How do I change my account password?',
+      answer: 'To change your account password, go to the Edit Profile section in your dashboard, then select the option to update your password. Follow the on-screen instructions to complete the process.'
     },
     {
       id: 5,
@@ -83,6 +93,56 @@ export default function DashboardHelp() {
     item.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.answer.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFile = e.target.files[0];
+      
+      // PDF validation
+      if (selectedFile.type !== 'application/pdf') {
+        setError('Only PDF files are allowed');
+        setFile(null);
+        return;
+      }
+      
+      // Size validation (1MB)
+      if (selectedFile.size > 1048576) {
+        setError('File size must be less than 1MB');
+        setFile(null);
+        return;
+      }
+      
+      setFile(selectedFile);
+      setError(null);
+      setUploadResult(null);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    
+    try {
+      setUploading(true);
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('pdf', file);
+      
+      // Upload file
+      const response = await axios.post('/api/upload/test-pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      setUploadResult(response.data);
+      setFile(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error uploading file');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -230,12 +290,38 @@ export default function DashboardHelp() {
               className="px-4 py-2 bg-primary text-white rounded-lg font-medium inline-flex items-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setShowChatModal(true)}
             >
               <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
               Start Chat
             </motion.button>
           </div>
         </div>
+      {/* Live Chat Coming Soon Modal */}
+      {showChatModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-sm w-full relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold focus:outline-none"
+              onClick={() => setShowChatModal(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center">
+              <ChatBubbleLeftRightIcon className="h-10 w-10 text-primary mb-4" />
+              <h4 className="text-lg font-semibold mb-2 text-gray-900">Live Chat Coming Soon</h4>
+              <p className="text-gray-700 text-center">Live chat is not available yet.<br/>This feature is coming soon!</p>
+              <button
+                className="mt-6 px-4 py-2 bg-primary text-white rounded-lg font-medium"
+                onClick={() => setShowChatModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

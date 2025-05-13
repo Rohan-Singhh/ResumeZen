@@ -11,7 +11,8 @@ const UserProfile = require('../models/UserProfile');
 const UserLinks = require('../models/UserLinks');
 const admin = require('firebase-admin');
 const rateLimit = require('express-rate-limit');
-const serviceAccount = require('../resumezen-7d5f2-firebase-adminsdk-fbsvc-0d1d6acd61.json');
+const path = require('path');
+const fs = require('fs');
 
 // Ensure Firebase Admin is initialized
 if (!admin.apps.length) {
@@ -22,9 +23,34 @@ if (!admin.apps.length) {
     console.log('Using Firebase Auth Emulator in backend at:', process.env.FIREBASE_AUTH_EMULATOR_HOST);
   }
   
+  try {
+    // Get service account path from environment variable
+    const serviceAccountPath = process.env.FIREBASE_ADMIN_SDK_PATH;
+    
+    if (!serviceAccountPath) {
+      throw new Error('FIREBASE_ADMIN_SDK_PATH environment variable is not set');
+    }
+    
+    // Resolve path to the service account file
+    const fullServiceAccountPath = path.resolve(__dirname, '..', serviceAccountPath.replace(/^\.\//, ''));
+    
+    // Check if the file exists
+    if (!fs.existsSync(fullServiceAccountPath)) {
+      throw new Error(`Firebase Admin SDK service account file not found at: ${fullServiceAccountPath}`);
+    }
+    
+    // Load the service account file
+    const serviceAccount = require(fullServiceAccountPath);
+  
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
+    
+    console.log('Firebase Admin SDK initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Firebase Admin SDK:', error.message);
+    throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
+  }
 }
 
 // Check if we're in development mode (using emulator)
@@ -64,8 +90,19 @@ const authLimiter = rateLimit({
  */
 const handleAuthUser = async (firebaseUID, userData) => {
   try {
-    // Find user by firebaseUID
-    let user = await UserAuth.findOne({ firebaseUid: firebaseUID });
+    // First try to find user by email to avoid duplicate key errors
+    let user = null;
+    
+    if (userData.email) {
+      user = await UserAuth.findOne({ email: userData.email });
+      console.log(`Checking for existing user with email ${userData.email}: ${user ? 'Found' : 'Not found'}`);
+    }
+    
+    // If not found by email, try to find by firebaseUID
+    if (!user) {
+      user = await UserAuth.findOne({ firebaseUid: firebaseUID });
+      console.log(`Checking for existing user with firebaseUID ${firebaseUID}: ${user ? 'Found' : 'Not found'}`);
+    }
     
     if (!user) {
       // Prepare user data for creation
@@ -81,34 +118,22 @@ const handleAuthUser = async (firebaseUID, userData) => {
         userAuthData.email = userData.email;
       }
       
-      // Add phone if provided
+      // Add phone if provided (for backward compatibility)
       if (userData.phone) {
         userAuthData.mobileNumber = userData.phone;
       }
       
-      // Verify at least one auth method is provided
-      if (!userData.email && !userData.phone) {
-        throw new Error('Either email or phone must be provided for authentication');
-      }
-      
-      // Set primary auth method based on provided data if not explicitly set
-      if (!userAuthData.primaryAuthMethod || userAuthData.primaryAuthMethod === 'both') {
-        if (userData.authType === 'google') {
-          userAuthData.primaryAuthMethod = 'google';
-        } else if (userData.authType === 'phone') {
-          userAuthData.primaryAuthMethod = 'phone';
-        } else if (userData.authType === 'email') {
-          userAuthData.primaryAuthMethod = 'email';
-        } else if (userData.email && userData.email.includes('@gmail.com')) {
-          userAuthData.primaryAuthMethod = 'google';
-        } else if (userData.email) {
-          userAuthData.primaryAuthMethod = 'email';
-        } else if (userData.phone) {
-          userAuthData.primaryAuthMethod = 'phone';
-        }
+      // Set primary auth method to Google if it's a Gmail account
+      if (userData.email && userData.email.includes('@gmail.com')) {
+        userAuthData.primaryAuthMethod = 'google';
+        userAuthData.authType = 'google';
+      } else if (userData.email) {
+        userAuthData.primaryAuthMethod = 'email';
+        userAuthData.authType = 'email';
       }
       
       // Create new user
+      console.log('Creating new user with data:', JSON.stringify(userAuthData, null, 2));
       user = await UserAuth.create(userAuthData);
       console.log('Created new user with firebaseUid:', firebaseUID);
       
@@ -138,35 +163,39 @@ const handleAuthUser = async (firebaseUID, userData) => {
       }
       
       // Check if phone number needs updating - only update if provided
+      // (kept for backward compatibility)
       if (userData.phone && (!user.mobileNumber || user.mobileNumber !== userData.phone)) {
         user.mobileNumber = userData.phone;
         needsUpdate = true;
       }
       
       // Update authType if needed
-      if (userData.authType && user.authType !== userData.authType) {
-        user.authType = userData.authType;
-        needsUpdate = true;
-      } else {
-        // Recalculate authType based on available fields
-        let newAuthType = 'both';
-        if (user.email && user.mobileNumber) {
-          newAuthType = 'both';
-        } else if (user.email) {
-          newAuthType = user.email.includes('@gmail.com') ? 'google' : 'email';
-        } else if (user.mobileNumber) {
-          newAuthType = 'phone';
+      if (userData.email && userData.email.includes('@gmail.com')) {
+        if (user.authType !== 'google') {
+          user.authType = 'google';
+          needsUpdate = true;
         }
         
-        if (user.authType !== newAuthType) {
-          user.authType = newAuthType;
+        if (user.primaryAuthMethod !== 'google') {
+          user.primaryAuthMethod = 'google';
+          needsUpdate = true;
+        }
+      } else if (userData.email) {
+        if (user.authType !== 'email') {
+          user.authType = 'email';
+          needsUpdate = true;
+        }
+        
+        if (user.primaryAuthMethod !== 'email') {
+          user.primaryAuthMethod = 'email';
           needsUpdate = true;
         }
       }
       
-      // Update primaryAuthMethod if provided explicitly
-      if (userData.primaryAuthMethod && user.primaryAuthMethod !== userData.primaryAuthMethod) {
-        user.primaryAuthMethod = userData.primaryAuthMethod;
+      // Update Firebase UID if it's different (for linking accounts)
+      if (user.firebaseUid !== firebaseUID) {
+        console.log(`Updating Firebase UID from ${user.firebaseUid} to ${firebaseUID}`);
+        user.firebaseUid = firebaseUID;
         needsUpdate = true;
       }
       
@@ -236,8 +265,7 @@ router.post('/verify-token', authLimiter, async (req, res) => {
       const userData = {
         name: 'Test User',
         email: 'test@example.com',
-        phone: '+15555555555',
-        authType: 'both'
+        authType: 'email' 
       };
       
       const { user, token } = await handleAuthUser(firebaseUID, userData);
@@ -267,22 +295,19 @@ router.post('/verify-token', authLimiter, async (req, res) => {
     const phone = decodedToken.phone_number || decodedToken.phoneNumber;
     const name = decodedToken.name || email?.split('@')[0] || 'User';
     
-    // Determine auth type
-    let authType = 'both';
-    if (email && phone) {
-      authType = 'both';
-    } else if (email) {
-      authType = email.includes('@gmail.com') ? 'google' : 'email';
-    } else if (phone) {
-      authType = 'phone';
+    // Determine auth type - only support Google or email now
+    let authType = 'email';
+    if (email && email.includes('@gmail.com')) {
+      authType = 'google';
     }
     
     // Prepare user data from token
     const userData = {
       name,
       email,
-      phone,
-      authType
+      phone, // Keep phone for data continuity
+      authType,
+      primaryAuthMethod: authType
     };
     
     // Handle authentication (create/update user and generate token)
@@ -315,9 +340,12 @@ router.post('/verify-token', authLimiter, async (req, res) => {
  * @route   POST /api/auth/phone
  * @desc    Authenticate with phone number via Firebase
  * @access  Public
+ * @deprecated - This endpoint is maintained for backward compatibility but not used by the frontend anymore
  */
 router.post('/phone', async (req, res) => {
   console.log('Phone auth endpoint called');
+  console.warn('DEPRECATED: Phone authentication is no longer supported in the UI');
+  
   try {
     const { idToken } = req.body;
     
@@ -357,11 +385,14 @@ router.post('/phone', async (req, res) => {
         firebaseUID = 'dev-phone-' + Date.now();
       }
       
+      // Generate a unique development email to avoid duplicates
+      const uniqueId = Date.now().toString().slice(-6);
+      
       const userData = {
-        name: 'Phone User',
-        phone: '+15555555555',
-        authType: 'phone',
-        primaryAuthMethod: 'phone'
+        name: 'Development User', // Consistent name
+        email: `dev.user${uniqueId}@resumezen.com`, // Use unique email to avoid duplicates
+        authType: 'google',
+        primaryAuthMethod: 'google'
       };
       
       try {
@@ -382,97 +413,63 @@ router.post('/phone', async (req, res) => {
         });
       } catch (devError) {
         console.error('Error in development flow:', devError);
+        
+        // Try to recover if it's a duplicate key error
+        if (devError.code === 11000 && devError.keyPattern && devError.keyPattern.email) {
+          try {
+            console.log('Attempting to recover from duplicate email error');
+            // Find the user with the duplicate email
+            const existingUser = await UserAuth.findOne({ email: devError.keyValue.email });
+            
+            if (existingUser) {
+              console.log('Found existing user with email, generating token');
+              // Generate a token for the existing user
+              const token = jwt.sign(
+                { 
+                  userId: existingUser._id, 
+                  firebaseUid: existingUser.firebaseUid,
+                  authType: existingUser.authType,
+                  primaryAuthMethod: existingUser.primaryAuthMethod
+                }, 
+                process.env.JWT_SECRET, 
+                { expiresIn: '7d' }
+              );
+              
+              return res.json({
+                success: true,
+                token,
+                user: {
+                  _id: existingUser._id,
+                  name: existingUser.fullName,
+                  email: existingUser.email,
+                  phone: existingUser.mobileNumber,
+                  authType: existingUser.authType,
+                  primaryAuthMethod: existingUser.primaryAuthMethod
+                },
+                developmentMode: true,
+                recoveredFromError: true
+              });
+            }
+          } catch (recoveryError) {
+            console.error('Error during recovery attempt:', recoveryError);
+          }
+        }
+        
         return res.status(500).json({
           success: false,
           message: 'Development server error',
-          error: devError.message || 'Error processing development mode authentication'
+          error: devError.message || 'Error processing development mode authentication',
+          code: devError.code || 'unknown'
         });
       }
     }
     
-    // Production flow starts here
-    try {
-      // Verify the Firebase ID token
-      console.log('Verifying Firebase ID token for phone auth...');
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-      console.log('Phone token verified successfully:', decodedToken.uid);
-      
-      // Extract user data from token
-      const firebaseUID = decodedToken.uid;
-      const phone = decodedToken.phone_number || null;
-      
-      // Log the phone number for debugging
-      console.log('Phone number from token:', phone);
-      
-      // Generate a name if not available
-      const name = decodedToken.name || 'User-' + firebaseUID.substring(0, 6);
-      
-      // Update userData to include authType
-      const userData = {
-        name: name || null,
-        phone: phone || null,
-        email: decodedToken.email || null,
-        authType: 'phone',
-        primaryAuthMethod: 'phone'
-      };
-      
-      console.log('Creating/updating user with data:', JSON.stringify(userData));
-      
-      // Handle authentication (create/update user and generate token)
-      const { user, token } = await handleAuthUser(firebaseUID, userData);
-      
-      // Return user data and token
-      return res.json({ 
-        success: true,
-        token, 
-        user: { 
-          _id: user._id,
-          name: user.fullName,
-          email: user.email,
-          phone: user.mobileNumber,
-          authType: user.authType,
-          primaryAuthMethod: user.primaryAuthMethod
-        } 
-      });
-    } catch (verifyError) {
-      // Detailed error for Firebase token verification
-      console.error('Firebase token verification error:', verifyError);
-      
-      // If in development mode, attempt a fallback authentication
-      if (isDevelopmentMode) {
-        console.log('Attempting development fallback auth after verification error');
-        try {
-          const firebaseUID = 'dev-fallback-' + Date.now();
-          const userData = {
-            name: 'Development User',
-            phone: '+10000000000'
-          };
-          
-          const { user, token } = await handleAuthUser(firebaseUID, userData);
-          
-          return res.json({
-            success: true,
-            token,
-            user: {
-              _id: user._id,
-              name: user.fullName,
-              email: user.email,
-              phone: user.mobileNumber
-            },
-            developmentMode: true,
-            fallback: true
-          });
-        } catch (fallbackError) {
-          console.error('Even fallback auth failed:', fallbackError);
-        }
-      }
-      
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication failed',
-        error: verifyError.message || 'Invalid Firebase token'
-      });
-    }
+    // Production flow starts here  
+    return res.status(400).json({
+      success: false,
+      message: 'Phone authentication has been deprecated',
+      error: 'This authentication method is no longer supported'
+    });
   } catch (err) {
     console.error('Phone auth error:', err);
     return res.status(500).json({ 
@@ -513,13 +510,36 @@ router.post('/google', async (req, res) => {
       console.log('Using development verification flow for Google auth');
       
       const firebaseUID = 'dev-google-' + Date.now();
+      
+      // Generate a unique development email to avoid duplicates
+      const uniqueId = Date.now().toString().slice(-6);
+      
+      // Use a fixed email for development to avoid confusion
       const userData = {
-        name: 'Google User',
-        email: 'google.user' + Date.now() + '@gmail.com',
-        phone: null,
+        name: 'Development User',
+        email: `dev.user${uniqueId}@resumezen.com`, // Use unique email to avoid duplicates
         authType: 'google',
         primaryAuthMethod: 'google'
       };
+      
+      // Try to extract email from the emulator token if possible
+      if (idToken !== 'development-token' && idToken !== 'test-token') {
+        try {
+          // Attempt to verify and extract data from emulator token
+          const decodedToken = await admin.auth().verifyIdToken(idToken);
+          if (decodedToken && decodedToken.email) {
+            // For development, add a suffix to avoid conflicts with existing users
+            const originalEmail = decodedToken.email;
+            const emailName = originalEmail.split('@')[0];
+            const emailDomain = originalEmail.split('@')[1] || 'example.com';
+            userData.email = `${emailName}.dev${uniqueId}@${emailDomain}`;
+            userData.name = decodedToken.name || decodedToken.displayName || 'Development User';
+            console.log('Using modified email from emulator token:', userData.email);
+          }
+        } catch (err) {
+          console.log('Could not extract email from emulator token, using default:', err.message);
+        }
+      }
       
       try {
         const { user, token } = await handleAuthUser(firebaseUID, userData);
@@ -539,10 +559,53 @@ router.post('/google', async (req, res) => {
         });
       } catch (devError) {
         console.error('Error in development flow:', devError);
+        
+        // Try to recover if it's a duplicate key error
+        if (devError.code === 11000 && devError.keyPattern && devError.keyPattern.email) {
+          try {
+            console.log('Attempting to recover from duplicate email error');
+            // Find the user with the duplicate email
+            const existingUser = await UserAuth.findOne({ email: devError.keyValue.email });
+            
+            if (existingUser) {
+              console.log('Found existing user with email, generating token');
+              // Generate a token for the existing user
+              const token = jwt.sign(
+                { 
+                  userId: existingUser._id, 
+                  firebaseUid: existingUser.firebaseUid,
+                  authType: existingUser.authType,
+                  primaryAuthMethod: existingUser.primaryAuthMethod
+                }, 
+                process.env.JWT_SECRET, 
+                { expiresIn: '7d' }
+              );
+              
+              return res.json({
+                success: true,
+                token,
+                user: {
+                  _id: existingUser._id,
+                  name: existingUser.fullName,
+                  email: existingUser.email,
+                  phone: existingUser.mobileNumber,
+                  authType: existingUser.authType,
+                  primaryAuthMethod: existingUser.primaryAuthMethod
+                },
+                developmentMode: true,
+                recoveredFromError: true
+              });
+            }
+          } catch (recoveryError) {
+            console.error('Error during recovery attempt:', recoveryError);
+          }
+        }
+        
         return res.status(500).json({
           success: false,
           message: 'Development server error',
-          error: devError.message || 'Error processing development mode authentication'
+          error: devError.message || 'Error processing development mode authentication',
+          code: devError.code || 'unknown'
         });
       }
     }
@@ -557,8 +620,7 @@ router.post('/google', async (req, res) => {
       // Extract user data from token
       const firebaseUID = decodedToken.uid;
       const email = decodedToken.email || null;
-      const name = decodedToken.name || email?.split('@')[0] || 'User';
-      const phone = decodedToken.phone_number || null;
+      const name = decodedToken.name || decodedToken.displayName || email?.split('@')[0] || 'User';
       
       // Ensure email is present for Google auth
       if (!email) {
@@ -574,12 +636,11 @@ router.post('/google', async (req, res) => {
       const userData = {
         name,
         email,
-        phone,
         authType: 'google',
         primaryAuthMethod: 'google'
       };
       
-      console.log('Creating/updating user with Google data:', JSON.stringify(userData));
+      console.log('Creating/updating user with Google data:', { name, email });
       
       // Handle authentication (create/update user and generate token)
       const { user, token } = await handleAuthUser(firebaseUID, userData);
@@ -598,7 +659,9 @@ router.post('/google', async (req, res) => {
         } 
       });
     } catch (verifyError) {
+      // Detailed error for Firebase token verification
       console.error('Firebase token verification error:', verifyError);
+      
       return res.status(401).json({
         success: false,
         message: 'Authentication failed',
