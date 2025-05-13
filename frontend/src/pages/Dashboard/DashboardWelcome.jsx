@@ -193,6 +193,16 @@ export default function DashboardWelcome() {
     handleFileUpload(selectedFile);
   };
 
+  const handleAnalysisModalClose = () => {
+    setShowAnalysisModal(false);
+    setAnalysisFileDetails(null);
+    // Reset upload state so the upload box is cleared after analysis/close
+    setSelectedFile(null);
+    setUploadedFile(null);
+    setUploadSuccess(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <div className="relative">
       {errorMessage && (
@@ -254,7 +264,7 @@ export default function DashboardWelcome() {
       <ResumeAnalysisModal
         fileDetails={analysisFileDetails}
         open={showAnalysisModal}
-        onClose={() => setShowAnalysisModal(false)}
+        onClose={handleAnalysisModalClose}
       />
     </div>
   );
