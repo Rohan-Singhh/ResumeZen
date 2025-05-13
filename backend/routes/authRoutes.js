@@ -11,7 +11,8 @@ const UserProfile = require('../models/UserProfile');
 const UserLinks = require('../models/UserLinks');
 const admin = require('firebase-admin');
 const rateLimit = require('express-rate-limit');
-const serviceAccount = require('../resumezen-7d5f2-firebase-adminsdk-fbsvc-0d1d6acd61.json');
+const path = require('path');
+const fs = require('fs');
 
 // Ensure Firebase Admin is initialized
 if (!admin.apps.length) {
@@ -22,9 +23,34 @@ if (!admin.apps.length) {
     console.log('Using Firebase Auth Emulator in backend at:', process.env.FIREBASE_AUTH_EMULATOR_HOST);
   }
   
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+  try {
+    // Get service account path from environment variable
+    const serviceAccountPath = process.env.FIREBASE_ADMIN_SDK_PATH;
+    
+    if (!serviceAccountPath) {
+      throw new Error('FIREBASE_ADMIN_SDK_PATH environment variable is not set');
+    }
+    
+    // Resolve path to the service account file
+    const fullServiceAccountPath = path.resolve(__dirname, '..', serviceAccountPath.replace(/^\.\//, ''));
+    
+    // Check if the file exists
+    if (!fs.existsSync(fullServiceAccountPath)) {
+      throw new Error(`Firebase Admin SDK service account file not found at: ${fullServiceAccountPath}`);
+    }
+    
+    // Load the service account file
+    const serviceAccount = require(fullServiceAccountPath);
+    
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    
+    console.log('Firebase Admin SDK initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Firebase Admin SDK:', error.message);
+    throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
+  }
 }
 
 // Check if we're in development mode (using emulator)

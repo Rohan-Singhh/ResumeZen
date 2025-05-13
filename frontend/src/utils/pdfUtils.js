@@ -99,10 +99,15 @@ export const ensureProperPublicId = (publicId) => {
  * Generate various URL formats for a PDF based on its public ID
  * 
  * @param {string} publicId - The Cloudinary public ID
- * @param {string} [cloudName='resumezen'] - The Cloudinary cloud name
+ * @param {string} [cloudName] - The Cloudinary cloud name
  * @returns {Object} - An object containing various URL formats
  */
-export const generatePdfUrls = (publicId, cloudName = 'resumezen') => {
+export const generatePdfUrls = (publicId, cloudName) => {
+  // Get cloudName from environment variable if not provided
+  if (!cloudName) {
+    cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'resumezen';
+  }
+  
   if (!publicId) return {};
   
   // Ensure proper public ID format
