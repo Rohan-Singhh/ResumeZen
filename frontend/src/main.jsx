@@ -13,7 +13,7 @@ axios.defaults.headers.post['Content-Type'] = 'application/json';
 axios.defaults.timeout = 30000; // 30 seconds
 
 // Add request interceptor for development debugging
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.MODE === 'development') {
   axios.interceptors.request.use(request => {
     console.log('API Request:', request.method?.toUpperCase(), request.url);
     return request;

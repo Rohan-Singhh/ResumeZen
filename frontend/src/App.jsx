@@ -12,6 +12,8 @@ import DashboardWelcome from './pages/Dashboard/DashboardWelcome';
 import DashboardProfileEdit from './pages/Dashboard/DashboardProfileEdit';
 import DashboardPlan from './pages/Dashboard/DashboardPlan';
 import DashboardHelp from './pages/Dashboard/DashboardHelp';
+import RecentUploads from './pages/Dashboard/RecentUploads';
+import ResumeAnalysis from './pages/Dashboard/ResumeAnalysis';
 
 // Create a global loading context
 export const LoadingContext = createContext({
@@ -68,8 +70,38 @@ export function useLoading() {
 
 // Animation wrapper component
 function AnimatedRoutes() {
-  const { isLoading, loadingMessage, skipTransitions } = useLoading();
+  const { isLoading, loadingMessage, skipTransitions, setLoading } = useLoading();
   const location = useLocation();
+  const loadingTimeoutRef = useRef(null);
+  
+  // Prevent infinite loading by adding a timeout
+  useEffect(() => {
+    if (isLoading) {
+      // Clear any existing timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      
+      // Set a new timeout to force end loading after 10 seconds
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.log('Forced loading state off after timeout');
+        setLoading(false);
+      }, 10000);
+    } else {
+      // Clear timeout when loading ends naturally
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [isLoading, setLoading]);
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -98,6 +130,8 @@ function AnimatedRoutes() {
             <Route path="profile" element={<DashboardProfileEdit />} />
             <Route path="plans" element={<DashboardPlan />} />
             <Route path="help" element={<DashboardHelp />} />
+            <Route path="recent-uploads" element={<RecentUploads />} />
+            <Route path="resume-analysis" element={<ResumeAnalysis />} />
           </Route>
         </Routes>
       )}

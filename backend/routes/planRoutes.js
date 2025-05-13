@@ -66,14 +66,44 @@ router.get('/user', authMiddleware, async (req, res) => {
  */
 router.post('/:planId/purchase', authMiddleware, async (req, res) => {
   try {
-    // Find the plan
-    const plan = await Plan.findById(req.params.planId);
+    // Find the plan by code instead of _id
+    const plan = await Plan.findOne({ code: req.params.planId });
     if (!plan) {
       return res.status(404).json({
         success: false,
         message: 'Plan not found',
         error: 'The requested plan does not exist'
       });
+    }
+    
+    // For subscription plans (unlimited packs), check if user already has an active subscription
+    if (plan.isUnlimited && plan.durationInDays >= 30) {
+      // Check for existing active unlimited subscriptions
+      const now = new Date();
+      const existingSubscription = await UserPlan.findOne({
+        userId: req.user.userId,
+        isActive: true,
+        expiresAt: { $gt: now },
+        'planId': { $ne: null } // Ensure planId exists
+      }).populate('planId');
+      
+      // If there's an existing unlimited subscription that hasn't expired
+      if (existingSubscription && 
+          existingSubscription.planId && 
+          existingSubscription.planId.isUnlimited) {
+        
+        const expiryDate = new Date(existingSubscription.expiresAt).toISOString().split('T')[0];
+        
+        return res.status(400).json({
+          success: false,
+          message: 'Active subscription exists',
+          error: `You already have an active subscription (${existingSubscription.planId.name}) that expires on ${expiryDate}. You cannot purchase a new subscription until the current one expires.`,
+          existingPlan: {
+            name: existingSubscription.planId.name,
+            expiresAt: existingSubscription.expiresAt
+          }
+        });
+      }
     }
     
     // In a real app, this would include payment processing
@@ -142,8 +172,11 @@ router.post('/seed', async (req, res) => {
     // Create default plans matching the frontend FALLBACK_PLANS
     const plans = [
       {
+        code: 'one-time-check',
         name: 'One-Time Check',
         price: 19,
+        currency: 'INR',
+        period: 'one-time',
         credits: 1,
         durationInDays: null,
         isUnlimited: false,
@@ -156,8 +189,11 @@ router.post('/seed', async (req, res) => {
         ]
       },
       {
+        code: 'boost-pack',
         name: 'Boost Pack',
         price: 70,
+        currency: 'INR',
+        period: 'one-time',
         credits: 5,
         durationInDays: null,
         isUnlimited: false,
@@ -173,8 +209,11 @@ router.post('/seed', async (req, res) => {
         ]
       },
       {
+        code: 'unlimited-pack',
         name: 'Unlimited Pack',
         price: 500,
+        currency: 'INR',
+        period: '3 months',
         credits: 999,
         durationInDays: 90, // 3 months
         isUnlimited: true,
@@ -206,6 +245,133 @@ router.post('/seed', async (req, res) => {
       success: false,
       message: 'Server error',
       error: 'Failed to seed plan data'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/plans/use-credit
+ * @desc    Use a credit from user's active plan
+ * @access  Private
+ */
+router.post('/use-credit', authMiddleware, async (req, res) => {
+  try {
+    const { planId } = req.body;
+    console.log('[use-credit] Incoming planId:', planId, 'userId:', req.user.userId);
+    if (!planId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Plan ID is required',
+        error: 'Missing plan ID in request'
+      });
+    }
+    // Find the user plan
+    const userPlan = await UserPlan.findOne({
+      _id: planId,
+      userId: req.user.userId,
+      isActive: true
+    }).populate('planId');
+    console.log('[use-credit] Found userPlan:', userPlan ? userPlan._id : null, 'creditsLeft:', userPlan ? userPlan.creditsLeft : null);
+    if (!userPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan not found or not active',
+        error: 'The requested user plan does not exist or is not active'
+      });
+    }
+    // If plan is unlimited, no need to decrement credits
+    if (userPlan.planId.isUnlimited) {
+      console.log('[use-credit] Plan is unlimited, no deduction.');
+      return res.json({
+        success: true,
+        message: 'Credit not decremented for unlimited plan',
+        userPlan
+      });
+    }
+    // Check if there are credits left
+    if (userPlan.creditsLeft <= 0) {
+      console.log('[use-credit] No credits left to deduct.');
+      return res.status(400).json({
+        success: false,
+        message: 'No credits remaining',
+        error: 'This plan has no credits left'
+      });
+    }
+    // Decrement credits
+    userPlan.creditsLeft -= 1;
+    console.log('[use-credit] Deducting credit. creditsLeft after deduction:', userPlan.creditsLeft);
+    await userPlan.save();
+    res.json({
+      success: true,
+      message: 'Credit used successfully',
+      userPlan
+    });
+  } catch (err) {
+    console.error('Error using credit:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: 'Failed to process credit usage'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/plans/refund-credit
+ * @desc    Refund a credit back to user's active plan when resume validation fails
+ * @access  Private
+ */
+router.post('/refund-credit', authMiddleware, async (req, res) => {
+  try {
+    const { planId } = req.body;
+    
+    if (!planId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Plan ID is required',
+        error: 'Missing plan ID in request'
+      });
+    }
+    
+    // Find the user plan
+    const userPlan = await UserPlan.findOne({
+      _id: planId,
+      userId: req.user.userId,
+      isActive: true
+    }).populate('planId');
+    
+    if (!userPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan not found or not active',
+        error: 'The requested user plan does not exist or is not active'
+      });
+    }
+    
+    // If plan is unlimited, no need to refund credits
+    if (userPlan.planId.isUnlimited) {
+      return res.json({
+        success: true,
+        message: 'Credit not refunded for unlimited plan',
+        userPlan
+      });
+    }
+    
+    // Add credit back
+    userPlan.creditsLeft += 1;
+    await userPlan.save();
+    
+    res.json({
+      success: true,
+      message: 'Credit refunded successfully',
+      userPlan
+    });
+  } catch (err) {
+    console.error('Error refunding credit:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: 'Failed to process credit refund'
     });
   }
 });

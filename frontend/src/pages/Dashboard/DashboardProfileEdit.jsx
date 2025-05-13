@@ -37,9 +37,28 @@ export default function DashboardProfileEdit() {
     }
   }, [currentUser]);
 
+  // Add validation helpers
+  const isValidPhone = (value) => /^\+?\d*$/.test(value);
+  const isValidUrl = (value) => {
+    if (!value) return true;
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const isValidGradYear = (value) => /^[\d\syearsxperience\/]*$/i.test(value);
+
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'mobileNumber') {
+      if (!isValidPhone(value)) return;
+    }
+    if (name === 'graduationYear') {
+      if (!isValidGradYear(value)) return;
+    }
     setFormData(prevState => ({
       ...prevState,
       [name]: value
@@ -111,7 +130,8 @@ export default function DashboardProfileEdit() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
                   placeholder="John Doe"
                 />
               </div>
@@ -126,7 +146,7 @@ export default function DashboardProfileEdit() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-gray-100"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-gray-100 text-gray-500 cursor-not-allowed"
                   placeholder="john@example.com"
                   disabled
                 />
@@ -143,7 +163,7 @@ export default function DashboardProfileEdit() {
                   name="mobileNumber"
                   value={formData.mobileNumber}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
                   placeholder="+1 (123) 456-7890"
                 />
               </div>
@@ -158,7 +178,8 @@ export default function DashboardProfileEdit() {
                   name="occupation"
                   value={formData.occupation}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
                   placeholder="Software Engineer"
                 />
               </div>
@@ -173,7 +194,11 @@ export default function DashboardProfileEdit() {
                   name="graduationYear"
                   value={formData.graduationYear}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onBlur={e => {
+                    if (!isValidGradYear(e.target.value)) setError('Please enter a valid graduation year format');
+                    else setError('');
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
                   placeholder="5 years experience / 2022"
                 />
               </div>
@@ -193,7 +218,11 @@ export default function DashboardProfileEdit() {
                   name="linkedin"
                   value={formData.linkedin}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onBlur={e => {
+                    if (!isValidUrl(e.target.value)) setError('Please enter a valid LinkedIn URL');
+                    else setError('');
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
                   placeholder="https://linkedin.com/in/username"
                 />
               </div>
@@ -208,7 +237,11 @@ export default function DashboardProfileEdit() {
                   name="github"
                   value={formData.github}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onBlur={e => {
+                    if (!isValidUrl(e.target.value)) setError('Please enter a valid GitHub URL');
+                    else setError('');
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
                   placeholder="https://github.com/username"
                 />
               </div>
@@ -223,7 +256,11 @@ export default function DashboardProfileEdit() {
                   name="website"
                   value={formData.website}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onBlur={e => {
+                    if (!isValidUrl(e.target.value)) setError('Please enter a valid website URL');
+                    else setError('');
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
                   placeholder="https://yourwebsite.com"
                 />
               </div>
@@ -237,8 +274,9 @@ export default function DashboardProfileEdit() {
                   name="bio"
                   value={formData.bio}
                   onChange={handleInputChange}
+                  onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
                   rows={5}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900 min-h-[120px]"
                   placeholder="Tell us about yourself, your experience, and your career goals."
                 ></textarea>
               </div>
