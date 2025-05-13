@@ -167,8 +167,8 @@ export default function DashboardWelcome() {
   const handleProceed = async () => {
     if (!uploadedFile) {
       if (fileInputRef.current) fileInputRef.current.click();
-      return;
-    }
+        return;
+      }
     setAnalysisFileDetails(uploadedFile);
     setShowAnalysisModal(true);
     // Clear upload state and file input after opening modal

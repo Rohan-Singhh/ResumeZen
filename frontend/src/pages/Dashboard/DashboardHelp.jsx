@@ -22,6 +22,7 @@ export default function DashboardHelp() {
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
   const [error, setError] = useState(null);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   // Toggle FAQ expansion
   const toggleFaq = (id) => {
@@ -72,8 +73,8 @@ export default function DashboardHelp() {
     },
     {
       id: 4,
-      question: 'Can I create multiple resumes?',
-      answer: 'Yes! The free plan includes one resume template, while our paid plans allow you to create multiple resumes tailored to different job applications. This helps you customize your approach for each position you apply to.'
+      question: 'How do I change my account password?',
+      answer: 'To change your account password, go to the Edit Profile section in your dashboard, then select the option to update your password. Follow the on-screen instructions to complete the process.'
     },
     {
       id: 5,
@@ -289,6 +290,7 @@ export default function DashboardHelp() {
               className="px-4 py-2 bg-primary text-white rounded-lg font-medium inline-flex items-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setShowChatModal(true)}
             >
               <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
               Start Chat
@@ -296,85 +298,31 @@ export default function DashboardHelp() {
           </div>
         </div>
       </div>
-
-      {/* PDF Upload Test Section */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-        <h2 className="text-lg font-semibold mb-4">Test PDF Upload to Cloudinary</h2>
-        
-        {error && (
-          <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 flex items-start">
-            <ExclamationCircleIcon className="h-5 w-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">{error}</p>
-          </div>
-        )}
-        
-        {uploadResult && (
-          <div className="bg-green-50 text-green-700 p-4 rounded-lg mb-4">
-            <div className="flex items-center mb-2">
-              <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-              <p className="font-medium">Upload Successful!</p>
-            </div>
-            <div className="mt-2 text-sm">
-              <p><span className="font-medium">URL:</span> <a href={uploadResult.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">{uploadResult.url}</a></p>
-              <p><span className="font-medium">Public ID:</span> {uploadResult.public_id}</p>
-            </div>
-          </div>
-        )}
-        
-        <div className={`border-2 border-dashed rounded-lg p-6 text-center ${
-          uploading ? 'border-blue-300 bg-blue-50' : file ? 'border-green-300 bg-green-50' : 'border-gray-300'
-        }`}>
-          {uploading ? (
-            <div className="py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-3 text-sm text-gray-600">Uploading PDF...</p>
-            </div>
-          ) : file ? (
-            <div>
-              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                <PaperClipIcon className="h-6 w-6 text-green-600" />
-              </div>
-              <p className="text-sm font-medium">{file.name}</p>
-              <p className="text-xs text-gray-500 mb-4">{(file.size / 1024).toFixed(2)} KB</p>
-              
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleUpload}
-                className="px-4 py-2 bg-primary text-white rounded-lg inline-flex items-center shadow-sm"
+      {/* Live Chat Coming Soon Modal */}
+      {showChatModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-sm w-full relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold focus:outline-none"
+              onClick={() => setShowChatModal(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center">
+              <ChatBubbleLeftRightIcon className="h-10 w-10 text-primary mb-4" />
+              <h4 className="text-lg font-semibold mb-2 text-gray-900">Live Chat Coming Soon</h4>
+              <p className="text-gray-700 text-center">Live chat is not available yet.<br/>This feature is coming soon!</p>
+              <button
+                className="mt-6 px-4 py-2 bg-primary text-white rounded-lg font-medium"
+                onClick={() => setShowChatModal(false)}
               >
-                <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
-                Upload to Cloudinary
-              </motion.button>
+                Close
+              </button>
             </div>
-          ) : (
-            <div>
-              <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                <PaperClipIcon className="h-6 w-6 text-gray-500" />
-              </div>
-              <p className="text-sm font-medium text-gray-700 mb-1">Drag and drop a PDF file</p>
-              <p className="text-xs text-gray-500 mb-4">or click to browse (Max 1MB)</p>
-              
-              <label htmlFor="test-file-upload" className="cursor-pointer">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg inline-flex items-center"
-                >
-                  Select PDF
-                </motion.div>
-                <input 
-                  id="test-file-upload" 
-                  type="file" 
-                  accept=".pdf" 
-                  className="hidden" 
-                  onChange={handleFileChange}
-                />
-              </label>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 } 

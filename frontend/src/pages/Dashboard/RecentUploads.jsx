@@ -28,7 +28,7 @@ export default function RecentUploads() {
         setError('Failed to fetch resume history.');
       } finally {
         setLoading(false);
-      }
+    }
     };
     fetchHistory();
   }, []);
@@ -55,7 +55,7 @@ export default function RecentUploads() {
       <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6 1a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
       <span className="text-lg">No resume analysis history found.</span>
     </div>;
-  }
+    }
 
   return (
     <div className="p-6 relative">
@@ -97,7 +97,7 @@ export default function RecentUploads() {
                     initial={{ width: 0 }}
                     animate={{ width: '6rem' }}
                     transition={{ duration: 0.7 }}
-                  >
+              >
                     <motion.div
                       className="h-3 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full"
                       style={{ width: `${atsScore || 0}%` }}
@@ -142,7 +142,7 @@ export default function RecentUploads() {
                 onClick={() => setModalItem(null)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
                 aria-label="Close"
-              >
+            >
                 &times;
             </button>
               <div className="flex flex-col items-center w-full">
@@ -189,7 +189,7 @@ export default function RecentUploads() {
               target="_blank"
               rel="noopener noreferrer"
                     className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors text-sm font-semibold shadow"
-                  >
+            >
                     View/Download Resume
                   </a>
           </div>

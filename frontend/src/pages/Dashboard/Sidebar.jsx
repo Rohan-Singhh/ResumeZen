@@ -219,10 +219,10 @@ export default function Sidebar({ onLogout }) {
               onClick={toggleSidebar}
               title="Toggle sidebar"
             >
-              R
+                R
             </motion.div>
-            <motion.span 
-              variants={contentVariants}
+              <motion.span 
+                variants={contentVariants}
               initial={isOpen ? "open" : "closed"}
               animate={isOpen ? "open" : "closed"}
               className="ml-3 text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-pink-600 to-blue-600 drop-shadow-lg"
@@ -247,19 +247,19 @@ export default function Sidebar({ onLogout }) {
                 </div>
                 <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-white animate-pulse"></span>
               </motion.div>
-              <motion.div 
-                variants={contentVariants}
-                initial="open"
-                animate="open"
+                <motion.div 
+                  variants={contentVariants}
+                  initial="open"
+                  animate="open"
                 className="text-center"
-              >
+                >
                 <p className="text-base font-semibold text-gray-800">
-                  {currentUser?.name || 'User'}
-                </p>
-                <p className="text-xs text-gray-500 truncate max-w-[160px]">
-                  {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
-                </p>
-              </motion.div>
+                    {currentUser?.name || 'User'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate max-w-[160px]">
+                    {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
+                  </p>
+                </motion.div>
             </div>
           )}
           
@@ -286,16 +286,16 @@ export default function Sidebar({ onLogout }) {
                   >
                     {item.icon}
                   </motion.span>
-                  {isOpen && (
-                    <motion.span 
-                      variants={contentVariants}
-                      initial="open"
-                      animate="open"
+                    {isOpen && (
+                      <motion.span 
+                        variants={contentVariants}
+                        initial="open"
+                        animate="open"
                       className=""
-                    >
-                      {item.name}
-                    </motion.span>
-                  )}
+                      >
+                        {item.name}
+                      </motion.span>
+                    )}
                 </NavLink>
               ))}
             </div>
@@ -383,11 +383,11 @@ export default function Sidebar({ onLogout }) {
                 </motion.div>
                 <div className="text-center">
                   <p className="text-base font-semibold text-gray-800">
-                    {currentUser?.name || 'User'}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate max-w-[160px]">
-                    {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
-                  </p>
+                      {currentUser?.name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate max-w-[160px]">
+                      {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
+                    </p>
                 </div>
               </div>
               
