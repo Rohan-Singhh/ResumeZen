@@ -297,7 +297,6 @@ export default function DashboardHelp() {
             </motion.button>
           </div>
         </div>
-      </div>
       {/* Live Chat Coming Soon Modal */}
       {showChatModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
@@ -323,6 +322,7 @@ export default function DashboardHelp() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 } 
