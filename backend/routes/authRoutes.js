@@ -16,36 +16,24 @@ const fs = require('fs');
 
 // Ensure Firebase Admin is initialized
 if (!admin.apps.length) {
-  // Connect to Firebase Auth Emulator in development mode
-  if (process.env.NODE_ENV === 'development') {
-    // For Firebase Admin SDK, set environment variables before initialization
-    process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
-    console.log('Using Firebase Auth Emulator in backend at:', process.env.FIREBASE_AUTH_EMULATOR_HOST);
-  }
-  
+  // Remove emulator logic: always use real Firebase
   try {
     // Get service account path from environment variable
     const serviceAccountPath = process.env.FIREBASE_ADMIN_SDK_PATH;
-    
     if (!serviceAccountPath) {
       throw new Error('FIREBASE_ADMIN_SDK_PATH environment variable is not set');
     }
-    
     // Resolve path to the service account file
     const fullServiceAccountPath = path.resolve(__dirname, '..', serviceAccountPath.replace(/^\.\//, ''));
-    
     // Check if the file exists
     if (!fs.existsSync(fullServiceAccountPath)) {
       throw new Error(`Firebase Admin SDK service account file not found at: ${fullServiceAccountPath}`);
     }
-    
     // Load the service account file
     const serviceAccount = require(fullServiceAccountPath);
-  
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-    
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
     console.log('Firebase Admin SDK initialized successfully');
   } catch (error) {
     console.error('Failed to initialize Firebase Admin SDK:', error.message);
@@ -508,42 +496,27 @@ router.post('/google', async (req, res) => {
          idToken === 'development-token' ||
          idToken === 'test-token')) {
       console.log('Using development verification flow for Google auth');
-      
       const firebaseUID = 'dev-google-' + Date.now();
-      
-      // Generate a unique development email to avoid duplicates
-      const uniqueId = Date.now().toString().slice(-6);
-      
-      // Use a fixed email for development to avoid confusion
+      // Use the real email and name from the decoded token if possible
+      let email = 'dev.user@resumezen.com';
+      let name = 'Development User';
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        if (decodedToken && decodedToken.email) {
+          email = decodedToken.email;
+          name = decodedToken.name || decodedToken.displayName || 'Development User';
+        }
+      } catch (err) {
+        console.log('Could not extract email from emulator token, using default:', err.message);
+      }
       const userData = {
-        name: 'Development User',
-        email: `dev.user${uniqueId}@resumezen.com`, // Use unique email to avoid duplicates
+        name,
+        email,
         authType: 'google',
         primaryAuthMethod: 'google'
       };
-      
-      // Try to extract email from the emulator token if possible
-      if (idToken !== 'development-token' && idToken !== 'test-token') {
-        try {
-          // Attempt to verify and extract data from emulator token
-          const decodedToken = await admin.auth().verifyIdToken(idToken);
-          if (decodedToken && decodedToken.email) {
-            // For development, add a suffix to avoid conflicts with existing users
-            const originalEmail = decodedToken.email;
-            const emailName = originalEmail.split('@')[0];
-            const emailDomain = originalEmail.split('@')[1] || 'example.com';
-            userData.email = `${emailName}.dev${uniqueId}@${emailDomain}`;
-            userData.name = decodedToken.name || decodedToken.displayName || 'Development User';
-            console.log('Using modified email from emulator token:', userData.email);
-          }
-        } catch (err) {
-          console.log('Could not extract email from emulator token, using default:', err.message);
-        }
-      }
-      
       try {
         const { user, token } = await handleAuthUser(firebaseUID, userData);
-        
         return res.json({ 
           success: true,
           token, 
