@@ -16,29 +16,21 @@ const fs = require('fs');
 
 // Ensure Firebase Admin is initialized
 if (!admin.apps.length) {
-  // Remove emulator logic: always use real Firebase
-  try {
-    // Get service account path from environment variable
-    const serviceAccountPath = process.env.FIREBASE_ADMIN_SDK_PATH;
-    if (!serviceAccountPath) {
-      throw new Error('FIREBASE_ADMIN_SDK_PATH environment variable is not set');
-    }
-    // Resolve path to the service account file
-    const fullServiceAccountPath = path.resolve(__dirname, '..', serviceAccountPath.replace(/^\.\//, ''));
-    // Check if the file exists
-    if (!fs.existsSync(fullServiceAccountPath)) {
-      throw new Error(`Firebase Admin SDK service account file not found at: ${fullServiceAccountPath}`);
-    }
-    // Load the service account file
-    const serviceAccount = require(fullServiceAccountPath);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    console.log('Firebase Admin SDK initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize Firebase Admin SDK:', error.message);
-    throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
+  let serviceAccount;
+  if (process.env.FIREBASE_ADMIN_CREDENTIAL) {
+    // Parse the JSON string from the environment variable (for cloud deployment)
+    serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIAL);
+  } else if (process.env.FIREBASE_ADMIN_SDK_PATH) {
+    // Fallback to file path for local/dev
+    const fullServiceAccountPath = path.resolve(__dirname, '..', process.env.FIREBASE_ADMIN_SDK_PATH.replace(/^\.\//, ''));
+    serviceAccount = require(fullServiceAccountPath);
+  } else {
+    throw new Error('No Firebase Admin credentials provided');
   }
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+  console.log('Firebase Admin SDK initialized successfully');
 }
 
 // Check if we're in development mode (using emulator)

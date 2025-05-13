@@ -11,7 +11,11 @@ const configureSecurity = (app) => {
   
   // Configure CORS to allow requests from frontend
   app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'], // Common dev ports
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://resume-zen-onpo.vercel.app' // Allow Vercel production frontend
+    ], // Common dev ports + production
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   }));
