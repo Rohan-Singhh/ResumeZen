@@ -39,6 +39,7 @@ router.get('/', authMiddleware, async (req, res) => {
       name: userAuth.fullName,
       email: userAuth.email,
       phone: userAuth.mobileNumber,
+      lastLoginAt: userAuth.lastLoginAt,
       // Add profile data if available
       ...(userProfile && {
         occupation: userProfile.occupation,
@@ -130,6 +131,7 @@ router.put('/', authMiddleware, async (req, res) => {
       name: userAuth.fullName,
       email: userAuth.email,
       phone: userAuth.mobileNumber,
+      lastLoginAt: userAuth.lastLoginAt,
       occupation: userProfile.occupation,
       graduationYear: userProfile.graduationYear,
       linkedin: userLinks.linkedin,

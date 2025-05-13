@@ -2,8 +2,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LoginOptions from '../components/auth/LoginOptions';
-import PhoneLogin from '../components/auth/PhoneLogin';
 import { useLoading } from '../App';
+import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // Page transition variants
 const pageVariants = {
@@ -24,8 +25,8 @@ const pageVariants = {
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showPhoneLogin, setShowPhoneLogin] = useState(false);
   const [error, setError] = useState('');
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const loginBoxRef = useRef(null);
   const navigatingRef = useRef(false);
   // Keep reference to loading context for backward compatibility
@@ -33,6 +34,20 @@ export default function Login() {
 
   // Get the redirect location from state, if any
   const { from } = location.state || { from: { pathname: '/dashboard' } };
+
+  // Check if user is already authenticated with Firebase
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsCheckingAuth(false);
+      if (user) {
+        console.log("User is already authenticated with Firebase:", user.email);
+        // If user is already authenticated, they can proceed directly
+        // The AuthContext will handle getting the token from localStorage
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [navigate]);
 
   // Consolidated useEffect to handle both loading state management and cleanup
   useEffect(() => {
@@ -54,17 +69,6 @@ export default function Login() {
     };
   }, []); // Empty dependency array since we capture values at the start
 
-  // Memoized handlers to avoid recreating them on every render
-  const handlePhoneLoginToggle = useCallback(() => {
-    setShowPhoneLogin(true);
-    setError('');
-  }, []);
-
-  const handleBack = useCallback(() => {
-    setShowPhoneLogin(false);
-    setError('');
-  }, []);
-
   const handleError = useCallback((message) => {
     setError(message);
   }, []);
@@ -72,9 +76,18 @@ export default function Login() {
   // Mark when we're navigating away to prevent turning off global loading
   const handleNavigate = useCallback(() => {
     navigatingRef.current = true;
-    // Navigate to the dashboard after login or to the original location if redirected
-    navigate(from.pathname, { replace: true });
-  }, [navigate, from]);
+    console.log('Login: Navigating to dashboard or original location', from.pathname);
+    
+    // Ensure loading state is off before navigation
+    setLoading(false);
+    
+    // Add a small delay to ensure loading state is updated before navigation
+    setTimeout(() => {
+      // Navigate to the dashboard after login or to the original location if redirected
+      navigate(from.pathname, { replace: true });
+      console.log('Login: Navigation complete');
+    }, 100);
+  }, [navigate, from, setLoading]);
 
   // Decorative elements for visual appeal
   const Decorations = () => (
@@ -91,6 +104,15 @@ export default function Login() {
       <div className="absolute top-2/3 right-1/3 w-5 h-5 bg-primary opacity-70 rounded-full blur-sm"></div>
     </>
   );
+
+  // If checking auth, show a loading indicator
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <motion.div 
@@ -148,33 +170,10 @@ export default function Login() {
 
           {/* Login form content */}
           <div className="px-8 py-6">
-            <AnimatePresence mode="wait">
-              {showPhoneLogin ? (
-                <motion.div
-                  key="phone"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <PhoneLogin onBack={handleBack} onError={handleError} onSuccessNavigation={handleNavigate} />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="options"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <LoginOptions 
-                    onPhoneLogin={handlePhoneLoginToggle} 
-                    onError={handleError}
-                    onSuccessNavigation={handleNavigate} 
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <LoginOptions 
+              onError={handleError}
+              onSuccessNavigation={handleNavigate} 
+            />
           </div>
         </motion.div>
         
