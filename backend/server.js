@@ -19,10 +19,37 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 /**
+ * Check critical environment variables
+ */
+const checkEnvironmentVariables = () => {
+  const criticalVars = {
+    'Cloudinary Cloud Name': process.env.CLOUDINARY_CLOUD_NAME,
+    'Cloudinary API Key': process.env.CLOUDINARY_API_KEY,
+    'Cloudinary API Secret': process.env.CLOUDINARY_API_SECRET,
+    'JWT Secret': process.env.JWT_SECRET
+  };
+
+  const missingVars = Object.entries(criticalVars)
+    .filter(([_, value]) => !value)
+    .map(([name]) => name);
+
+  if (missingVars.length > 0) {
+    console.warn('⚠️  Missing critical environment variables:');
+    missingVars.forEach(name => console.warn(`   - ${name}`));
+    console.warn('⚠️  Check your .env file and restart the server.');
+  } else {
+    console.log('✅ All critical environment variables are set.');
+  }
+};
+
+/**
  * Start server and initialize all components
  */
 const startServer = async () => {
   try {
+    // Check environment variables
+    checkEnvironmentVariables();
+    
     // Apply middleware
     config.middleware(app);
     

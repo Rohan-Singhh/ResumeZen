@@ -6,7 +6,7 @@ import { getAnalytics } from "firebase/analytics";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Check for development mode
-const isDevelopment = process.env.NODE_ENV === 'development' || 
+const isDevelopment = import.meta.env.MODE === 'development' || 
                      window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1';
 
@@ -31,26 +31,6 @@ if (isDevelopment) {
   // Connect to Auth Emulator
   connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
   console.log("Using Firebase Auth Emulator");
-  
-  // When using emulator, disable app verification
-  auth.settings.appVerificationDisabledForTesting = true;
-  console.log("App verification disabled for testing in emulator mode");
-}
-
-// Set custom reCAPTCHA parameters if a key is provided
-const recaptchaKey = import.meta.env.VITE_REACT_APP_RECAPTCHA_KEY;
-
-// Handle reCAPTCHA configuration
-if (!isDevelopment && recaptchaKey) {
-  // In production, use reCAPTCHA key if provided
-  console.log('Using custom reCAPTCHA key in production');
-  
-  // Configure reCAPTCHA parameters
-  window.recaptchaParams = {
-    size: 'invisible',
-    badge: 'bottomright',
-    sitekey: recaptchaKey
-  };
 }
 
 // Initialize Google Auth Provider
@@ -60,10 +40,14 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
+// Add additional scopes for better user profile access
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
+
 // Initialize analytics in production only to avoid dev console errors
 let analytics = null;
 if (!isDevelopment) {
   analytics = getAnalytics(app);
 }
 
-export { auth, googleProvider };
+export { auth, googleProvider, app };
