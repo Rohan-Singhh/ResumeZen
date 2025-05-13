@@ -201,6 +201,8 @@ export default function DashboardWelcome() {
     setUploadedFile(null);
     setUploadSuccess(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    // Refresh user plans/credits after analysis
+    fetchUserPlans(true);
   };
 
   return (
