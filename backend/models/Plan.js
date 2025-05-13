@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const PlanSchema = new mongoose.Schema({
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+    enum: ['one-time-check', 'boost-pack', 'unlimited-pack'],
+  },
   name: {
     type: String,
     required: true,
@@ -9,6 +15,15 @@ const PlanSchema = new mongoose.Schema({
   price: {
     type: Number,
     required: true,
+  },
+  currency: {
+    type: String,
+    default: 'INR',
+  },
+  period: {
+    type: String,
+    enum: ['one-time', 'monthly', 'quarterly', 'yearly', '3 months'],
+    default: 'one-time',
   },
   credits: {
     type: Number,
