@@ -9,6 +9,30 @@ const { extractText } = require('./ocrService');
 const { analyzeResume } = require('./aiAnalysisService');
 const ResumeAnalysis = require('../models/ResumeAnalysis');
 
+const MAX_EDUCATION_LENGTH = 1000; // Limit for education/qualification text sent to AI
+
+// Section limits (in characters or items)
+const SECTION_LIMITS = {
+  education: 1000, // max 1000 chars
+  qualification: 1000, // max 1000 chars
+  skills: 400, // 20 skills * 20 chars
+  workExperience: 2000, // max 2000 chars
+  certifications: 400, // 20 certs * 20 chars
+  summary: 500, // max 500 chars
+  projects: 1000, // max 1000 chars
+};
+
+// Helper to truncate a section in the text
+function truncateSection(text, section, maxLen) {
+  // Regex to find section header and up to next section or end
+  const regex = new RegExp(`(${section})([\s\S]{0,${maxLen * 2}})`, 'i');
+  const match = text.match(regex);
+  if (match && match[2].length > maxLen) {
+    return text.replace(match[0], match[1] + match[2].slice(0, maxLen) + '\n[Truncated]');
+  }
+  return text;
+}
+
 /**
  * Basic resume file handling
  * @param {Object} file - File object with tempFilePath or path
@@ -293,6 +317,26 @@ const validateResumeText = (text) => {
   };
 };
 
+// Helper to detect likely name anywhere in text
+function findLikelyName(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    if (
+      line.length > 2 && line.length < 40 &&
+      !line.match(/@/) && // not an email
+      !line.match(/^\d/) // not a number
+    ) {
+      return line;
+    }
+  }
+  return null;
+}
+
+// Helper to detect education keywords anywhere in text
+function hasEducationAnywhere(text) {
+  return /education|bachelor|master|phd|university|college|school|degree|diploma|qualification/i.test(text);
+}
+
 /**
  * Process resume - extract text and analyze with AI
  * @param {string} pdfUrl - URL of the PDF to process
@@ -303,48 +347,49 @@ const processResume = async (pdfUrl, options = {}) => {
   try {
     // First extract text from the PDF
     const extraction = await extractResumeText(pdfUrl, options);
-    
     if (!extraction.success) {
       return {
         success: false,
         error: extraction.error || 'Failed to extract text from PDF'
       };
     }
-    
     // Validate if the extracted text appears to be from a resume
     const validationDetails = validateResumeText(extraction.data.extractedText);
-    
-    if (!validationDetails.isResume) {
-      return {
-        success: false,
-        error: `This document doesn't appear to be a resume (score: ${validationDetails.score}/100). Please upload a valid resume document.`,
-        validationDetails
-      };
+    // Truncate overly long sections before AI
+    let truncatedText = extraction.data.extractedText;
+    for (const [section, maxLen] of Object.entries(SECTION_LIMITS)) {
+      truncatedText = truncateSection(truncatedText, section, maxLen);
     }
-    
     // Analyze the extracted text with AI
-    const analysis = await analyzeResumeWithAI(extraction.data.extractedText, options);
-    
-    // If analysis fails or is not successful, do not save to DB
-    if (!analysis.success || analysis.data?.usedFallback || analysis.data?.error) {
-      return {
-        success: false,
-        error: analysis.error || analysis.data?.error || 'Failed to analyze resume text',
-        status: 422
-      };
+    const analysis = await analyzeResumeWithAI(truncatedText, options);
+    // Accept fallback/partial results, but add a warning
+    let warning = null;
+    if (!analysis.success || analysis.data?.error) {
+      warning = analysis.error || analysis.data?.error || 'AI analysis failed, fallback used.';
     }
-    
+    if (analysis.data?.usedFallback) {
+      warning = (warning ? warning + ' ' : '') + 'AI returned fallback analysis.';
+    }
+    // Defensive: if minimal contact or education info is found, always return an ATS score
+    let ai = analysis.data.structured || {};
+    // NEW: Search OCR text for likely name and education keywords anywhere
+    const likelyName = findLikelyName(extraction.data.extractedText);
+    const hasEdu = hasEducationAnywhere(extraction.data.extractedText);
+    if (!ai.analysis || typeof ai.analysis.atsScore !== 'number') {
+      if (likelyName || hasEdu) {
+        ai.analysis = ai.analysis || {};
+        ai.analysis.atsScore = 60; // Default for partial resumes
+      }
+    }
     // Save to ResumeAnalysis if userId and planId are provided
     let savedAnalysis = null;
     if (options.userId && options.planId && pdfUrl) {
-      // Defensive: fill missing fields with NA/[]
-      const ai = analysis.data.structured || {};
       savedAnalysis = await ResumeAnalysis.create({
         userId: options.userId,
         planId: options.planId,
         resumeUrl: pdfUrl,
         contactInformation: {
-          name: ai.contactInformation?.name || 'NA',
+          name: ai.contactInformation?.name || likelyName || 'NA',
           email: ai.contactInformation?.email || 'NA',
           phone: ai.contactInformation?.phone || 'NA',
           location: ai.contactInformation?.location || 'NA',
@@ -380,14 +425,29 @@ const processResume = async (pdfUrl, options = {}) => {
         raw: analysis.data.raw || analysis.data || null
       });
     }
-    
+    // Always return success if we have at least minimal info, with warning if fallback/partial
+    if (
+      ai.contactInformation?.name ||
+      (ai.education && ai.education.length > 0) ||
+      likelyName ||
+      hasEdu
+    ) {
+      return {
+        success: true,
+        data: {
+          extraction: extraction.data,
+          analysis: analysis.data,
+          resumeAnalysisId: savedAnalysis ? savedAnalysis._id : null,
+          warning
+        }
+      };
+    }
+    // If truly nothing useful, return error
     return {
-      success: true,
-      data: {
-        extraction: extraction.data,
-        analysis: analysis.data,
-        resumeAnalysisId: savedAnalysis ? savedAnalysis._id : null
-      }
+      success: false,
+      error: warning || 'Failed to process resume',
+      data: { extraction: extraction.data, analysis: analysis.data },
+      status: 422
     };
   } catch (error) {
     console.error('Error processing resume:', error);
