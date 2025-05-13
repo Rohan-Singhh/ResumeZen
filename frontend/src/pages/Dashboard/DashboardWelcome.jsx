@@ -167,9 +167,8 @@ export default function DashboardWelcome() {
   const handleProceed = async () => {
     if (!uploadedFile) {
       if (fileInputRef.current) fileInputRef.current.click();
-        return;
-      }
-<<<<<<< HEAD
+      return;
+    }
     setAnalysisFileDetails(uploadedFile);
     setShowAnalysisModal(true);
     // Clear upload state and file input after opening modal
@@ -177,15 +176,6 @@ export default function DashboardWelcome() {
     setUploadedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
-=======
-      setAnalysisFileDetails(uploadedFile);
-      setShowAnalysisModal(true);
-      // Clear upload state and file input after opening modal
-      setSelectedFile(null);
-      setUploadedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
->>>>>>> 74c505b01d84ab07dc737019d373142769c6cf82
   const openPlanModal = () => { setIsPlanModalOpen(true); setShowNoCreditPopup(false); };
 
   // Called by DashboardFileUploadSection when user clicks 'Upload to Continue'
