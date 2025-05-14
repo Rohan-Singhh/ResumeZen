@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { EnvelopeIcon, PhoneIcon, ChatBubbleLeftRightIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
 
 const contactMethods = [
   {
@@ -37,6 +38,13 @@ const contactMethods = [
 ];
 
 export default function Support() {
+  const [showModal, setShowModal] = useState(false);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setShowModal(true);
+  }
+
   return (
     <section id="support" className="bg-white pt-8 pb-24 sm:pt-12 sm:pb-32">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -117,14 +125,14 @@ export default function Support() {
               </div>
             </div>
             
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                   <input
                     type="text"
                     placeholder="Your Name"
-                    className="w-full px-4 py-2.5 text-gray-300 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
+                    className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -132,7 +140,7 @@ export default function Support() {
                   <input
                     type="email"
                     placeholder="Your Email"
-                    className="w-full px-4 py-2.5 text-gray-300 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
+                    className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                   />
                 </div>
               </div>
@@ -141,7 +149,7 @@ export default function Support() {
                 <input
                   type="text"
                   placeholder="How can we help?"
-                  className="w-full px-4 py-2.5 text-gray-300 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
+                  className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                 />
               </div>
               <div>
@@ -149,7 +157,7 @@ export default function Support() {
                 <textarea
                   placeholder="Your Message"
                   rows="4"
-                  className="w-full px-4 py-2.5 text-gray-300 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
+                  className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                 ></textarea>
               </div>
               <motion.button
@@ -163,6 +171,34 @@ export default function Support() {
             </form>
           </div>
         </motion.div>
+
+        {/* Animated Modal Popup */}
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 40 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 40 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative"
+            >
+              <h4 className="text-2xl font-bold text-primary mb-2">Thank you!</h4>
+              <p className="text-gray-700 mb-6">We are working on it, and this feature will be implemented soon.</p>
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-secondary transition-all duration-200 focus:outline-none"
+                autoFocus
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
       </div>
     </section>
   );

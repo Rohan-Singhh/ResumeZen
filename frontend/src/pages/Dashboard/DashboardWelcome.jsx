@@ -114,7 +114,19 @@ export default function DashboardWelcome() {
   const handleDrop = (e) => {
     e.preventDefault(); e.stopPropagation(); setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      setSelectedFile(file);
+      setUploadSuccess(false);
+      setErrorMessage('');
+      if (!activePlan) {
+        setShowNoCreditPopup(true);
+        return;
+      }
+      if (!activePlan.planId.isUnlimited && activePlan.creditsLeft <= 0) {
+        setShowNoCreditPopup(true);
+        return;
+      }
+      setShowCreditConfirmation(true);
       e.dataTransfer.clearData();
     }
   };
