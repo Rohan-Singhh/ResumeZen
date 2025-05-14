@@ -13,6 +13,7 @@ import DashboardFeedbackQuotes from './dashboardwelcome/DashboardFeedbackQuotes'
 import DashboardCustomerReviews from './dashboardwelcome/DashboardCustomerReviews';
 import { useNavigate } from 'react-router-dom';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function DashboardWelcome() {
   const { currentUser, userPlans, fetchUserPlans, usePlanCredit } = useAuth();
@@ -34,6 +35,7 @@ export default function DashboardWelcome() {
   const navigate = useNavigate();
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisFileDetails, setAnalysisFileDetails] = useState(null);
+  const [fileSizeError, setFileSizeError] = useState(false);
 
   useEffect(() => {
     fetchUserPlans(true);
@@ -115,6 +117,13 @@ export default function DashboardWelcome() {
     e.preventDefault(); e.stopPropagation(); setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
+      if (file.size > 1024 * 1024) {
+        setFileSizeError(true);
+        setSelectedFile(null);
+        setUploadSuccess(false);
+        setErrorMessage('');
+        return;
+      }
       setSelectedFile(file);
       setUploadSuccess(false);
       setErrorMessage('');
@@ -133,6 +142,13 @@ export default function DashboardWelcome() {
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      if (file.size > 1024 * 1024) {
+        setFileSizeError(true);
+        setSelectedFile(null);
+        setUploadSuccess(false);
+        setErrorMessage('');
+        return;
+      }
       setSelectedFile(file);
       setUploadSuccess(false);
       setErrorMessage('');
@@ -227,6 +243,46 @@ export default function DashboardWelcome() {
           </div>
         </div>
       )}
+      <AnimatePresence>
+        {fileSizeError && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center relative"
+            >
+              <motion.div
+                initial={{ rotate: -10, scale: 1.2 }}
+                animate={{ rotate: [0, 10, -10, 0], scale: [1.2, 1.1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                className="text-5xl mb-2"
+              >
+                📦
+              </motion.div>
+              <h4 className="text-2xl font-bold text-red-600 mb-2">File Too Large!</h4>
+              <p className="text-gray-700 mb-4">Your PDF exceeds 1MB. Please upload a smaller file.</p>
+              <button
+                onClick={() => {
+                  setFileSizeError(false);
+                  setSelectedFile(null);
+                  setUploadSuccess(false);
+                  setErrorMessage('');
+                }}
+                className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-secondary transition-all duration-200 focus:outline-none"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <DashboardGreetingSection
         currentUser={currentUser}
         lastActive={lastActive}

@@ -186,8 +186,15 @@ export default function ResumeAnalysis() {
         throw new Error('Failed to extract text from resume');
       }
     } catch (error) {
-      console.error('Error extracting text:', error);
-      setTextExtractionError(error.message || 'Failed to extract text from resume');
+      let userMsg = 'Sorry, we could not extract text from your document.';
+      let details = error?.response?.data?.message || error.message || 'Unknown error';
+      if (details.includes('timeout') || details.includes('exceeded')) {
+        userMsg = 'The request took too long. Please try again later.';
+      } else if (details.toLowerCase().includes('extract')) {
+        userMsg = 'Text extraction failed. Please upload a clearer or different resume.';
+      }
+      setFriendlyError({ userMsg, details });
+      setTextExtractionError(details);
     } finally {
       setExtractingText(false);
     }
@@ -418,8 +425,19 @@ export default function ResumeAnalysis() {
         throw new Error('Failed to process resume');
       }
     } catch (error) {
-      console.error('Error analyzing resume:', error);
-      setProcessingError(error.message || 'Failed to process resume');
+      let userMsg = 'Sorry, something went wrong on our side.';
+      let details = error?.response?.data?.message || error.message || 'Unknown error';
+      if (error?.response?.status === 403) {
+        userMsg = 'You do not have an active plan or enough credits. Please purchase a plan or check your credits.';
+      } else if (error?.response?.status === 422) {
+        userMsg = 'The document could not be processed. Please upload a valid resume.';
+      } else if (error?.response?.status === 400) {
+        userMsg = 'Bad request. Please try again or contact support.';
+      } else if (details.includes('timeout') || details.includes('exceeded')) {
+        userMsg = 'The request took too long. Please try again later.';
+      }
+      setFriendlyError({ userMsg, details });
+      setProcessingError(details);
     } finally {
       setProcessing(false);
     }
@@ -431,6 +449,18 @@ export default function ResumeAnalysis() {
     setProcessingResults(null);
     processResumeAutomatically();
   };
+  
+  // Add a helper to pick emoji based on error type
+  function getErrorEmoji(userMsg) {
+    if (userMsg.includes('plan') || userMsg.includes('credit')) return '💸';
+    if (userMsg.toLowerCase().includes('timeout')) return '⏳';
+    if (userMsg.toLowerCase().includes('extract')) return '🕵️‍♂️';
+    if (userMsg.toLowerCase().includes('upload')) return '📄';
+    if (userMsg.toLowerCase().includes('document')) return '📄';
+    if (userMsg.toLowerCase().includes('bad request')) return '🤔';
+    if (userMsg.toLowerCase().includes('sorry')) return '😬';
+    return '😢';
+  }
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -796,6 +826,47 @@ export default function ResumeAnalysis() {
           <span className="ml-2 text-green-600">Analysis ID: {resumeAnalysisId}</span>
         </div>
       )}
+      
+      {/* Friendly Error Popup */}
+      <AnimatePresence>
+        {friendlyError && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center relative"
+            >
+              <motion.div
+                initial={{ rotate: -10, scale: 1.2 }}
+                animate={{ rotate: [0, 10, -10, 0], scale: [1.2, 1.1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                className="text-5xl mb-2"
+              >
+                {getErrorEmoji(friendlyError.userMsg)}
+              </motion.div>
+              <h4 className="text-2xl font-bold text-red-600 mb-2">Oops!</h4>
+              <p className="text-gray-700 mb-4">{friendlyError.userMsg}</p>
+              <details className="text-xs text-gray-400 mb-4 cursor-pointer select-text">
+                <summary className="mb-1">Show technical details</summary>
+                <pre className="whitespace-pre-wrap break-all">{friendlyError.details}</pre>
+              </details>
+              <button
+                onClick={() => setFriendlyError(null)}
+                className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-secondary transition-all duration-200 focus:outline-none"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 } 
