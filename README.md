@@ -1,10 +1,67 @@
-# ResumeZen
+<div align="center">
 
-An affordable platform for students to optimize their resumes with ATS score analysis and actionable improvement suggestions powered by AI.
+# <strong>RESUMEZEN</strong>
+
+*Transforming resumes, empowering career journeys effortlessly.*
+
+<p>
+  <img src="https://img.shields.io/github/last-commit/Rohan-Singhh/ResumeZen?style=for-the-badge" />
+  <img src="https://img.shields.io/github/languages/top/Rohan-Singhh/ResumeZen?style=for-the-badge&color=blue" />
+  <img src="https://img.shields.io/github/languages/count/Rohan-Singhh/ResumeZen?style=for-the-badge&color=blueviolet" />
+  <img src="https://img.shields.io/github/repo-size/Rohan-Singhh/ResumeZen?style=for-the-badge&color=informational" />
+</p>
+
+---
+
+### <em>Built with the tools and technologies:</em>
+
+<p>
+  <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white" />
+  <img src="https://img.shields.io/badge/JSON-333?style=for-the-badge&logo=json&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vercel-000?style=for-the-badge&logo=vercel&logoColor=white" />
+  <img src="https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white" />
+  <img src="https://img.shields.io/badge/Autoprefixer-DD3735?style=for-the-badge&logo=autoprefixer&logoColor=white" />
+  <img src="https://img.shields.io/badge/Mongoose-880000?style=for-the-badge&logo=mongoose&logoColor=white" />
+  <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
+  <img src="https://img.shields.io/badge/PostCSS-DD3A0A?style=for-the-badge&logo=postcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/.ENV-8D6748?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" />
+  <img src="https://img.shields.io/badge/Nodemon-76D04B?style=for-the-badge&logo=nodemon&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white" />
+  <img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white" />
+  <img src="https://img.shields.io/badge/date-fns-FF5A5F?style=for-the-badge" />
+</p>
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [External Services Setup](#external-services-setup)
+- [Development Information](#development-information)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Environment Variables Guide](#environment-variables-guide)
+- [License](#license)
+- [Contact](#contact)
+
+---
 
 ## 🚀 Overview
 
 ResumeZen helps students create ATS-friendly resumes that stand out to employers. Our platform uses artificial intelligence to analyze resumes, provide real-time feedback, and offer specific suggestions for improvement.
+
+---
 
 ## ✨ Features
 
@@ -15,6 +72,8 @@ ResumeZen helps students create ATS-friendly resumes that stand out to employers
 - **User Dashboard**: Track improvement history and access analysis reports
 - **Subscription Plans**: Flexible pricing options for different user needs
 - **Modern UI**: Responsive design with smooth animations and transitions
+
+---
 
 ## 🛠️ Tech Stack
 
@@ -43,6 +102,8 @@ ResumeZen helps students create ATS-friendly resumes that stand out to employers
 - [OCR Space](https://ocr.space/) - Optical Character Recognition for text extraction
 - [Firebase Authentication](https://firebase.google.com/products/auth) - User authentication
 
+---
+
 ## 🏗️ Architecture
 
 ### Backend Services
@@ -63,6 +124,8 @@ ResumeZen helps students create ATS-friendly resumes that stand out to employers
 - **Profile Management**: User profile settings
 - **PDF Utils**: Utilities for handling PDF documents
 
+---
+
 ## 📝 Getting Started
 
 ### Prerequisites
@@ -81,7 +144,7 @@ ResumeZen helps students create ATS-friendly resumes that stand out to employers
 
 1. Clone the repository
 ```bash
-git clone https://github.com/YourUsername/ResumeZen.git
+git clone https://github.com/Rohan-Singhh/ResumeZen.git
 cd ResumeZen
 ```
 
@@ -156,7 +219,7 @@ npm run dev
 
 1. Clone the repository
 ```bash
-git clone https://github.com/YourUsername/ResumeZen.git
+git clone https://github.com/Rohan-Singhh/ResumeZen.git
 cd ResumeZen
 ```
 
@@ -172,6 +235,8 @@ docker-compose up
 Access:
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:5000
+
+---
 
 ## 🔐 External Services Setup
 
@@ -206,6 +271,8 @@ Access:
 1. Create an [OpenRouter account](https://openrouter.ai/)
 2. Generate an API key
 3. Add your API key to the backend `.env` file as OPENROUTER_API_KEY
+
+---
 
 ## 🧑‍💻 Development Information
 
@@ -251,6 +318,8 @@ Access:
 - Credits system for resume checks
 - Premium features for higher-tier plans
 
+---
+
 ## 🧪 Testing
 
 ```bash
@@ -263,6 +332,8 @@ cd backend
 npm test
 ```
 
+---
+
 ## 🚀 Deployment
 
 ### Frontend Deployment
@@ -274,6 +345,8 @@ npm test
 - [Render](https://render.com/docs)
 - [Railway](https://docs.railway.app/)
 - [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform/)
+
+---
 
 ## 🔧 Environment Variables Guide
 
@@ -293,9 +366,13 @@ npm test
 - `VITE_CLOUDINARY_CLOUD_NAME`: Cloudinary cloud name for direct uploads
 - `VITE_REACT_APP_RECAPTCHA_KEY`: reCAPTCHA site key for authentication
 
+---
+
 ## 📄 License
 
 Copyright © 2025 ResumeZen. All rights reserved.
+
+---
 
 ## 👥 Contact
 
