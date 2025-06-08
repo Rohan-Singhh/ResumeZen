@@ -120,6 +120,29 @@ export const AuthProvider = ({ children }) => {
     axios.defaults.headers.common['Cache-Control'] = 'max-age=300';
   }, []);
 
+  // Always set axios auth token from localStorage on mount and when token changes
+  useEffect(() => {
+    const setAxiosAuthToken = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        axios.defaults.headers.common['x-auth-token'] = token;
+      } else {
+        delete axios.defaults.headers.common['x-auth-token'];
+      }
+    };
+
+    setAxiosAuthToken();
+
+    // Listen for storage events (cross-tab, iOS, etc.)
+    const handleStorage = (e) => {
+      if (e.key === 'token') {
+        setAxiosAuthToken();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   // Listen for Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

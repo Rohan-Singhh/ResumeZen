@@ -56,8 +56,22 @@ export default function DashboardWelcome() {
 
   useEffect(() => {
     if (userPlans && userPlans.length > 0) {
-      const sortedPlans = [...userPlans].sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt));
-      setActivePlan(sortedPlans[0]);
+      // Only consider active, non-expired plans
+      const now = new Date();
+      const validPlans = userPlans.filter(plan => {
+        if (!plan.isActive) return false;
+        if (plan.expiresAt && new Date(plan.expiresAt) < now) return false;
+        if (!plan.planId) return false;
+        // Must have credits left or be unlimited
+        return plan.planId.isUnlimited || plan.creditsLeft > 0;
+      });
+      if (validPlans.length > 0) {
+        // Sort by purchase date, most recent first
+        const sortedPlans = [...validPlans].sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt));
+        setActivePlan(sortedPlans[0]);
+      } else {
+        setActivePlan(null);
+      }
     } else {
       setActivePlan(null);
     }
@@ -170,9 +184,19 @@ export default function DashboardWelcome() {
       if (selectedFile.size > 1024 * 1024) { setErrorMessage('File size exceeds 1MB limit'); return; }
       if (selectedFile.type !== 'application/pdf') { setErrorMessage('Only PDF files are allowed'); return; }
       setIsUploading(true);
+      setUploadProgress(0);
+      // Animate progress from 0 to 80% while uploading
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += Math.floor(Math.random() * 10) + 5; // random step for realism
+        if (progress >= 80) progress = 80;
+        setUploadProgress(progress);
+      }, 120);
       const formData = new FormData();
       formData.append('resume', selectedFile);
       const response = await axios.post('/api/upload/resume', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      clearInterval(progressInterval);
+      setUploadProgress(100);
       if (response.data && response.data.success) {
         const fileData = response.data.data;
         setUploadedFile({ name: selectedFile.name, originalName: selectedFile.name, size: selectedFile.size, type: selectedFile.type, url: fileData.url, cloudinaryUrl: fileData.cloudinaryUrl, viewUrl: fileData.viewUrl, downloadUrl: fileData.downloadUrl, publicId: fileData.publicId, assetId: fileData.assetId, format: fileData.format || 'pdf', resourceType: fileData.resourceType || 'image', createdAt: new Date().toISOString() });
@@ -184,6 +208,7 @@ export default function DashboardWelcome() {
         setIsUploading(false);
       }
     } catch (error) {
+      setUploadProgress(0);
       setErrorMessage('Upload failed: ' + (error.response?.data?.message || error.message || 'Unknown error'));
       setIsUploading(false);
     }
