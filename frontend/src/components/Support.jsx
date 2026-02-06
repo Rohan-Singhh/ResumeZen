@@ -39,9 +39,19 @@ const contactMethods = [
 
 export default function Support() {
   const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState('Normal');
+  const [message, setMessage] = useState('');
 
-  function handleSubmit(e) {
+  const priorities = ['Low', 'Normal', 'Urgent'];
+  const maxCharacters = 500;
+  const progress = Math.min((message.length / maxCharacters) * 100, 100);
+
+  async function handleSubmit(e) {
     e.preventDefault();
+    setIsSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    setIsSubmitting(false);
     setShowModal(true);
   }
 
@@ -89,7 +99,7 @@ export default function Support() {
         </div>
 
         <motion.div
-          className="mt-16 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-3xl overflow-hidden"
+          className="mt-16 rounded-3xl overflow-hidden border border-primary/20 shadow-[0_0_0_1px_rgba(99,102,241,0.08),0_30px_60px_-35px_rgba(79,70,229,0.55)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),rgba(255,255,255,0.85)_45%),linear-gradient(120deg,rgba(99,102,241,0.08),rgba(167,139,250,0.1),rgba(56,189,248,0.07))] backdrop-blur-sm"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -101,6 +111,10 @@ export default function Support() {
               <p className="text-gray-600">
                 Have a specific question? Fill out this form and we'll get back to you as soon as possible.
               </p>
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                Live Support Queue
+              </div>
               <div className="bg-white p-6 rounded-xl shadow-sm">
                 <ul className="space-y-3 text-sm">
                   <li className="flex items-center text-gray-600">
@@ -125,7 +139,7 @@ export default function Support() {
               </div>
             </div>
             
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            <form className="space-y-4 rounded-2xl border border-white/50 bg-white/80 p-5 backdrop-blur-md" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -153,20 +167,57 @@ export default function Support() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <span className="block text-sm font-medium text-gray-700 mb-2">Priority</span>
+                <div className="flex flex-wrap gap-2">
+                  {priorities.map((priority) => {
+                    const isActive = selectedPriority === priority;
+
+                    return (
+                      <button
+                        key={priority}
+                        type="button"
+                        onClick={() => setSelectedPriority(priority)}
+                        className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+                          isActive
+                            ? 'border-primary bg-primary text-white shadow-lg shadow-primary/25'
+                            : 'border-gray-300 bg-white text-gray-700 hover:border-primary/50 hover:text-primary'
+                        }`}
+                      >
+                        {priority}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700">Message</label>
+                  <span className="text-xs text-gray-500">{message.length}/{maxCharacters}</span>
+                </div>
                 <textarea
                   placeholder="Your Message"
                   rows="4"
+                  maxLength={maxCharacters}
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
                   className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
                 ></textarea>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-primary via-violet-500 to-cyan-400"
+                    animate={{ width: `${progress}%` }}
+                    transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+                  />
+                </div>
               </div>
               <motion.button
                 type="submit"
-                className="w-full bg-primary text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-secondary transition-all duration-300"
+                className="w-full bg-primary text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-secondary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-80"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                disabled={isSubmitting}
               >
-                Send Message
+                {isSubmitting ? 'Sending...' : `Send Message • ${selectedPriority}`}
               </motion.button>
             </form>
           </div>
@@ -187,8 +238,8 @@ export default function Support() {
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative"
             >
-              <h4 className="text-2xl font-bold text-primary mb-2">Thank you!</h4>
-              <p className="text-gray-700 mb-6">We are working on it, and this feature will be implemented soon.</p>
+              <h4 className="text-2xl font-bold text-primary mb-2">Signal Received!</h4>
+              <p className="text-gray-700 mb-6">Thanks for reaching out. Our support crew has your message in the queue and will respond soon.</p>
               <button
                 onClick={() => setShowModal(false)}
                 className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-secondary transition-all duration-200 focus:outline-none"
