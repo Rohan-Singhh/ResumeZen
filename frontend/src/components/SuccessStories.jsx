@@ -117,7 +117,7 @@ export default function SuccessStories() {
           {successStories.map((story, index) => (
             <motion.div
               key={story.id}
-              className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8"
+              className="group rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-gray-100 p-8 transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -127,23 +127,23 @@ export default function SuccessStories() {
                 <img
                   src={story.image}
                   alt={story.name}
-                  className="w-16 h-16 rounded-full ring-4 ring-white"
+                  className="h-16 w-16 rounded-full ring-4 ring-white transition-transform duration-300 group-hover:scale-105"
                 />
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">{story.name}</h3>
-                  <p className="text-primary font-semibold">{story.role}</p>
+                  <p className="font-semibold text-primary transition-colors duration-300 group-hover:text-secondary">{story.role}</p>
                 </div>
               </div>
               
               <div className="space-y-6">
-                <div className="bg-white rounded-xl p-6 shadow-sm">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">BEFORE</h4>
+                <div className="rounded-xl bg-white p-6 shadow-sm transition-all duration-300 group-hover:shadow-md">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 transition-colors duration-300 group-hover:border-gray-300">
+                      <h4 className="mb-2 text-sm font-medium text-gray-500">BEFORE</h4>
                       <p className="text-gray-900">{story.before}</p>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">AFTER</h4>
+                    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
+                      <h4 className="mb-2 text-sm font-medium text-primary">AFTER</h4>
                       <p className="text-gray-900">{story.after}</p>
                     </div>
                   </div>
@@ -151,14 +151,14 @@ export default function SuccessStories() {
 
                 <ul className="space-y-3">
                   {story.key_improvements.map((improvement, i) => (
-                    <li key={i} className="flex items-center gap-3">
+                    <li key={i} className="flex translate-y-1 items-center gap-3 opacity-90 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100" style={{ transitionDelay: `${i * 50}ms` }}>
                       <CheckCircleIcon className="h-5 w-5 text-primary flex-shrink-0" />
                       <span className="text-gray-700">{improvement}</span>
                     </li>
                   ))}
                 </ul>
 
-                <blockquote className="text-gray-700 italic border-l-4 border-primary pl-4">
+                <blockquote className="border-l-4 border-primary/60 pl-4 italic text-gray-700 transition-all duration-300 group-hover:border-primary group-hover:text-gray-800">
                   "{story.quote}"
                 </blockquote>
               </div>
