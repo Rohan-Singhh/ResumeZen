@@ -39,13 +39,14 @@ const LOADING_VIBES = [
   "Lowkey analyzing every detail 🔍",
 ];
 
-export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
+export default function ResumeAnalysisModal({ fileDetails, open, onClose, onViewReport }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [vibeIndex, setVibeIndex] = useState(0);
+  const [savedAnalysisData, setSavedAnalysisData] = useState(null);
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
 
@@ -133,6 +134,8 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
           if (res?.success && res?.data?.analysis?.structured) {
             setProgress(100);
             setCurrentStep(4);
+            // Store the full response so we can pass it to the detail modal
+            setSavedAnalysisData(res);
             setTimeout(() => {
               setResult(res.data.analysis.structured);
               setLoading(false);
@@ -161,6 +164,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
       setResult(null);
       setProgress(0);
       setCurrentStep(0);
+      setSavedAnalysisData(null);
     }
   }, [open, fileDetails]);
 
@@ -189,7 +193,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500" />
 
           {loading ? (
-            <div className="relative p-8 sm:p-10">
+            <div className="relative p-6 sm:p-8 overflow-hidden">
               {/* Particle canvas background */}
               <canvas
                 ref={canvasRef}
@@ -199,10 +203,10 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
               {/* Ambient glow behind the ring */}
               <div className={`absolute top-8 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full blur-[60px] ${activeColor.bg} opacity-20 pointer-events-none transition-colors duration-700`} />
 
-              <div className="relative z-10">
+              <div className="relative z-10 flex flex-col items-center">
                 {/* Central animated ring */}
-                <div className="flex justify-center mb-8">
-                  <div className="relative h-28 w-28">
+                <div className="mb-6">
+                  <div className="relative h-24 w-24">
                     {/* Outer pulsing ring */}
                     <motion.div
                       className={`absolute inset-0 rounded-full border-2 ${activeColor.ring} opacity-30`}
@@ -248,7 +252,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
                 </div>
 
                 {/* Heading */}
-                <h3 className="text-xl font-extrabold text-white text-center mb-1 font-display tracking-tight">
+                <h3 className="text-lg font-extrabold text-white text-center mb-1 font-display tracking-tight">
                   Analyzing Resume
                 </h3>
                 {/* Rotating vibes text */}
@@ -259,14 +263,14 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3 }}
-                    className="text-sm text-zinc-500 text-center mb-8 h-5 font-medium"
+                    className="text-xs text-zinc-500 text-center mb-6 min-h-[18px] font-medium px-2 truncate max-w-full"
                   >
                     {LOADING_VIBES[vibeIndex]}
                   </motion.p>
                 </AnimatePresence>
 
                 {/* Steps list */}
-                <div className="space-y-3">
+                <div className="space-y-2 w-full">
                   {STEPS.map((step, i) => {
                     const isActive = i === currentStep;
                     const isDone = i < currentStep;
@@ -279,7 +283,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
                         initial={{ opacity: 0, x: -15 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.08 }}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-500 ${
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-500 min-w-0 ${
                           isActive
                             ? `bg-white/5 border border-white/10 ${color.glow}`
                             : isDone
@@ -290,7 +294,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
                         {/* Step icon circle */}
                         <div className="relative flex-shrink-0">
                           <div
-                            className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all duration-500 ${
+                            className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all duration-500 ${
                               isDone
                                 ? 'bg-emerald-500/20 border border-emerald-500/30'
                                 : isActive
@@ -299,9 +303,9 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
                             }`}
                           >
                             {isDone ? (
-                              <CheckCircleIcon className="h-4 w-4 text-emerald-400" />
+                              <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-400" />
                             ) : (
-                              <StepIcon className={`h-4 w-4 ${isActive ? color.text : 'text-zinc-600'}`} />
+                              <StepIcon className={`h-3.5 w-3.5 ${isActive ? color.text : 'text-zinc-600'}`} />
                             )}
                           </div>
                           {/* Active pulse dot */}
@@ -316,7 +320,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
 
                         {/* Step label */}
                         <span
-                          className={`text-sm font-semibold transition-colors duration-500 ${
+                          className={`text-xs font-semibold truncate min-w-0 transition-colors duration-500 ${
                             isActive ? 'text-zinc-100' : isDone ? 'text-zinc-400 line-through' : 'text-zinc-600'
                           }`}
                         >
@@ -324,7 +328,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
                         </span>
 
                         {/* Done / active indicator */}
-                        <div className="ml-auto">
+                        <div className="ml-auto flex-shrink-0">
                           {isDone && (
                             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Done</span>
                           )}
@@ -342,7 +346,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
                 </div>
 
                 {/* Bottom progress bar */}
-                <div className="mt-6 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="mt-5 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500"
                     style={{ width: `${progress}%` }}
@@ -398,7 +402,13 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
                   Your resume report is ready to view.
                 </p>
                 <button
-                  onClick={onClose}
+                  onClick={() => {
+                    if (onViewReport && savedAnalysisData) {
+                      onViewReport(savedAnalysisData);
+                    } else {
+                      onClose();
+                    }
+                  }}
                   className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-bold px-5 py-3 rounded-xl transition-all duration-200 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
                 >
                   View Report →

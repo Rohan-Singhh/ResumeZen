@@ -10,7 +10,7 @@ import DashboardNoCreditPopup from './dashboardwelcome/DashboardNoCreditPopup';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
 import ResumeDetailModal from './ResumeDetailModal';
 import sadRobotError from '../../assets/sad_robot_error.png';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUpTrayIcon,
   DocumentTextIcon,
@@ -19,6 +19,9 @@ import {
   CreditCardIcon,
   CheckCircleIcon,
   ArrowRightIcon,
+  CloudArrowUpIcon,
+  ShieldCheckIcon,
+  ServerIcon,
 } from '@heroicons/react/24/outline';
 
 export default function DashboardWelcome() {
@@ -35,6 +38,8 @@ export default function DashboardWelcome() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadStep, setUploadStep] = useState(0);
+  const [uploadVibeIdx, setUploadVibeIdx] = useState(0);
 
   // Modal state
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
@@ -126,21 +131,30 @@ export default function DashboardWelcome() {
 
     setIsUploading(true);
     setUploadProgress(0);
+    setUploadStep(0);
     setErrorMessage('');
 
     let progress = 0;
     const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 10) + 5;
-      if (progress >= 80) progress = 80;
+      progress += Math.floor(Math.random() * 8) + 3;
+      if (progress >= 85) progress = 85;
       setUploadProgress(progress);
-    }, 120);
+    }, 200);
+
+    // Advance upload steps
+    const stepTimers = [
+      setTimeout(() => setUploadStep(1), 600),
+      setTimeout(() => setUploadStep(2), 1500),
+    ];
 
     try {
       const formData = new FormData();
       formData.append('resume', selectedFile);
       const response = await axios.post('/api/upload/resume', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       clearInterval(interval);
+      stepTimers.forEach(clearTimeout);
       setUploadProgress(100);
+      setUploadStep(3);
 
       if (response.data?.success) {
         const fileData = response.data.data;
@@ -153,6 +167,7 @@ export default function DashboardWelcome() {
       }
     } catch (err) {
       clearInterval(interval);
+      stepTimers.forEach(clearTimeout);
       setErrorMessage('Upload failed: ' + (err.response?.data?.message || err.message));
     } finally {
       setIsUploading(false);
@@ -175,8 +190,51 @@ export default function DashboardWelcome() {
     setAnalysisFileDetails(null);
     setSelectedFile(null);
     setUploadedFile(null);
+    setUploadSuccess(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
     fetchUserPlans(true);
+    // Refresh history to include the new analysis
+    (async () => {
+      try {
+        const data = await getResumeHistory();
+        setHistory(data);
+      } catch { /* silent */ }
+    })();
+  };
+
+  // Called when user clicks "View Report" in the analysis modal
+  const handleViewReport = (analysisResponse) => {
+    // Close the analysis modal
+    setShowAnalysisModal(false);
+    setAnalysisFileDetails(null);
+    setSelectedFile(null);
+    setUploadedFile(null);
+    setUploadSuccess(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    fetchUserPlans(true);
+
+    // Build a ResumeDetailModal-compatible object from the API response
+    const structured = analysisResponse?.data?.analysis?.structured || {};
+    const resumeDetail = {
+      _id: analysisResponse?.resumeAnalysisId || 'temp',
+      createdAt: new Date().toISOString(),
+      contactInformation: structured.contactInformation || {},
+      skills: structured.skills || {},
+      workExperience: structured.workExperience || [],
+      education: structured.education || [],
+      certifications: structured.certifications || [],
+      summary: structured.summary || '',
+      analysis: structured.analysis || {},
+    };
+    setSelectedResume(resumeDetail);
+
+    // Refresh history in background
+    (async () => {
+      try {
+        const data = await getResumeHistory();
+        setHistory(data);
+      } catch { /* silent */ }
+    })();
   };
 
   const firstName = currentUser?.name?.split(' ')[0] || 'there';
@@ -321,19 +379,80 @@ export default function DashboardWelcome() {
             )}
 
             {isUploading && (
-              <div className="py-12 text-center relative z-10">
-                <div className="relative h-24 w-24 mx-auto mb-6">
-                  <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-                  <div 
-                    className="absolute inset-0 rounded-full border-4 border-violet-500 border-t-transparent animate-spin" 
-                    style={{ clipPath: `polygon(0 0, 100% 0, 100% ${uploadProgress}%, 0 ${uploadProgress}%)` }} 
-                  ></div>
-                  <div className="absolute inset-0 flex items-center justify-center flex-col">
-                    <span className="text-lg font-bold text-zinc-100">{uploadProgress}%</span>
+              <div className="py-6 relative z-10 overflow-hidden">
+                {/* Ambient glow */}
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 w-40 h-40 bg-violet-500/15 rounded-full blur-[60px] pointer-events-none" />
+                
+                <div className="relative z-10 flex flex-col items-center">
+                  {/* Progress Ring */}
+                  <div className="relative h-20 w-20 mb-5 flex-shrink-0">
+                    <div className="absolute inset-0 rounded-full border-[3px] border-white/5" />
+                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 80 80">
+                      <circle
+                        cx="40" cy="40" r="36"
+                        fill="none"
+                        stroke="url(#uploadGradient)"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        strokeDasharray={`${uploadProgress * 2.26} ${226 - uploadProgress * 2.26}`}
+                        className="transition-all duration-300 ease-out"
+                      />
+                      <defs>
+                        <linearGradient id="uploadGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#8b5cf6" />
+                          <stop offset="100%" stopColor="#06b6d4" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-lg font-extrabold text-white font-display tabular-nums leading-none">{Math.round(uploadProgress)}%</span>
+                      <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Upload</span>
+                    </div>
+                  </div>
+
+                  {/* Steps */}
+                  <div className="space-y-1.5 w-full max-w-[280px]">
+                    {[
+                      { label: 'Preparing file', icon: DocumentTextIcon },
+                      { label: 'Encrypting data', icon: ShieldCheckIcon },
+                      { label: 'Uploading to cloud', icon: CloudArrowUpIcon },
+                      { label: 'Stored securely', icon: ServerIcon },
+                    ].map((step, i) => {
+                      const isDone = i < uploadStep;
+                      const isActive = i === uploadStep;
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all duration-500 ${
+                            isActive ? 'bg-white/5 border border-white/10' : isDone ? 'opacity-50' : 'opacity-25'
+                          }`}
+                        >
+                          <div className={`h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
+                            isDone ? 'bg-emerald-500/20 border border-emerald-500/30' : isActive ? 'bg-white/10 border border-white/15' : 'bg-white/5 border border-white/5'
+                          }`}>
+                            {isDone ? (
+                              <CheckCircleIcon className="h-3 w-3 text-emerald-400" />
+                            ) : (
+                              <step.icon className={`h-3 w-3 ${isActive ? 'text-violet-400' : 'text-zinc-600'}`} />
+                            )}
+                          </div>
+                          <span className={`text-xs font-semibold truncate transition-colors duration-500 ${
+                            isActive ? 'text-zinc-200' : isDone ? 'text-zinc-400 line-through' : 'text-zinc-600'
+                          }`}>{step.label}</span>
+                          {isDone && <span className="ml-auto text-[9px] font-bold text-emerald-400 uppercase tracking-wider flex-shrink-0">Done</span>}
+                          {isActive && (
+                            <motion.div className="ml-auto h-1 w-4 rounded-full bg-violet-500 opacity-60 flex-shrink-0" animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 1.2, repeat: Infinity }} />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom bar */}
+                  <div className="mt-4 h-1 w-full max-w-[280px] bg-white/5 rounded-full overflow-hidden">
+                    <motion.div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-500" style={{ width: `${uploadProgress}%` }} transition={{ duration: 0.3 }} />
                   </div>
                 </div>
-                <p className="text-base font-medium text-zinc-300 mb-1">Uploading your document...</p>
-                <p className="text-xs text-zinc-500">Securely encrypting and storing file</p>
               </div>
             )}
 
@@ -475,7 +594,7 @@ export default function DashboardWelcome() {
       <PlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} />
       <DashboardCreditConfirmationPopup show={showCreditConfirmation} onClose={() => setShowCreditConfirmation(false)} onConfirm={confirmCreditUsage} activePlan={activePlan} />
       <DashboardNoCreditPopup show={showNoCreditPopup} onClose={() => setShowNoCreditPopup(false)} onViewPlans={() => { setIsPlanModalOpen(true); setShowNoCreditPopup(false); }} activePlan={activePlan} />
-      <ResumeAnalysisModal fileDetails={analysisFileDetails} open={showAnalysisModal} onClose={handleAnalysisClose} />
+      <ResumeAnalysisModal fileDetails={analysisFileDetails} open={showAnalysisModal} onClose={handleAnalysisClose} onViewReport={handleViewReport} />
       <ResumeDetailModal modalItem={selectedResume} onClose={() => setSelectedResume(null)} />
     </div>
   );
