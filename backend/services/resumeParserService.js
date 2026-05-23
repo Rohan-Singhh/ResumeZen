@@ -362,13 +362,20 @@ const processResume = async (pdfUrl, options = {}) => {
     }
     // Analyze the extracted text with AI
     const analysis = await analyzeResumeWithAI(truncatedText, options);
+    
+    // If the AI models failed and generated dummy fallback data, we want to reject it
+    // so the user's credit is refunded and no dummy data is saved to their history.
+    if (!analysis.success || analysis.data?.usedFallback) {
+      return {
+        success: false,
+        error: 'We are sorry, but our AI models are currently experiencing high load and could not analyze your resume. Your credit has been refunded. Please try again later.'
+      };
+    }
+    
     // Accept fallback/partial results, but add a warning
     let warning = null;
-    if (!analysis.success || analysis.data?.error) {
-      warning = analysis.error || analysis.data?.error || 'AI analysis failed, fallback used.';
-    }
-    if (analysis.data?.usedFallback) {
-      warning = (warning ? warning + ' ' : '') + 'AI returned fallback analysis.';
+    if (analysis.data?.error) {
+      warning = analysis.data?.error || 'AI analysis completed with warnings.';
     }
     // Defensive: if minimal contact or education info is found, always return an ATS score
     let ai = analysis.data.structured || {};
