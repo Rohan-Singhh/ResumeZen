@@ -1,4 +1,5 @@
 const express = require('express');
+const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -12,7 +13,7 @@ const { matchJobsWithAI } = require('../services/aiAnalysisService');
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const response = await axios.get('https://www.arbeitnow.com/api/job-board-api');
-    
+
     // Check if we received data
     if (response.data && response.data.data) {
       // Send the first 50 jobs to keep the payload reasonable
@@ -59,14 +60,14 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/match', authMiddleware, async (req, res) => {
   try {
     const { userProfile } = req.body;
-    
+
     if (!userProfile) {
       return res.status(400).json({ success: false, message: 'User profile is required' });
     }
 
     // Fetch jobs first
     const response = await axios.get('https://www.arbeitnow.com/api/job-board-api');
-    
+
     if (!response.data || !response.data.data) {
       return res.status(404).json({ success: false, message: 'No jobs found from provider' });
     }

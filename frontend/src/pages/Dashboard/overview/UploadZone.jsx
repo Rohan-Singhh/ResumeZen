@@ -34,15 +34,15 @@ export default function UploadZone({
   onFileChange,
 }) {
   return (
-    <div className="bg-[#0d0d12]/80 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6 relative overflow-hidden">
+    <div className="bg-[#0d0d12]/80 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-8 relative overflow-hidden h-full flex flex-col justify-center shadow-xl">
       {/* Subtle glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-24 bg-violet-500/[0.03] blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-violet-500/[0.05] blur-[60px] pointer-events-none" />
 
-      <div className="flex items-center gap-2.5 mb-5 relative z-10">
-        <div className="p-1.5 bg-violet-500/10 rounded-lg border border-violet-500/20">
-          <ArrowUpTrayIcon className="h-4 w-4 text-violet-400" />
+      <div className="flex items-center justify-center gap-3 mb-6 relative z-10">
+        <div className="p-2 bg-violet-500/10 rounded-xl border border-violet-500/20">
+          <ArrowUpTrayIcon className="h-5 w-5 text-violet-400" />
         </div>
-        <h3 className="text-base font-bold text-zinc-100 font-display">Upload Resume</h3>
+        <h3 className="text-xl font-bold text-zinc-100 font-display">Upload Resume</h3>
       </div>
 
       {errorMessage && (
@@ -61,17 +61,17 @@ export default function UploadZone({
           onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files?.[0]) onFileSelect(e.dataTransfer.files[0]); }}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300 relative z-10 group ${isDragging
-            ? 'border-violet-500 bg-violet-500/10 scale-[1.01]'
+          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 relative z-10 group flex-1 flex flex-col items-center justify-center min-h-[220px] ${isDragging
+            ? 'border-violet-500 bg-violet-500/10 scale-[1.02] shadow-[0_0_30px_rgba(139,92,246,0.15)]'
             : 'border-white/[0.08] bg-white/[0.02] hover:border-violet-500/40 hover:bg-white/[0.04]'
           }`}
           onClick={() => fileInputRef.current?.click()}
         >
-          <div className={`h-12 w-12 mx-auto rounded-full flex items-center justify-center mb-3 transition-colors ${isDragging ? 'bg-violet-500/20 text-violet-400' : 'bg-white/[0.04] text-zinc-500 group-hover:bg-violet-500/10 group-hover:text-violet-400'}`}>
-            <ArrowUpTrayIcon className="h-6 w-6" />
+          <div className={`h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4 transition-colors ${isDragging ? 'bg-violet-500/20 text-violet-400' : 'bg-white/[0.04] text-zinc-500 group-hover:bg-violet-500/10 group-hover:text-violet-400'}`}>
+            <ArrowUpTrayIcon className="h-8 w-8" />
           </div>
-          <p className="text-sm font-semibold text-zinc-300 mb-1 font-display">Click to upload or drag & drop</p>
-          <p className="text-xs text-zinc-600 font-medium">PDF only (Max 1MB)</p>
+          <p className="text-base font-semibold text-zinc-200 mb-1 font-display">Click to upload or drag & drop</p>
+          <p className="text-sm text-zinc-500 font-medium">PDF only (Max 1MB)</p>
           <input ref={fileInputRef} type="file" className="hidden" accept=".pdf" onChange={onFileChange} />
         </div>
       )}

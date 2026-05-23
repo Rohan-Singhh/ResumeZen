@@ -223,12 +223,38 @@ export default function DashboardWelcome() {
   return (
     <div className="space-y-5 relative z-10">
 
-      {/* 1. Hero Section */}
-      <HeroSection
-        currentUser={currentUser}
-        latestAnalysis={latestAnalysis}
-        previousAnalysis={previousAnalysis}
-      />
+      {/* 1. Top Section: Hero + Upload Zone */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        <div className="xl:col-span-2">
+          <HeroSection
+            currentUser={currentUser}
+            latestAnalysis={latestAnalysis}
+            previousAnalysis={previousAnalysis}
+          />
+        </div>
+        <div className="flex flex-col">
+          <UploadZone
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
+            isUploading={isUploading}
+            uploadProgress={uploadProgress}
+            uploadStep={uploadStep}
+            uploadSuccess={uploadSuccess}
+            uploadedFile={uploadedFile}
+            errorMessage={errorMessage}
+            isDragging={isDragging}
+            setIsDragging={setIsDragging}
+            hasCredits={hasCredits}
+            isProcessing={isProcessing}
+            fileSizeError={fileSizeError}
+            onFileSelect={handleFileSelect}
+            onUpload={handleUpload}
+            onProceed={handleProceed}
+            fileInputRef={fileInputRef}
+            onFileChange={handleFileChange}
+          />
+        </div>
+      </div>
 
       {/* 2. KPI Grid */}
       <KpiGrid
@@ -257,33 +283,9 @@ export default function DashboardWelcome() {
       {/* 4. Resume Health */}
       <ResumeHealthRadar latestAnalysis={latestAnalysis} />
 
-      {/* 5. Two-column: Action Center + Upload Zone */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2">
-          <AiActionCenter latestAnalysis={latestAnalysis} />
-        </div>
-        <div>
-          <UploadZone
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
-            isUploading={isUploading}
-            uploadProgress={uploadProgress}
-            uploadStep={uploadStep}
-            uploadSuccess={uploadSuccess}
-            uploadedFile={uploadedFile}
-            errorMessage={errorMessage}
-            isDragging={isDragging}
-            setIsDragging={setIsDragging}
-            hasCredits={hasCredits}
-            isProcessing={isProcessing}
-            fileSizeError={fileSizeError}
-            onFileSelect={handleFileSelect}
-            onUpload={handleUpload}
-            onProceed={handleProceed}
-            fileInputRef={fileInputRef}
-            onFileChange={handleFileChange}
-          />
-        </div>
+      {/* 5. Action Center */}
+      <div className="grid grid-cols-1 gap-5">
+        <AiActionCenter latestAnalysis={latestAnalysis} />
       </div>
 
       {/* 6. Plan Banner */}
