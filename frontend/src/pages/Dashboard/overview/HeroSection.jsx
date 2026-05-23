@@ -44,7 +44,7 @@ export default function HeroSection({ currentUser, latestAnalysis, previousAnaly
     ? `Your latest resume scored ${latestScore}%.${issueCount > 0 ? ` AI identified ${issueCount} area${issueCount > 1 ? 's' : ''} to improve.` : ` ${strengthCount} strengths detected.`}`
     : "Upload a resume to get your AI-powered ATS analysis.";
 
-  const circumference = 2 * Math.PI * 58;
+  const circumference = 2 * Math.PI * 66;
   const strokeOffset = latestScore !== null ? circumference - (displayScore / 100) * circumference : circumference;
 
   return (
@@ -61,16 +61,16 @@ export default function HeroSection({ currentUser, latestAnalysis, previousAnaly
       <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center gap-8">
         {/* Score Ring */}
         <div className="flex-shrink-0 relative">
-          <div className="relative h-36 w-36">
+          <div className="relative h-40 w-40">
             {/* Background ring */}
-            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 140 140">
-              <circle cx="70" cy="70" r="58" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="6" />
+            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="66" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="7" />
               {latestScore !== null && (
                 <circle
-                  cx="70" cy="70" r="58"
+                  cx="80" cy="80" r="66"
                   fill="none"
                   stroke={`url(#heroScoreGrad)`}
-                  strokeWidth="6"
+                  strokeWidth="7"
                   strokeLinecap="round"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeOffset}
@@ -98,10 +98,10 @@ export default function HeroSection({ currentUser, latestAnalysis, previousAnaly
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               {latestScore !== null ? (
                 <>
-                  <span className="text-4xl font-extrabold text-white font-display tabular-nums tracking-tighter leading-none">
+                  <span className="text-4xl font-extrabold text-white font-display tabular-nums tracking-tighter leading-none mb-1">
                     {displayScore}
                   </span>
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mt-1">ATS Score</span>
+                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">ATS Score</span>
                 </>
               ) : (
                 <>

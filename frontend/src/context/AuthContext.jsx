@@ -113,6 +113,7 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [authStatusChecked, setAuthStatusChecked] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(null);
+  const [firebaseInitialized, setFirebaseInitialized] = useState(false);
 
   // Set up default headers for all axios requests
   useEffect(() => {
@@ -143,7 +144,6 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  // Listen for Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
@@ -173,10 +173,12 @@ export const AuthProvider = ({ children }) => {
             }
           } catch (err) {
             console.error("Error authenticating with backend:", err);
-            // Don't set error state here to avoid showing error message on initial load
           }
         }
       }
+      
+      // Finally, set firebase as initialized
+      setFirebaseInitialized(true);
     });
     
     return () => unsubscribe();
@@ -210,12 +212,32 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
-      setLoading(false);
-      setAuthStatusChecked(true);
+      // If we have a token, we verified it (or it failed), so auth status is checked.
+      // If we DON'T have a token, we must wait for Firebase to initialize before declaring auth checked.
+      if (token) {
+        setLoading(false);
+        setAuthStatusChecked(true);
+      }
     };
 
     checkAuthStatus();
   }, []);
+
+  // When firebase initializes, if we didn't have a token, we can now safely declare auth status checked
+  useEffect(() => {
+    if (firebaseInitialized) {
+      // If we don't have a token AND we don't have a Firebase user, we are definitely logged out.
+      // If we DO have a Firebase user, the onAuthStateChanged logic above has already fetched the 
+      // backend token and called login(), or it failed. Either way, we're done checking.
+      if (!localStorage.getItem('token') && !firebaseUser) {
+        setLoading(false);
+        setAuthStatusChecked(true);
+      } else if (!localStorage.getItem('token') && firebaseUser && !currentUser) {
+        // Wait, the backend sync might still be in progress, so we don't do anything here yet.
+        // Once login() finishes, it will set loading to false.
+      }
+    }
+  }, [firebaseInitialized, firebaseUser, currentUser]);
 
   // Function to handle login
   const login = async (userData, token) => {
