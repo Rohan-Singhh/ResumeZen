@@ -94,22 +94,22 @@ export default function DashboardProfileEdit() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Your Profile</h1>
+      <div className="bg-zinc-900/30 rounded-xl p-6 border border-white/10 backdrop-blur-md">
+        <h1 className="text-2xl font-bold text-zinc-100 mb-6 font-display">Edit Your Profile</h1>
         
         {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
+          <div className="mb-4 p-3 bg-red-950/20 text-red-400 border border-red-500/20 rounded-xl text-sm">
             {error}
           </div>
         )}
         
         {submitSuccess && (
           <motion.div 
-            className="mb-4 p-3 bg-green-50 text-green-700 rounded-md flex items-center"
+            className="mb-4 p-3 bg-green-950/20 text-green-400 border border-green-500/20 rounded-xl flex items-center text-sm"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <CheckCircleIcon className="h-5 w-5 mr-2" />
+            <CheckCircleIcon className="h-5 w-5 mr-2 text-green-400" />
             Profile updated successfully!
           </motion.div>
         )}
@@ -118,10 +118,10 @@ export default function DashboardProfileEdit() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-purple-300 mb-4">Basic Information</h3>
               
               <div className="mb-4">
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="fullName" className="block text-sm font-medium text-zinc-300 mb-1">
                   Full Name
                 </label>
                 <input
@@ -131,13 +131,13 @@ export default function DashboardProfileEdit() {
                   value={formData.fullName}
                   onChange={handleInputChange}
                   onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
                   placeholder="John Doe"
                 />
               </div>
               
               <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">
                   Email Address
                 </label>
                 <input
@@ -146,30 +146,30 @@ export default function DashboardProfileEdit() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-gray-100 text-gray-500 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-white/5 rounded-xl bg-zinc-950/20 text-zinc-500 cursor-not-allowed"
                   placeholder="john@example.com"
                   disabled
                 />
-                <p className="mt-1 text-xs text-gray-500">Email address cannot be changed</p>
+                <p className="mt-1.5 text-xs text-zinc-500 font-medium">Email address cannot be changed</p>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="mobileNumber" className="block text-sm font-medium text-zinc-300 mb-1">
                   Phone Number
                 </label>
                 <input
-                  type="tel"
+                  type="text"
                   id="mobileNumber"
                   name="mobileNumber"
                   value={formData.mobileNumber}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
                   placeholder="+1 (123) 456-7890"
                 />
               </div>
               
               <div className="mb-4">
-                <label htmlFor="occupation" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="occupation" className="block text-sm font-medium text-zinc-300 mb-1">
                   Occupation / Role
                 </label>
                 <input
@@ -179,13 +179,13 @@ export default function DashboardProfileEdit() {
                   value={formData.occupation}
                   onChange={handleInputChange}
                   onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
                   placeholder="Software Engineer"
                 />
               </div>
               
               <div className="mb-4">
-                <label htmlFor="graduationYear" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="graduationYear" className="block text-sm font-medium text-zinc-300 mb-1">
                   Experience Level / Graduation Year
                 </label>
                 <input
@@ -198,7 +198,7 @@ export default function DashboardProfileEdit() {
                     if (!isValidGradYear(e.target.value)) setError('Please enter a valid graduation year format');
                     else setError('');
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
                   placeholder="5 years experience / 2022"
                 />
               </div>
@@ -206,10 +206,10 @@ export default function DashboardProfileEdit() {
             
             {/* Additional Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Additional Information</h3>
+              <h3 className="text-lg font-semibold text-purple-300 mb-4">Additional Information</h3>
               
               <div className="mb-4">
-                <label htmlFor="linkedin" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="linkedin" className="block text-sm font-medium text-zinc-300 mb-1">
                   LinkedIn Profile
                 </label>
                 <input
@@ -222,13 +222,13 @@ export default function DashboardProfileEdit() {
                     if (!isValidUrl(e.target.value)) setError('Please enter a valid LinkedIn URL');
                     else setError('');
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
                   placeholder="https://linkedin.com/in/username"
                 />
               </div>
               
               <div className="mb-4">
-                <label htmlFor="github" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="github" className="block text-sm font-medium text-zinc-300 mb-1">
                   GitHub Profile
                 </label>
                 <input
@@ -241,13 +241,13 @@ export default function DashboardProfileEdit() {
                     if (!isValidUrl(e.target.value)) setError('Please enter a valid GitHub URL');
                     else setError('');
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
                   placeholder="https://github.com/username"
                 />
               </div>
               
               <div className="mb-4">
-                <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="website" className="block text-sm font-medium text-zinc-300 mb-1">
                   Personal Website
                 </label>
                 <input
@@ -260,13 +260,13 @@ export default function DashboardProfileEdit() {
                     if (!isValidUrl(e.target.value)) setError('Please enter a valid website URL');
                     else setError('');
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
                   placeholder="https://yourwebsite.com"
                 />
               </div>
               
               <div className="mb-4">
-                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="bio" className="block text-sm font-medium text-zinc-300 mb-1">
                   Professional Bio
                 </label>
                 <textarea
@@ -276,7 +276,7 @@ export default function DashboardProfileEdit() {
                   onChange={handleInputChange}
                   onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
                   rows={5}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white text-gray-900 min-h-[120px]"
+                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 min-h-[120px]"
                   placeholder="Tell us about yourself, your experience, and your career goals."
                 ></textarea>
               </div>
@@ -286,7 +286,7 @@ export default function DashboardProfileEdit() {
           <div className="mt-8 flex justify-end">
             <motion.button
               type="submit"
-              className="px-6 py-2 bg-primary text-white rounded-lg font-medium inline-flex items-center disabled:bg-gray-400"
+              className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-semibold inline-flex items-center disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed shadow-md shadow-purple-500/10"
               disabled={isSubmitting}
               whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
               whileTap={{ scale: isSubmitting ? 1 : 0.95 }}

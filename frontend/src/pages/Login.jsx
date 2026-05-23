@@ -8,18 +8,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 // Page transition variants
 const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 20,
-  },
-  in: {
-    opacity: 1,
-    y: 0,
-  },
-  exit: {
-    opacity: 0,
-    y: -20,
-  }
+  initial: { opacity: 0 },
+  in: { opacity: 1 },
+  exit: { opacity: 0 }
 };
 
 export default function Login() {
@@ -29,32 +20,24 @@ export default function Login() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const loginBoxRef = useRef(null);
   const navigatingRef = useRef(false);
-  // Keep reference to loading context for backward compatibility
   const { setLoading } = useLoading();
 
-  // Get the redirect location from state, if any
   const { from } = location.state || { from: { pathname: '/dashboard' } };
 
-  // Check if user is already authenticated with Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsCheckingAuth(false);
       if (user) {
         console.log("User is already authenticated with Firebase:", user.email);
-        // If user is already authenticated, they can proceed directly
-        // The AuthContext will handle getting the token from localStorage
       }
     });
     
     return () => unsubscribe();
   }, [navigate]);
 
-  // Consolidated useEffect to handle both loading state management and cleanup
   useEffect(() => {
-    // Get a ref to the current navigate function to avoid stale closures
     const navigateFunction = navigate;
     
-    // Add click outside handler
     const handleClickOutside = (event) => {
       if (loginBoxRef.current && !loginBoxRef.current.contains(event.target)) {
         navigateFunction('/');
@@ -63,91 +46,84 @@ export default function Login() {
     
     document.addEventListener('mousedown', handleClickOutside);
     
-    // Cleanup function for unmounting
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []); // Empty dependency array since we capture values at the start
+  }, []);
 
   const handleError = useCallback((message) => {
     setError(message);
   }, []);
   
-  // Mark when we're navigating away to prevent turning off global loading
   const handleNavigate = useCallback(() => {
     navigatingRef.current = true;
-    console.log('Login: Navigating to dashboard or original location', from.pathname);
     
-    // Ensure loading state is off before navigation
     setLoading(false);
     
-    // Add a small delay to ensure loading state is updated before navigation
     setTimeout(() => {
-      // Navigate to the dashboard after login or to the original location if redirected
       navigate(from.pathname, { replace: true });
-      console.log('Login: Navigation complete');
     }, 100);
   }, [navigate, from, setLoading]);
 
-  // Decorative elements for visual appeal
   const Decorations = () => (
     <>
-      {/* Top-left decoration */}
-      <div className="absolute top-0 left-0 w-64 h-64 bg-primary opacity-10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-      
-      {/* Bottom-right decoration */}
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-500 opacity-10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
-      
-      {/* Extra decorations */}
-      <div className="absolute top-1/4 right-1/4 w-6 h-6 bg-yellow-400 opacity-70 rounded-full blur-sm"></div>
-      <div className="absolute bottom-1/3 left-1/4 w-4 h-4 bg-purple-500 opacity-70 rounded-full blur-sm"></div>
-      <div className="absolute top-2/3 right-1/3 w-5 h-5 bg-primary opacity-70 rounded-full blur-sm"></div>
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[150px] pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-accent/10 rounded-full blur-[120px] pointer-events-none translate-y-1/3 -translate-x-1/3"></div>
+      <div className="absolute top-1/3 left-1/4 w-32 h-32 bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
     </>
   );
 
-  // If checking auth, show a loading indicator
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-dark-bg selection:bg-primary/30">
+        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
     <motion.div 
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden relative"
+      className="min-h-screen flex items-center justify-center bg-dark-bg selection:bg-primary/30 overflow-hidden relative"
       initial="initial"
       animate="in"
       exit="exit"
       variants={pageVariants}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.6 }}
     >
-      {/* Decorative elements */}
       <Decorations />
       
-      {/* Login container */}
-      <div className="relative z-10 w-full max-w-md px-4 py-8">
+      {/* Background Grid Pattern */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)] pointer-events-none"></div>
+
+      <div className="relative z-10 w-full max-w-[440px] px-4 py-8">
+        
         {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl shadow-lg mb-4">
-            <span className="text-white text-2xl font-bold">RZ</span>
+        <motion.div 
+          className="flex flex-col items-center justify-center mb-10 cursor-pointer group"
+          onClick={() => navigate('/')}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <div className="flex items-center justify-center w-16 h-16 bg-white/5 border border-white/10 rounded-2xl shadow-glow-primary/20 mb-6 group-hover:scale-105 group-hover:bg-white/10 transition-all duration-300">
+             <span className="text-white text-2xl font-bold font-display">RZ</span>
           </div>
-        </div>
+          <h2 className="text-3xl font-extrabold text-white font-display tracking-tight text-center">
+            Welcome to <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-secondary animate-shimmer bg-[length:200%_auto]">ResumeZen</span>
+          </h2>
+        </motion.div>
         
         {/* Main card */}
         <motion.div 
           ref={loginBoxRef}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-full bg-white rounded-3xl shadow-xl overflow-hidden"
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+          className="w-full bg-dark-card border border-white/10 rounded-3xl shadow-2xl backdrop-blur-xl overflow-hidden relative"
         >
-          {/* Card header with gradient */}
-          <div className="bg-gradient-to-r from-primary/90 to-blue-600/90 px-8 py-6 text-white">
-            <h1 className="text-3xl font-bold mb-1">Welcome</h1>
-            <p className="text-blue-100">Sign in to your ResumeZen account</p>
-          </div>
+          {/* Card Top Border Glow */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-secondary"></div>
 
           {/* Error message */}
           <AnimatePresence>
@@ -156,20 +132,23 @@ export default function Login() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="px-8 py-4 bg-red-50"
+                className="bg-red-500/10 border-b border-red-500/20"
               >
-                <p className="text-red-600 text-sm flex items-center">
-                  <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
+                <div className="px-6 py-4 flex items-start">
+                  <svg className="w-5 h-5 mr-3 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {error}
-                </p>
+                  <p className="text-red-400 text-sm font-medium leading-relaxed">{error}</p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Login form content */}
-          <div className="px-8 py-6">
+          <div className="p-8 sm:p-10">
+             <p className="text-gray-400 text-center mb-8 font-light text-sm">
+                Get started or sign in to your account. We'll handle the rest.
+             </p>
             <LoginOptions 
               onError={handleError}
               onSuccessNavigation={handleNavigate} 
@@ -178,10 +157,15 @@ export default function Login() {
         </motion.div>
         
         {/* Footer */}
-        <div className="text-center mt-6 text-gray-500 text-sm">
+        <motion.div 
+          className="text-center mt-8 text-gray-500 text-xs font-medium"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
           <p>© {new Date().getFullYear()} ResumeZen. All rights reserved.</p>
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
-} 
+}

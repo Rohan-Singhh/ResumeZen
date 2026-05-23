@@ -95,7 +95,7 @@ const reviews = [
 
 const Star = ({ filled }) => (
   <svg
-    className={`h-4 w-4 inline-block ${filled ? 'text-yellow-400' : 'text-gray-300'}`}
+    className={`h-4 w-4 inline-block ${filled ? 'text-yellow-400 fill-yellow-400' : 'text-zinc-700'}`}
     fill={filled ? 'currentColor' : 'none'}
     viewBox="0 0 20 20"
     stroke="currentColor"
@@ -103,44 +103,44 @@ const Star = ({ filled }) => (
     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.967c.3.921-.755 1.688-1.54 1.118l-3.38-2.455a1 1 0 00-1.175 0l-3.38 2.455c-.784.57-1.838-.197-1.54-1.118l1.287-3.967a1 1 0 00-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z" />
   </svg>
 );
-
+ 
 const DashboardCustomerReviews = () => {
   const [startIdx, setStartIdx] = useState(0);
   const visibleCount = 4;
-
+ 
   useEffect(() => {
     const interval = setInterval(() => {
       setStartIdx((prev) => (prev + visibleCount) % reviews.length);
     }, 7000);
     return () => clearInterval(interval);
   }, []);
-
+ 
   const visibleReviews = [];
   for (let i = 0; i < visibleCount; i++) {
     visibleReviews.push(reviews[(startIdx + i) % reviews.length]);
   }
-
+ 
   return (
     <div className="my-10 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center tracking-tight">What international students say</h2>
+      <h2 className="text-2xl font-bold text-zinc-100 mb-6 text-center tracking-tight font-display">What international students say</h2>
       <div className="grid gap-8 md:grid-cols-2">
         {visibleReviews.map((review, idx) => (
           <div
             key={idx}
-            className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-2xl p-6 shadow-lg flex flex-col items-center transition-transform hover:scale-105 duration-300"
+            className="bg-zinc-900/30 border border-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg flex flex-col items-center transition-all hover:scale-102 hover:border-purple-500/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.05)] duration-300"
           >
             <div className="flex items-center mb-3">
               <img
                 src={review.img}
                 alt={review.name}
-                className="w-12 h-12 rounded-full border-2 border-primary shadow-sm object-cover mr-3"
+                className="w-12 h-12 rounded-full border-2 border-purple-500 shadow-sm object-cover mr-3"
               />
               <span className="text-3xl mr-2">{review.country}</span>
-              <span className="font-semibold text-primary text-lg mr-2">{review.name}</span>
-              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 font-medium border border-gray-200">{review.school}</span>
+              <span className="font-semibold text-purple-300 text-lg mr-2">{review.name}</span>
+              <span className="text-xs bg-white/5 px-2 py-0.5 rounded-full text-zinc-300 font-semibold border border-white/10">{review.school}</span>
             </div>
-            <p className="text-gray-700 italic text-center mb-3">"{review.text}"</p>
-            <div className="flex items-center">
+            <p className="text-zinc-300 italic text-center mb-3">"{review.text}"</p>
+            <div className="flex items-center gap-0.5">
               {[1,2,3,4,5].map(i => <Star key={i} filled={i <= review.rating} />)}
             </div>
           </div>

@@ -64,7 +64,7 @@ export default function Hero({ onShowSuccessStories }) {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              Build Resume for Free
+              Get Started
               <ArrowRightIcon className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
             </motion.button>
             

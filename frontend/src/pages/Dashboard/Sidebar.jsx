@@ -202,19 +202,19 @@ export default function Sidebar({ onLogout }) {
       {/* Sidebar for Desktop */}
       <motion.div 
         ref={sidebarRef}
-        className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:z-20 bg-white/70 backdrop-blur-xl shadow-2xl border-r border-gray-200 rounded-tr-3xl rounded-br-3xl overflow-hidden overflow-x-hidden sidebar-glass"
+        className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:z-20 bg-zinc-950/50 backdrop-blur-xl border-r border-white/5 rounded-tr-3xl rounded-br-3xl overflow-hidden overflow-x-hidden"
         variants={sidebarVariants}
         initial={isOpen ? "open" : "closed"}
         animate={isOpen ? "open" : "closed"}
         style={{"--sidebar-width": "18rem", "--sidebar-collapsed-width": "5rem"}}
       >
-        <div className="flex flex-col flex-grow overflow-y-auto overflow-x-hidden relative">
+        <div className="flex flex-col flex-grow overflow-y-auto overflow-x-hidden relative bg-zinc-950/30">
           {/* Logo and App Name */}
-          <div className="p-4 flex items-center gap-2 border-b border-gray-200 bg-white/60 backdrop-blur-md">
+          <div className="p-4 flex items-center gap-2 border-b border-white/5 bg-zinc-950/60 backdrop-blur-md">
             {/* Responsive Profile Avatar (toggles sidebar) */}
             <motion.div
-              className="h-11 w-11 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 text-white flex items-center justify-center font-bold text-2xl shadow-lg ring-4 ring-purple-200 cursor-pointer animate-pulse-glow"
-              whileHover={{ scale: 1.12, boxShadow: '0 0 0 6px #f472b6' }}
+              className="h-11 w-11 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 text-white flex items-center justify-center font-bold text-2xl shadow-lg ring-4 ring-purple-500/20 cursor-pointer animate-pulse-glow"
+              whileHover={{ scale: 1.12, boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)' }}
               whileTap={{ scale: 0.95 }}
               onClick={toggleSidebar}
               title="Toggle sidebar"
@@ -225,7 +225,7 @@ export default function Sidebar({ onLogout }) {
                 variants={contentVariants}
               initial={isOpen ? "open" : "closed"}
               animate={isOpen ? "open" : "closed"}
-              className="ml-3 text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-pink-600 to-blue-600 drop-shadow-lg"
+              className="ml-3 text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 drop-shadow-lg"
             >
               ResumeZen
             </motion.span>
@@ -233,19 +233,19 @@ export default function Sidebar({ onLogout }) {
           
           {/* User Profile Section - Only when expanded */}
           {isOpen && (
-            <div className="px-4 py-6 border-b border-gray-200 flex flex-col items-center gap-2 bg-white/40 backdrop-blur-sm">
+            <div className="px-4 py-6 border-b border-white/5 flex flex-col items-center gap-2 bg-zinc-950/20 backdrop-blur-sm">
               {/* Responsive Profile Avatar (toggles sidebar) */}
               <motion.div
                 className="relative flex items-center justify-center cursor-pointer"
-                whileHover={{ scale: 1.08, boxShadow: '0 0 0 6px #f472b6' }}
+                whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={toggleSidebar}
                 title="Toggle sidebar"
               >
-                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-400 via-pink-300 to-blue-300 flex items-center justify-center shadow-xl ring-4 ring-pink-200 animate-pulse-glow">
+                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 flex items-center justify-center shadow-xl ring-4 ring-purple-500/20 animate-pulse-glow">
                   <span className="text-2xl font-bold text-white drop-shadow-lg">{getInitials()}</span>
                 </div>
-                <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-white animate-pulse"></span>
+                <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-zinc-950 animate-pulse"></span>
               </motion.div>
                 <motion.div 
                   variants={contentVariants}
@@ -253,10 +253,10 @@ export default function Sidebar({ onLogout }) {
                   animate="open"
                 className="text-center"
                 >
-                <p className="text-base font-semibold text-gray-800">
+                <p className="text-base font-semibold text-zinc-100">
                     {currentUser?.name || 'User'}
                   </p>
-                  <p className="text-xs text-gray-500 truncate max-w-[160px]">
+                  <p className="text-xs text-zinc-400 truncate max-w-[160px]">
                     {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
                   </p>
                 </motion.div>
@@ -272,10 +272,10 @@ export default function Sidebar({ onLogout }) {
                   to={item.path}
                   end={item.path === '/dashboard'}
                   className={({ isActive }) => 
-                    `group flex items-center px-3 py-3 rounded-xl text-base font-medium transition-all duration-300 shadow-sm ${
+                    `group flex items-center px-3 py-3 rounded-xl text-base font-medium transition-all duration-300 border-l-2 ${
                       isActive || isNavItemActive(item.path)
-                        ? 'bg-gradient-to-r from-purple-100 via-pink-100 to-blue-100 text-purple-700 scale-105 shadow-lg'
-                        : 'text-gray-600 hover:text-purple-700 hover:bg-gradient-to-r hover:from-purple-50 hover:via-pink-50 hover:to-blue-50 hover:scale-105'
+                        ? 'border-purple-500 bg-white/5 text-purple-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] shadow-purple-500/5'
+                        : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/5'
                     }`
                   }
                 >
@@ -305,8 +305,8 @@ export default function Sidebar({ onLogout }) {
           <div className="p-4 mt-auto">
             <motion.button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-3 px-3 py-3 text-base rounded-xl text-purple-500 bg-white/60 hover:bg-gradient-to-r hover:from-purple-50 hover:via-pink-50 hover:to-blue-50 shadow-md hover:shadow-xl transition-all duration-300 font-semibold"
-              whileHover={{ scale: 1.07, backgroundColor: '#f3e8ff' }}
+              className="w-full flex items-center justify-center gap-3 px-3 py-3 text-base rounded-xl text-zinc-400 bg-white/5 border border-white/5 hover:text-white hover:bg-white/10 shadow-md hover:shadow-xl transition-all duration-300 font-semibold"
+              whileHover={{ scale: 1.07 }}
               whileTap={{ scale: 0.97 }}
             >
               <ArrowRightOnRectangleIcon className="h-6 w-6" />
@@ -334,7 +334,7 @@ export default function Sidebar({ onLogout }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.6 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-gradient-to-br from-purple-400 via-pink-300 to-blue-300 blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setIsMobileMenuOpen(false)}
             />
             
@@ -344,37 +344,37 @@ export default function Sidebar({ onLogout }) {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="fixed top-0 bottom-0 left-0 w-72 bg-white/80 backdrop-blur-2xl z-50 shadow-2xl flex flex-col md:hidden rounded-tr-3xl rounded-br-3xl overflow-hidden"
+              className="fixed top-0 bottom-0 left-0 w-72 bg-zinc-950/90 backdrop-blur-2xl border-r border-white/10 z-50 shadow-2xl flex flex-col md:hidden rounded-tr-3xl rounded-br-3xl overflow-hidden"
             >
               {/* Mobile Header with responsive avatar */}
-              <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-white/60 backdrop-blur-md">
+              <div className="flex items-center justify-between p-5 border-b border-white/5 bg-zinc-950/60 backdrop-blur-md">
                 <div className="flex items-center gap-2">
                   <motion.div
-                    className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 text-white flex items-center justify-center font-bold text-xl shadow-lg ring-2 ring-purple-200 cursor-pointer"
-                    whileHover={{ scale: 1.12, boxShadow: '0 0 0 6px #f472b6' }}
+                    className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 text-white flex items-center justify-center font-bold text-xl shadow-lg ring-2 ring-purple-500/20 cursor-pointer"
+                    whileHover={{ scale: 1.12 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setIsMobileMenuOpen(false)}
                     title="Close menu"
                   >
                     R
                   </motion.div>
-                  <span className="ml-2 text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-pink-600 to-blue-600 drop-shadow-lg">
+                  <span className="ml-2 text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 drop-shadow-lg">
                     ResumeZen
                   </span>
                 </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 rounded-full text-purple-400 hover:bg-purple-100 shadow-md transition-all duration-200"
+                  className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200"
                 >
                   <XMarkIcon className="h-6 w-6" />
                 </button>
               </div>
               
               {/* Mobile User Profile with responsive avatar */}
-              <div className="p-5 border-b border-gray-200 flex flex-col items-center gap-2 bg-white/40 backdrop-blur-sm">
+              <div className="p-5 border-b border-white/5 flex flex-col items-center gap-2 bg-zinc-950/40 backdrop-blur-sm">
                 <motion.div
-                  className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-400 via-pink-300 to-blue-300 flex items-center justify-center shadow-xl ring-2 ring-pink-200 cursor-pointer"
-                  whileHover={{ scale: 1.08, boxShadow: '0 0 0 6px #f472b6' }}
+                  className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-50 via-pink-400 to-blue-400 flex items-center justify-center shadow-xl ring-2 ring-purple-500/20 cursor-pointer"
+                  whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsMobileMenuOpen(false)}
                   title="Close menu"
@@ -382,10 +382,10 @@ export default function Sidebar({ onLogout }) {
                   <span className="text-xl font-bold text-white drop-shadow-lg">{getInitials()}</span>
                 </motion.div>
                 <div className="text-center">
-                  <p className="text-base font-semibold text-gray-800">
+                  <p className="text-base font-semibold text-zinc-100">
                       {currentUser?.name || 'User'}
                     </p>
-                    <p className="text-xs text-gray-500 truncate max-w-[160px]">
+                    <p className="text-xs text-zinc-400 truncate max-w-[160px]">
                       {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
                     </p>
                 </div>
@@ -401,10 +401,10 @@ export default function Sidebar({ onLogout }) {
                       end={item.path === '/dashboard'}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={({ isActive }) => 
-                        `group flex items-center px-4 py-3 rounded-xl text-base font-medium transition-all duration-300 shadow-sm ${
+                        `group flex items-center px-4 py-3 rounded-xl text-base font-medium transition-all duration-300 border-l-2 ${
                           isActive || isNavItemActive(item.path)
-                            ? 'bg-gradient-to-r from-purple-100 via-pink-100 to-blue-100 text-purple-700 scale-105 shadow-lg'
-                            : 'text-gray-600 hover:text-purple-700 hover:bg-gradient-to-r hover:from-purple-50 hover:via-pink-50 hover:to-blue-50 hover:scale-105'
+                            ? 'border-purple-500 bg-white/5 text-purple-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
+                            : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/5'
                         }`
                       }
                     >
@@ -422,11 +422,11 @@ export default function Sidebar({ onLogout }) {
               </nav>
               
               {/* Mobile Logout */}
-              <div className="p-5 border-t border-gray-200">
+              <div className="p-5 border-t border-white/5">
                 <motion.button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 text-base rounded-xl text-purple-500 bg-white/60 hover:bg-gradient-to-r hover:from-purple-50 hover:via-pink-50 hover:to-blue-50 shadow-md hover:shadow-xl transition-all duration-300 font-semibold"
-                  whileHover={{ scale: 1.07, backgroundColor: '#f3e8ff' }}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 text-base rounded-xl text-zinc-400 bg-white/5 hover:text-white hover:bg-white/10 shadow-md transition-all duration-300 font-semibold"
+                  whileHover={{ scale: 1.07 }}
                   whileTap={{ scale: 0.97 }}
                 >
                   <ArrowRightOnRectangleIcon className="h-6 w-6" />

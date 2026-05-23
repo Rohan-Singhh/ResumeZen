@@ -41,21 +41,21 @@ const DashboardGreetingSection = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 mb-6">
+    <div className="bg-zinc-900/30 rounded-xl p-5 border border-white/10 mb-6 backdrop-blur-md">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {currentUser?.name?.split(' ')[0] || 'User'}
+          <h1 className="text-2xl font-bold text-zinc-100">
+            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400">{currentUser?.name?.split(' ')[0] || 'User'}</span>
           </h1>
           <div className="flex items-center mt-2">
-            <ClockIcon className="h-4 w-4 text-gray-400 mr-1" />
-            <p className="text-sm text-gray-500">
+            <ClockIcon className="h-4 w-4 text-zinc-500 mr-1" />
+            <p className="text-sm text-zinc-400">
               Last active: {formatLastActive(lastActive)}
             </p>
           </div>
         </div>
         <div className="flex-shrink-0">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+          <div className="w-12 h-12 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-300 font-semibold shadow-[0_0_15px_rgba(168,85,247,0.15)]">
             {getInitials()}
           </div>
         </div>

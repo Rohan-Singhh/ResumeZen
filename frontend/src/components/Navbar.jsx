@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLenis } from '@studio-freight/react-lenis';
 
 const navLinks = [
   { name: 'Features', id: 'features' },
@@ -17,6 +18,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
+  const lenis = useLenis();
 
   const isLandingPage = location.pathname === '/';
 
@@ -37,14 +39,18 @@ export default function Navbar() {
     const element = document.getElementById(sectionId);
     if (!element) return;
 
-    const offset = 88;
-    const elementPosition = element.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth'
-    });
+    if (lenis) {
+      lenis.scrollTo(element, { offset: -88 });
+    } else {
+      const offset = 88;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   };
 
   const handleSectionNavigation = (sectionId) => {
@@ -120,24 +126,14 @@ export default function Navbar() {
               )}
             </>
           ) : (
-            <>
-              <motion.button
-                onClick={() => navigate('/login')}
-                className="text-gray-300 hover:text-white font-semibold py-2.5 px-4 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Log in
-              </motion.button>
-              <motion.button
-                onClick={() => navigate('/login')}
-                className="bg-white text-dark-bg hover:shadow-glow-primary font-bold py-2.5 px-6 rounded-lg transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Sign up free
-              </motion.button>
-            </>
+            <motion.button
+              onClick={() => navigate('/login')}
+              className="bg-white text-dark-bg hover:shadow-glow-primary font-bold py-2.5 px-6 rounded-lg transition-all duration-300"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Get Started
+            </motion.button>
           )}
         </div>
 
@@ -194,15 +190,9 @@ export default function Navbar() {
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={() => navigate('/login')}
-                    className="bg-white/10 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-center border border-white/10"
-                  >
-                    Log In
-                  </button>
-                  <button
-                    onClick={() => navigate('/login')}
                     className="bg-white text-dark-bg font-bold py-3 px-4 rounded-lg transition duration-300 text-center"
                   >
-                    Sign Up Free
+                    Get Started
                   </button>
                 </div>
               )}

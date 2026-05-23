@@ -284,11 +284,11 @@ export default function DashboardPlan() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-6">
+      <div className="bg-zinc-900/30 rounded-xl p-6 border border-white/10 mb-6 backdrop-blur-md">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Plan</h1>
-            <p className="text-gray-600">
+            <h1 className="text-2xl font-bold text-zinc-100 mb-2 font-display">Choose Your Plan</h1>
+            <p className="text-zinc-400 text-sm">
               Select the plan that best fits your needs. Upgrade anytime.
             </p>
           </div>
@@ -296,7 +296,7 @@ export default function DashboardPlan() {
           {/* Reload button */}
           <button 
             onClick={handleReloadPlans}
-            className="text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg"
+            className="text-sm px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/15 text-zinc-300 rounded-lg transition-colors font-semibold"
           >
             Reload Plans
           </button>
@@ -304,57 +304,57 @@ export default function DashboardPlan() {
       </div>
       
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+        <div className="bg-red-950/20 border-l-4 border-red-500 p-4 mb-6 rounded-lg border-red-500/25">
           <div className="flex">
-            <ExclamationCircleIcon className="h-5 w-5 text-red-500 mr-2" />
-            <p className="text-red-700">{error}</p>
+            <ExclamationCircleIcon className="h-5 w-5 text-red-400 mr-2" />
+            <p className="text-red-400 text-sm">{error}</p>
           </div>
         </div>
       )}
 
       {purchaseStatus.success && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-md flex items-center">
-          <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-          <p className="text-green-700">Purchase successful! Your plan has been activated.</p>
+        <div className="bg-green-950/20 border-l-4 border-green-500 p-4 mb-6 rounded-lg border-green-500/25 flex items-center">
+          <CheckCircleIcon className="h-5 w-5 text-green-400 mr-2" />
+          <p className="text-green-400 text-sm">Purchase successful! Your plan has been activated.</p>
         </div>
       )}
 
       {purchaseStatus.error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
-          <p className="text-red-700">{purchaseStatus.error}</p>
+        <div className="bg-red-950/20 border-l-4 border-red-500 p-4 mb-6 rounded-lg border-red-500/25">
+          <p className="text-red-400 text-sm">{purchaseStatus.error}</p>
         </div>
       )}
       
       {/* Current Plan Info (if applicable) */}
       {userPlans && userPlans.length > 0 && (
-        <div className="bg-green-50 rounded-xl shadow-sm p-6 border border-green-200 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-            <CheckCircleIcon className="h-6 w-6 text-green-500 mr-2" />
+        <div className="bg-green-950/15 rounded-xl p-6 border border-green-500/20 mb-6 backdrop-blur-md">
+          <h2 className="text-xl font-semibold text-zinc-100 flex items-center">
+            <CheckCircleIcon className="h-6 w-6 text-green-400 mr-2" />
             Your Current Plan
           </h2>
           
           <div className="mt-4">
             {userPlans.map((userPlan, index) => (
-              <div key={index} className="bg-white rounded-lg p-4 mb-2 border border-green-100">
+              <div key={index} className="bg-green-950/10 rounded-lg p-4 mb-2 border border-green-500/10">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                   <div>
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-zinc-200">
                       {userPlan.planId?.name || "Unknown Plan"}
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Credits remaining: <span className="font-medium">
+                    <p className="text-sm text-zinc-400 mt-1">
+                      Credits remaining: <span className="font-semibold text-zinc-200">
                         {userPlan.planId?.isUnlimited ? 'Unlimited' : userPlan.creditsLeft || 0}
                       </span>
                     </p>
                     {userPlan.expiresAt && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-zinc-400">
                         Expires: {new Date(userPlan.expiresAt).toLocaleDateString()}
                       </p>
                     )}
                   </div>
                   <div className="text-right mt-2 md:mt-0">
-                    <p className="text-sm text-gray-500">Purchased</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs text-zinc-500">Purchased</p>
+                    <p className="text-sm text-zinc-400">
                       {new Date(userPlan.purchasedAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -367,39 +367,39 @@ export default function DashboardPlan() {
       
       {/* Active Subscription Warning Modal */}
       {showSubscriptionWarning && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full animate-fade-in">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-white/10 rounded-xl p-6 max-w-md w-full shadow-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Active Subscription</h3>
+              <h3 className="text-xl font-semibold text-zinc-100">Active Subscription</h3>
               <button 
                 onClick={closeSubscriptionWarning} 
-                className="p-1 rounded-full hover:bg-gray-100"
+                className="p-1 rounded-lg hover:bg-white/5 transition-colors"
               >
-                <XMarkIcon className="h-6 w-6 text-gray-500" />
+                <XMarkIcon className="h-6 w-6 text-zinc-400 hover:text-zinc-200" />
               </button>
             </div>
             
-            <div className="mb-6">
+            <div className="mb-6 text-sm">
               <div className="flex items-start mb-4">
                 <ExclamationCircleIcon className="h-6 w-6 text-amber-500 mr-2 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-gray-700 mb-2">
-                    You already have an active subscription plan <span className="font-semibold">({activePlanInfo?.name})</span> that expires on <span className="font-semibold">{activePlanInfo?.expiresAt}</span>.
+                  <p className="text-zinc-300 mb-2">
+                    You already have an active subscription plan <span className="font-semibold text-zinc-100">({activePlanInfo?.name})</span> that expires on <span className="font-semibold text-zinc-100">{activePlanInfo?.expiresAt}</span>.
                   </p>
-                  <p className="text-gray-700">
+                  <p className="text-zinc-300">
                     You cannot purchase a new plan until your current subscription ends.
                   </p>
                 </div>
               </div>
               
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r my-4">
-                <p className="text-sm text-blue-700">
+              <div className="bg-blue-950/20 border-l-4 border-blue-500 p-4 rounded-r my-4 border-blue-500/25">
+                <p className="text-sm text-blue-300">
                   Your current subscription gives you unlimited access for {activePlanInfo?.durationInDays || 90} days. Enjoy all premium features until your subscription ends.
                 </p>
               </div>
               
-              <p className="text-sm text-gray-600">
-                If you'd like to upgrade or change your plan, please contact our customer support at <a href="mailto:support@resumezen.com" className="text-primary hover:underline">support@resumezen.com</a>.
+              <p className="text-sm text-zinc-400">
+                If you'd like to upgrade or change your plan, please contact our customer support at <a href="mailto:support@resumezen.com" className="text-purple-400 hover:underline">support@resumezen.com</a>.
               </p>
             </div>
             
@@ -408,7 +408,7 @@ export default function DashboardPlan() {
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={closeSubscriptionWarning}
-                className="px-4 py-2 bg-primary text-white rounded-lg font-medium"
+                className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors"
               >
                 I Understand
               </motion.button>
@@ -420,20 +420,20 @@ export default function DashboardPlan() {
       {/* Plans List */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          <p className="mt-4 text-gray-600">Loading plans...</p>
+          <div className="inline-block animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full"></div>
+          <p className="mt-4 text-zinc-400 text-sm">Loading plans...</p>
         </div>
       ) : (
         <>
           {plans.length === 0 ? (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-              <h3 className="text-lg font-medium text-yellow-800 mb-2">No Plans Available</h3>
-              <p className="text-yellow-700 mb-4">
+            <div className="bg-yellow-950/20 border border-yellow-500/20 rounded-xl p-8 text-center">
+              <h3 className="text-lg font-semibold text-yellow-500 mb-2">No Plans Available</h3>
+              <p className="text-yellow-400 text-sm mb-4">
                 We couldn't find any subscription plans at the moment. Please try again later.
               </p>
               <button
                 onClick={handleReloadPlans}
-                className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium"
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-semibold hover:bg-yellow-500 transition-colors"
               >
                 Retry Loading Plans
               </button>
@@ -444,34 +444,34 @@ export default function DashboardPlan() {
               {(plans.length < 3 ? FALLBACK_PLANS : plans).map((plan) => (
                 <motion.div
                   key={plan._id}
-                  className={`relative bg-white rounded-xl shadow-lg border-2 overflow-hidden flex flex-col ${
-                    plan.isSpecial ? 'border-secondary bg-secondary/5' : 
-                    plan.isPopular ? 'border-primary' : 'border-gray-200'
+                  className={`relative bg-zinc-900/30 backdrop-blur-md rounded-2xl shadow-lg border-2 overflow-hidden flex flex-col transition-all hover:scale-102 hover:shadow-[0_0_30px_rgba(168,85,247,0.05)] ${
+                    plan.isSpecial ? 'border-pink-500/50 bg-pink-500/5' : 
+                    plan.isPopular ? 'border-purple-500/50 bg-purple-500/5 shadow-[0_0_20px_rgba(168,85,247,0.08)]' : 'border-white/10'
                   }`}
-                  whileHover={{ y: -5, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                  whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
                 >
                   {/* Popular badge */}
                   {plan.isPopular && (
-                    <div className="absolute -top-0 right-4 bg-primary text-white px-4 py-1 rounded-b-lg text-sm font-semibold">
+                    <div className="absolute -top-0 right-4 bg-purple-600 text-purple-100 px-4 py-1 rounded-b-lg text-xs font-semibold">
                       Most Popular
                     </div>
                   )}
                   
                   {/* Special offer badge */}
                   {plan.isSpecial && (
-                    <div className="absolute -top-0 right-4 bg-secondary text-white px-4 py-1 rounded-b-lg text-sm font-semibold flex items-center gap-1">
+                    <div className="absolute -top-0 right-4 bg-pink-600 text-pink-100 px-4 py-1 rounded-b-lg text-xs font-semibold flex items-center gap-1">
                       <SparklesIcon className="h-4 w-4" />
                       Special Offer
                     </div>
                   )}
                   
                   <div className="p-6 flex-grow">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{plan.name}</h3>
+                    <h3 className="text-xl font-semibold text-zinc-100 mb-2 font-display">{plan.name}</h3>
                     
                     <div className="mb-4">
-                      <span className="text-3xl font-bold text-primary">{formatPrice(plan.price, plan.currency)}</span>
-                      <span className="text-gray-500 text-sm ml-1">
+                      <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">{formatPrice(plan.price, plan.currency)}</span>
+                      <span className="text-zinc-400 text-sm ml-1.5">
                         /{formatPeriod(plan.period, plan._id)}
                       </span>
                     </div>
@@ -479,9 +479,9 @@ export default function DashboardPlan() {
                     <ul className="mb-6 space-y-2">
                       <li className="flex items-start">
                         <CheckCircleIcon className={`h-5 w-5 mr-2 flex-shrink-0 ${
-                          plan.isSpecial ? 'text-secondary' : 'text-primary'
+                          plan.isSpecial ? 'text-pink-400' : 'text-purple-400'
                         } mt-0.5`} />
-                        <span className="text-gray-600">
+                        <span className="text-zinc-300 text-sm">
                           {plan.isUnlimited ? 'Unlimited Resume Checks' : `${plan.credits} Resume ${plan.credits === 1 ? 'Check' : 'Checks'}`}
                         </span>
                       </li>
@@ -491,9 +491,9 @@ export default function DashboardPlan() {
                         plan.features.map((feature, i) => (
                           <li key={i} className="flex items-start">
                             <CheckCircleIcon className={`h-5 w-5 mr-2 flex-shrink-0 ${
-                              plan.isSpecial ? 'text-secondary' : 'text-primary'
+                              plan.isSpecial ? 'text-pink-400' : 'text-purple-400'
                             } mt-0.5`} />
-                            <span className="text-gray-600">{feature}</span>
+                            <span className="text-zinc-300 text-sm">{feature}</span>
                           </li>
                         ))
                       }
@@ -502,16 +502,16 @@ export default function DashboardPlan() {
                   
                   <div className="p-6 pt-0">
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`w-full py-2 rounded-lg font-medium ${
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all shadow ${
                         purchaseStatus.loading 
-                          ? 'bg-gray-200 text-gray-500 relative overflow-hidden' 
+                          ? 'bg-zinc-800 text-zinc-500 relative overflow-hidden' 
                           : plan.isSpecial 
-                            ? 'bg-secondary hover:bg-secondary/90 text-white' 
+                            ? 'bg-pink-600 hover:bg-pink-500 text-white' 
                             : plan.isPopular
-                              ? 'bg-primary hover:bg-primary/90 text-white'
-                              : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-500/10'
+                              : 'bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10'
                       }`}
                       onClick={() => handlePurchase(plan)}
                       disabled={purchaseStatus.loading}
@@ -520,10 +520,10 @@ export default function DashboardPlan() {
                         <>
                           <span>Processing...</span>
                           <span 
-                            className="absolute left-0 top-0 bottom-0 bg-gray-300 opacity-20 animate-shimmer" 
+                            className="absolute left-0 top-0 bottom-0 bg-zinc-700 opacity-20 animate-shimmer" 
                             style={{ 
                               width: '100%',
-                              background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)',
+                              background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)',
                               backgroundSize: '200% 100%'
                             }} 
                           ></span>

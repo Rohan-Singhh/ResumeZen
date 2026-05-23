@@ -8,6 +8,7 @@ import FAQ from '../components/FAQ';
 import Support from '../components/Support';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { ReactLenis } from '@studio-freight/react-lenis';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -48,15 +49,17 @@ export default function Landing() {
   };
 
   return (
-    <main className="bg-white">
-      <Navbar />
-      <Hero onShowSuccessStories={handleShowSuccessStories} />
-      <Features />
-      <Steps />
-      <Pricing />
-      <Reviews />
-      <FAQ />
-      <Support />
-    </main>
+    <ReactLenis root options={{ lerp: 0.1, duration: 1.5, smoothTouch: true }}>
+      <main className="bg-dark-bg text-white selection:bg-primary/30">
+        <Navbar />
+        <Hero onShowSuccessStories={handleShowSuccessStories} />
+        <Features />
+        <Steps />
+        <Pricing />
+        <Reviews />
+        <FAQ />
+        <Support />
+      </main>
+    </ReactLenis>
   );
 }

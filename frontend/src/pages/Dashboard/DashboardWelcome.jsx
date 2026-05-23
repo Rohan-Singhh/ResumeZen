@@ -261,10 +261,10 @@ export default function DashboardWelcome() {
   return (
     <div className="relative">
       {errorMessage && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+        <div className="bg-red-950/20 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
           <div className="flex">
-            <ExclamationCircleIcon className="h-5 w-5 text-red-500 mr-2" />
-            <p className="text-red-700">{errorMessage}</p>
+            <ExclamationCircleIcon className="h-5 w-5 text-red-400 mr-2" />
+            <p className="text-red-400">{errorMessage}</p>
           </div>
         </div>
       )}
@@ -274,14 +274,14 @@ export default function DashboardWelcome() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
           >
             <motion.div
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center relative"
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-8 max-w-md w-full text-center relative"
             >
               <motion.div
                 initial={{ rotate: -10, scale: 1.2 }}
@@ -291,8 +291,8 @@ export default function DashboardWelcome() {
               >
                 📦
               </motion.div>
-              <h4 className="text-2xl font-bold text-red-600 mb-2">File Too Large!</h4>
-              <p className="text-gray-700 mb-4">Your PDF exceeds 1MB. Please upload a smaller file.</p>
+              <h4 className="text-2xl font-bold text-red-500 mb-2">File Too Large!</h4>
+              <p className="text-zinc-300 mb-6 text-sm">Your PDF exceeds 1MB. Please upload a smaller file.</p>
               <button
                 onClick={() => {
                   setFileSizeError(false);
@@ -300,7 +300,7 @@ export default function DashboardWelcome() {
                   setUploadSuccess(false);
                   setErrorMessage('');
                 }}
-                className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-secondary transition-all duration-200 focus:outline-none"
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg font-semibold transition-all duration-200 focus:outline-none shadow-md shadow-purple-500/10"
               >
                 Close
               </button>

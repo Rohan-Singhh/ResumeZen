@@ -25,6 +25,7 @@ export default function ResumeAnalysis() {
   const [loading, setLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
   const [pdfUrlState, setPdfUrlState] = useState(null);
+  const [friendlyError, setFriendlyError] = useState(null);
   
   // States for OCR functionality
   const [extractedText, setExtractedText] = useState(null);
@@ -463,31 +464,31 @@ export default function ResumeAnalysis() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Back navigation and header */}
-      <div className="bg-white shadow">
+      <div className="bg-zinc-900/40 border-b border-white/5 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <button
               onClick={() => navigate(-1)}
-              className="text-gray-600 hover:text-gray-900 flex items-center"
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-white/5 px-3 py-1.5 rounded-lg flex items-center transition-colors text-sm font-semibold"
             >
-              <ArrowLeftIcon className="h-5 w-5 mr-2" />
+              <ArrowLeftIcon className="h-4 w-4 mr-2" />
               <span>Back</span>
             </button>
             
             <div className="flex items-center space-x-2">
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-lg font-semibold text-zinc-100 font-display">
                 {resumeFileInfo?.fileName || 'Resume Analysis'}
               </h1>
               
               {resumeFileInfo && (
                 <button
                   onClick={handleDownload}
-                  className="ml-2 p-1 rounded-full text-gray-400 hover:text-gray-700"
+                  className="ml-2 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-white/5 transition-colors"
                   title="Download PDF"
                 >
-                  <ArrowDownTrayIcon className="h-5 w-5" />
+                  <ArrowDownTrayIcon className="h-4 w-4" />
                 </button>
               )}
             </div>
@@ -499,36 +500,36 @@ export default function ResumeAnalysis() {
       <div className="container mx-auto px-4 py-6">
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500"></div>
           </div>
         ) : error ? (
-          <div className="bg-red-50 p-6 rounded-lg text-center">
+          <div className="bg-red-950/20 border border-red-500/20 p-6 rounded-2xl text-center max-w-xl mx-auto backdrop-blur-md">
             <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
-            <h2 className="text-lg font-semibold text-red-800 mb-2">Error</h2>
-            <p className="text-red-600">{error}</p>
-            <div className="mt-4">
-              <Link
+              <h2 className="text-lg font-bold text-red-400 mb-2 font-display">Error</h2>
+              <p className="text-red-300 text-sm mb-6">{error}</p>
+              <div>
+                <Link
                   to="/dashboard"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-              >
-                Return to Dashboard
-              </Link>
-            </div>
+                  className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors"
+                >
+                  Return to Dashboard
+                </Link>
+              </div>
             </motion.div>
           </div>
         ) : resumeFileInfo ? (
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-zinc-900/30 border border-white/10 rounded-2xl shadow-xl backdrop-blur-md overflow-hidden">
             {/* Processing state with motivational quotes */}
             {processing ? (
               <div className="p-10 flex flex-col items-center justify-center text-center">
                 <div className="relative mb-8">
-                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-500"></div>
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-500/10 border-t-purple-500"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="h-8 w-8 rounded-full bg-white"></div>
+                    <div className="h-8 w-8 rounded-full bg-zinc-950"></div>
                   </div>
                 </div>
                 
-                <h3 className="text-xl font-medium text-gray-900 mb-2">
+                <h3 className="text-xl font-bold text-zinc-100 mb-2 font-display">
                   Analyzing Your Resume
                 </h3>
                 
@@ -540,17 +541,17 @@ export default function ResumeAnalysis() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.5 }}
-                      className="text-gray-600 max-w-md text-center"
+                      className="text-zinc-400 text-sm max-w-md text-center italic"
                     >
-                      {currentQuote}
+                      "{currentQuote}"
                     </motion.p>
                   </AnimatePresence>
                 </div>
                 
                 <div className="mt-6 w-full max-w-md">
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <motion.div
-                      className="h-full bg-blue-500 rounded-full"
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
                       initial={{ width: "0%" }}
                       animate={{ 
                         width: "100%",
@@ -563,33 +564,33 @@ export default function ResumeAnalysis() {
             ) : processingError ? (
               <div className="p-8 text-center">
                 <ExclamationCircleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-bold text-zinc-100 mb-2 font-display">
                   {processingError.includes("doesn't appear to be a resume") ? 
                     "Invalid Document Type" : 
                     "Processing Failed"}
                 </h3>
                 <div className="max-w-2xl mx-auto mb-6">
-                  <p className="text-gray-600 whitespace-pre-line">
+                  <p className="text-zinc-300 text-sm whitespace-pre-line leading-relaxed">
                     {processingError}
                   </p>
                   {creditRefunded && (
-                    <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md">
+                    <div className="mt-4 p-4 bg-green-950/20 border border-green-500/20 text-green-400 rounded-xl text-sm font-semibold max-w-md mx-auto">
                       <p>Your credit has been automatically refunded.</p>
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   {!processingError.includes("doesn't appear to be a resume") && (
                     <button
                       onClick={handleRetry}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors"
                     >
                       Try Again
                     </button>
                   )}
                   <Link
                     to="/dashboard"
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex items-center px-5 py-2.5 bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 rounded-lg text-sm font-semibold transition-colors"
                   >
                     {processingError.includes("doesn't appear to be a resume") ? 
                       "Upload a Resume" : 
@@ -604,35 +605,35 @@ export default function ResumeAnalysis() {
                   <div className="space-y-6">
                     {/* Contact Information */}
                     {processingResults.analysis.structured.contactInformation && (
-                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                          <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      <div className="bg-zinc-900/20 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-md">
+                        <div className="px-5 py-4 bg-zinc-950/40 border-b border-white/5">
+                          <h3 className="text-base font-bold text-zinc-100 font-display">
                             Contact Information
                           </h3>
                         </div>
-                        <div className="px-4 py-5 sm:p-6">
+                        <div className="p-6">
                           <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                             <div>
-                              <dt className="text-sm font-medium text-gray-500">Name</dt>
-                              <dd className="mt-1 text-sm text-gray-900">
+                              <dt className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Name</dt>
+                              <dd className="mt-1 text-sm font-bold text-zinc-200">
                                 {processingResults.analysis.structured.contactInformation.name || 'N/A'}
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-sm font-medium text-gray-500">Email</dt>
-                              <dd className="mt-1 text-sm text-gray-900">
+                              <dt className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Email</dt>
+                              <dd className="mt-1 text-sm font-bold text-zinc-200">
                                 {processingResults.analysis.structured.contactInformation.email || 'N/A'}
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-sm font-medium text-gray-500">Phone</dt>
-                              <dd className="mt-1 text-sm text-gray-900">
+                              <dt className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Phone</dt>
+                              <dd className="mt-1 text-sm font-bold text-zinc-200">
                                 {processingResults.analysis.structured.contactInformation.phone || 'N/A'}
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-sm font-medium text-gray-500">Location</dt>
-                              <dd className="mt-1 text-sm text-gray-900">
+                              <dt className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Location</dt>
+                              <dd className="mt-1 text-sm font-bold text-zinc-200">
                                 {processingResults.analysis.structured.contactInformation.location || 'N/A'}
                               </dd>
                             </div>
@@ -643,21 +644,21 @@ export default function ResumeAnalysis() {
                     
                     {/* Skills */}
                     {processingResults.analysis.structured.skills && (
-                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                          <h3 className="text-lg leading-6 font-medium text-gray-900">
-                            Skills
+                      <div className="bg-zinc-900/20 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-md">
+                        <div className="px-5 py-4 bg-zinc-950/40 border-b border-white/5">
+                          <h3 className="text-base font-bold text-zinc-100 font-display">
+                            Extracted Skills
                           </h3>
                         </div>
-                        <div className="px-4 py-5 sm:p-6">
-                          <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-500 mb-2">Technical Skills</h4>
+                        <div className="p-6 space-y-5">
+                          <div>
+                            <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Technical Skills</h4>
                             <div className="flex flex-wrap gap-2">
                               {Array.isArray(processingResults.analysis.structured.skills.technical) && 
                                processingResults.analysis.structured.skills.technical.map((skill, index) => (
                                 <span 
                                   key={index}
-                                  className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800"
+                                  className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold bg-purple-500/15 border border-purple-500/20 text-purple-300"
                                 >
                                   {skill}
                                 </span>
@@ -665,13 +666,13 @@ export default function ResumeAnalysis() {
                             </div>
                           </div>
                           <div>
-                            <h4 className="text-sm font-medium text-gray-500 mb-2">Soft Skills</h4>
+                            <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Soft Skills</h4>
                             <div className="flex flex-wrap gap-2">
                               {Array.isArray(processingResults.analysis.structured.skills.soft) && 
                                processingResults.analysis.structured.skills.soft.map((skill, index) => (
                                 <span 
                                   key={index}
-                                  className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-green-100 text-green-800"
+                                  className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold bg-green-500/15 border border-green-500/20 text-green-300"
                                 >
                                   {skill}
                                 </span>
@@ -684,27 +685,27 @@ export default function ResumeAnalysis() {
                     
                     {/* Analysis and Recommendations */}
                     {processingResults.analysis.structured.analysis && (
-                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                          <h3 className="text-lg leading-6 font-medium text-gray-900">
-                            Resume Analysis
+                      <div className="bg-zinc-900/20 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-md">
+                        <div className="px-5 py-4 bg-zinc-950/40 border-b border-white/5">
+                          <h3 className="text-base font-bold text-zinc-100 font-display">
+                            ATS Audit Report
                           </h3>
                         </div>
-                        <div className="px-4 py-5 sm:p-6">
-                          <div className="mb-4">
-                            <p className="text-sm font-medium text-gray-500 mb-1">
+                        <div className="p-6 space-y-6">
+                          <div>
+                            <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider mb-2">
                               ATS Score
                             </p>
                             {(() => {
                               const score = processingResults.analysis.structured.analysis.atsScore;
                               return (
                                 <div className="flex items-center">
-                                  <span className="text-2xl font-bold text-gray-900 mr-2">
+                                  <span className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mr-4 font-display">
                                     {typeof score === 'number' && score > 0 ? `${score}%` : 'NA'}
                                   </span>
-                                  <div className="relative w-full max-w-xs h-2 bg-gray-200 rounded">
+                                  <div className="relative w-full max-w-sm h-2.5 bg-zinc-800 rounded-full overflow-hidden">
                                     <div 
-                                      className="absolute top-0 left-0 h-2 bg-blue-600 rounded"
+                                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
                                       style={{ width: `${typeof score === 'number' && score > 0 ? score : 0}%` }}
                                     ></div>
                                   </div>
@@ -713,34 +714,40 @@ export default function ResumeAnalysis() {
                             })()}
                           </div>
                           
-                          <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Strengths</h4>
-                            <ul className="list-disc pl-5 space-y-1">
+                          <div className="border-t border-white/5 pt-4">
+                            <h4 className="text-sm font-semibold text-purple-300 mb-3">Key Strengths</h4>
+                            <ul className="space-y-2">
                               {Array.isArray(processingResults.analysis.structured.analysis.strengths) && 
                                processingResults.analysis.structured.analysis.strengths.map((item, index) => (
-                                <li key={index} className="text-sm text-gray-600">{item}</li>
+                                <li key={index} className="text-sm text-zinc-300 flex items-start gap-2">
+                                  <span className="text-purple-400 mt-0.5">•</span>
+                                  <span>{item}</span>
+                                </li>
                               ))}
                             </ul>
                           </div>
                           
-                          <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Areas for Improvement</h4>
-                            <ul className="list-disc pl-5 space-y-1">
+                          <div className="border-t border-white/5 pt-4">
+                            <h4 className="text-sm font-semibold text-amber-400 mb-3">Areas for Improvement</h4>
+                            <ul className="space-y-2">
                               {Array.isArray(processingResults.analysis.structured.analysis.areasForImprovement) && 
                                processingResults.analysis.structured.analysis.areasForImprovement.map((item, index) => (
-                                <li key={index} className="text-sm text-gray-600">{item}</li>
+                                <li key={index} className="text-sm text-zinc-300 flex items-start gap-2">
+                                  <span className="text-amber-400 mt-0.5">•</span>
+                                  <span>{item}</span>
+                                </li>
                               ))}
                             </ul>
                           </div>
                           
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">ATS Keywords</h4>
+                          <div className="border-t border-white/5 pt-4">
+                            <h4 className="text-sm font-semibold text-pink-400 mb-3">Suggested ATS Keywords</h4>
                             <div className="flex flex-wrap gap-2">
                               {Array.isArray(processingResults.analysis.structured.analysis.keywords) && 
                                processingResults.analysis.structured.analysis.keywords.map((keyword, index) => (
                                 <span 
                                   key={index}
-                                  className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-purple-100 text-purple-800"
+                                  className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold bg-pink-500/15 border border-pink-500/20 text-pink-300"
                                 >
                                   {keyword}
                                 </span>
@@ -752,8 +759,8 @@ export default function ResumeAnalysis() {
                     )}
                   </div>
                 ) : (
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <p className="text-gray-700 whitespace-pre-line">
+                  <div className="bg-zinc-900/20 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
+                    <p className="text-zinc-300 text-sm whitespace-pre-line leading-relaxed">
                       {processingResults.analysis?.raw || 'No structured analysis available.'}
                     </p>
                   </div>
@@ -761,20 +768,20 @@ export default function ResumeAnalysis() {
               </div>
             ) : (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p className="text-gray-500">Preparing to analyze your resume...</p>
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                <p className="text-zinc-400 text-sm">Preparing to analyze your resume...</p>
               </div>
             )}
           </div>
         ) : (
-          <div className="bg-red-50 p-6 rounded-lg text-center">
+          <div className="bg-red-950/20 border border-red-500/20 p-6 rounded-2xl text-center max-w-xl mx-auto backdrop-blur-md">
             <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
-              <h2 className="text-lg font-semibold text-red-800 mb-2">Error</h2>
-              <p className="text-red-600">{error}</p>
-              <div className="mt-4">
+              <h2 className="text-lg font-bold text-red-400 mb-2 font-display">Error</h2>
+              <p className="text-red-300 text-sm mb-6">{error}</p>
+              <div>
                 <Link
                   to="/dashboard"
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                  className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors"
                 >
                   Return to Dashboard
                 </Link>
@@ -791,15 +798,15 @@ export default function ResumeAnalysis() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-4 right-4 bg-green-50 border border-green-200 rounded-lg shadow-lg p-4 max-w-md"
+            className="fixed bottom-4 right-4 bg-green-950/80 border border-green-500/20 backdrop-blur-md rounded-xl shadow-lg p-4 max-w-md text-green-400 z-50"
           >
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <CheckCircleIcon className="h-6 w-6 text-green-400" />
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-green-800">Analysis Complete!</h3>
-                <p className="mt-1 text-sm text-green-600">
+                <h3 className="text-sm font-bold text-green-300">Analysis Complete!</h3>
+                <p className="mt-1 text-sm text-green-400">
                   Here is your resume analysis. We hope it helps you improve your job prospects!
                 </p>
               </div>
@@ -807,7 +814,7 @@ export default function ResumeAnalysis() {
                 <div className="-mx-1.5 -my-1.5">
                   <button
                     onClick={() => setShowSuccessPopup(false)}
-                    className="inline-flex rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    className="inline-flex rounded-lg p-1.5 text-green-400 hover:bg-white/5 focus:outline-none transition-colors"
                   >
                     <span className="sr-only">Dismiss</span>
                     <XMarkIcon className="h-5 w-5" />
@@ -821,9 +828,9 @@ export default function ResumeAnalysis() {
       
       {/* After analysis, show a link to the saved analysis if available */}
       {resumeAnalysisId && (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <span className="text-green-700 font-semibold">Analysis saved!</span>
-          <span className="ml-2 text-green-600">Analysis ID: {resumeAnalysisId}</span>
+        <div className="mt-4 p-4 bg-green-950/20 border border-green-500/20 backdrop-blur-md rounded-xl max-w-xl mx-auto flex items-center justify-between text-sm">
+          <span className="text-green-400 font-semibold">Analysis saved successfully!</span>
+          <span className="text-green-500 text-xs font-mono">ID: {resumeAnalysisId}</span>
         </div>
       )}
       
@@ -831,35 +838,35 @@ export default function ResumeAnalysis() {
       <AnimatePresence>
         {friendlyError && (
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
           >
             <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center relative"
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-8 max-w-md w-full text-center relative text-zinc-200"
             >
               <motion.div
                 initial={{ rotate: -10, scale: 1.2 }}
                 animate={{ rotate: [0, 10, -10, 0], scale: [1.2, 1.1, 1.2, 1] }}
                 transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                className="text-5xl mb-2"
+                className="text-5xl mb-3"
               >
                 {getErrorEmoji(friendlyError.userMsg)}
               </motion.div>
-              <h4 className="text-2xl font-bold text-red-600 mb-2">Oops!</h4>
-              <p className="text-gray-700 mb-4">{friendlyError.userMsg}</p>
-              <details className="text-xs text-gray-400 mb-4 cursor-pointer select-text">
-                <summary className="mb-1">Show technical details</summary>
-                <pre className="whitespace-pre-wrap break-all">{friendlyError.details}</pre>
+              <h4 className="text-xl font-bold text-red-500 mb-2">Oops!</h4>
+              <p className="text-zinc-300 text-sm mb-4 leading-relaxed">{friendlyError.userMsg}</p>
+              <details className="text-xs text-zinc-500 mb-6 cursor-pointer select-text bg-zinc-950/50 p-2.5 rounded-xl border border-white/5">
+                <summary className="mb-1 text-zinc-400 font-semibold">Show technical details</summary>
+                <pre className="whitespace-pre-wrap break-all text-left mt-2 leading-relaxed text-zinc-500 font-mono text-[10px]">{friendlyError.details}</pre>
               </details>
               <button
                 onClick={() => setFriendlyError(null)}
-                className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-secondary transition-all duration-200 focus:outline-none"
+                className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors"
               >
                 Close
               </button>

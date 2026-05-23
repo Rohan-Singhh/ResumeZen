@@ -30,9 +30,9 @@ const DashboardFeedbackQuotes = () => {
 
   return (
     <div className="my-8 flex flex-col items-center">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 mb-4 max-w-xl text-center">
-        <span className="text-lg text-blue-700 font-medium italic">
-          {motivationalQuotes[quoteIndex]}
+      <div className="bg-zinc-900/40 border border-white/5 backdrop-blur-md rounded-2xl px-6 py-4 mb-4 max-w-xl text-center shadow-[0_4px_30px_rgba(0,0,0,0.2)]">
+        <span className="text-lg text-purple-300 font-medium italic">
+          "{motivationalQuotes[quoteIndex]}"
         </span>
       </div>
     </div>

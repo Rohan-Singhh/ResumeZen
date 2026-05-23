@@ -65,8 +65,8 @@ export default function RecentUploads() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
       >
-        <span className="text-2xl font-bold text-blue-600 animate-pulse mb-2">🚀 Recent Resume Analyses</span>
-        <span className="text-lg text-gray-700 italic animate-fade-in-slow">{quote}</span>
+        <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 font-display mb-2">🚀 Recent Resume Analyses</span>
+        <span className="text-sm text-zinc-400 italic text-center max-w-xl">"{quote}"</span>
       </motion.div>
       <div className={modalItem ? "filter blur-sm pointer-events-none select-none" : ""}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -79,27 +79,27 @@ export default function RecentUploads() {
                 key={item._id}
                 layout
                 initial={{ borderRadius: 20 }}
-                className={`relative bg-gradient-to-br from-blue-50 to-purple-100 shadow-xl rounded-2xl p-6 cursor-pointer transition-all duration-300 border-2 border-transparent hover:scale-102`}
+                className={`relative bg-zinc-900/30 border border-white/10 rounded-2xl p-6 cursor-pointer backdrop-blur-md transition-all duration-300 hover:border-purple-500/30`}
                 onClick={() => setModalItem(item)}
                 whileHover={{ scale: 1.03 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-lg text-blue-700">{item.contactInformation?.name || 'NA'}</span>
-                  <span className="text-xs text-gray-500">{new Date(item.createdAt).toLocaleString()}</span>
+                  <span className="font-bold text-lg text-zinc-200">{item.contactInformation?.name || 'NA'}</span>
+                  <span className="text-xs text-zinc-500">{new Date(item.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-3xl font-extrabold text-purple-700 drop-shadow-lg">
+                  <span className="text-3xl font-extrabold text-purple-300 drop-shadow-lg">
                     {atsScore !== null ? `${atsScore}%` : 'NA'}
                   </span>
-                  <span className="text-sm font-semibold text-purple-500">ATS Score</span>
+                  <span className="text-sm font-semibold text-purple-400">ATS Score</span>
                   <motion.div
-                    className="ml-2 h-3 w-24 bg-purple-200 rounded-full overflow-hidden"
+                    className="ml-2 h-3 w-24 bg-zinc-800 rounded-full overflow-hidden"
                     initial={{ width: 0 }}
                     animate={{ width: '6rem' }}
                     transition={{ duration: 0.7 }}
-              >
+                  >
                     <motion.div
-                      className="h-3 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full"
+                      className="h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
                       style={{ width: `${atsScore || 0}%` }}
                     />
                   </motion.div>
@@ -108,7 +108,7 @@ export default function RecentUploads() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute bottom-4 right-4 text-xs text-blue-400 font-semibold animate-bounce"
+                  className="absolute bottom-4 right-4 text-xs text-purple-400 font-semibold"
                 >
                   Click for details
                 </motion.div>
@@ -124,79 +124,83 @@ export default function RecentUploads() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={e => {
               if (e.target === e.currentTarget) setModalItem(null);
             }}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl mx-auto relative flex flex-col items-center justify-center"
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-8 w-full max-w-2xl mx-auto relative flex flex-col items-center justify-center text-zinc-200"
               style={{ minHeight: '60vh' }}
               onClick={e => e.stopPropagation()}
             >
             <button 
                 onClick={() => setModalItem(null)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+                className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-200 text-2xl font-bold focus:outline-none p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                 aria-label="Close"
             >
                 &times;
             </button>
               <div className="flex flex-col items-center w-full">
-                <div className="flex items-center justify-between w-full mb-2">
-                  <span className="font-bold text-lg text-blue-700">{modalItem.contactInformation?.name || 'NA'}</span>
-                  <span className="text-xs text-gray-500">{new Date(modalItem.createdAt).toLocaleString()}</span>
+                <div className="flex items-center justify-between w-full mb-4 border-b border-white/5 pb-2">
+                  <span className="font-bold text-lg text-purple-300">{modalItem.contactInformation?.name || 'NA'}</span>
+                  <span className="text-xs text-zinc-400">{new Date(modalItem.createdAt).toLocaleString()}</span>
                 </div>
-                <div className="flex items-center gap-2 mb-4 w-full justify-center">
-                  <span className="text-4xl font-extrabold text-purple-700 drop-shadow-lg">
+                <div className="flex items-center gap-2 mb-6 w-full justify-center">
+                  <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 drop-shadow-lg">
                     {typeof modalItem.analysis?.atsScore === 'number' ? `${modalItem.analysis.atsScore}%` : 'NA'}
                   </span>
-                  <span className="text-lg font-semibold text-purple-500">ATS Score</span>
-                  <div className="ml-2 h-4 w-32 bg-purple-200 rounded-full overflow-hidden">
+                  <span className="text-lg font-semibold text-purple-300">ATS Score</span>
+                  <div className="ml-2 h-4 w-32 bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-4 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full"
+                      className="h-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
                       style={{ width: `${typeof modalItem.analysis?.atsScore === 'number' ? modalItem.analysis.atsScore : 0}%` }}
                     />
                   </div>
                 </div>
-                <div className="mb-2 w-full">
-                  <span className="font-semibold text-gray-700">Email:</span> {modalItem.contactInformation?.email || 'NA'}<br />
-                  <span className="font-semibold text-gray-700">Phone:</span> {modalItem.contactInformation?.phone || 'NA'}<br />
-                  <span className="font-semibold text-gray-700">Location:</span> {modalItem.contactInformation?.location || 'NA'}
+                <div className="mb-4 w-full text-sm space-y-1">
+                  <div><span className="font-semibold text-zinc-400">Email:</span> <span className="text-zinc-200">{modalItem.contactInformation?.email || 'NA'}</span></div>
+                  <div><span className="font-semibold text-zinc-400">Phone:</span> <span className="text-zinc-200">{modalItem.contactInformation?.phone || 'NA'}</span></div>
+                  <div><span className="font-semibold text-zinc-400">Location:</span> <span className="text-zinc-200">{modalItem.contactInformation?.location || 'NA'}</span></div>
                 </div>
-                <div className="mb-2 w-full">
-                  <span className="font-semibold text-blue-700">Technical Skills:</span> {modalItem.skills?.technical?.length ? modalItem.skills.technical.join(', ') : 'NA'}<br />
-                  <span className="font-semibold text-green-700">Soft Skills:</span> {modalItem.skills?.soft?.length ? modalItem.skills.soft.join(', ') : 'NA'}
+                <div className="mb-4 w-full text-sm space-y-2">
+                  <div><span className="font-semibold text-purple-400">Technical Skills:</span> <span className="text-zinc-200">{modalItem.skills?.technical?.length ? modalItem.skills.technical.join(', ') : 'NA'}</span></div>
+                  <div><span className="font-semibold text-green-400">Soft Skills:</span> <span className="text-zinc-200">{modalItem.skills?.soft?.length ? modalItem.skills.soft.join(', ') : 'NA'}</span></div>
                 </div>
-                <div className="mb-2 w-full">
-                  <span className="font-semibold text-purple-700">Strengths:</span> {modalItem.analysis?.strengths?.length ? modalItem.analysis.strengths.join(', ') : 'NA'}
+                <div className="mb-2 w-full text-sm">
+                  <span className="font-semibold text-purple-400">Strengths:</span>
+                  <p className="text-zinc-300 mt-0.5">{modalItem.analysis?.strengths?.length ? modalItem.analysis.strengths.join(', ') : 'NA'}</p>
                 </div>
-                <div className="mb-2 w-full">
-                  <span className="font-semibold text-yellow-700">Areas for Improvement:</span> {modalItem.analysis?.areasForImprovement?.length ? modalItem.analysis.areasForImprovement.join(', ') : 'NA'}
+                <div className="mb-2 w-full text-sm">
+                  <span className="font-semibold text-amber-400">Areas for Improvement:</span>
+                  <p className="text-zinc-300 mt-0.5">{modalItem.analysis?.areasForImprovement?.length ? modalItem.analysis.areasForImprovement.join(', ') : 'NA'}</p>
                   </div>
-                <div className="mb-2 w-full">
-                  <span className="font-semibold text-pink-700">ATS Keywords:</span> {modalItem.analysis?.keywords?.length ? modalItem.analysis.keywords.join(', ') : 'NA'}
+                <div className="mb-2 w-full text-sm">
+                  <span className="font-semibold text-pink-400">ATS Keywords:</span>
+                  <p className="text-zinc-300 mt-0.5">{modalItem.analysis?.keywords?.length ? modalItem.analysis.keywords.join(', ') : 'NA'}</p>
               </div>
-                <div className="mb-2 w-full">
-                  <span className="font-semibold text-gray-700">Summary:</span> {modalItem.summary || 'NA'}
+                <div className="mb-6 w-full text-sm">
+                  <span className="font-semibold text-zinc-400">Summary:</span>
+                  <p className="text-zinc-300 mt-0.5">{modalItem.summary || 'NA'}</p>
             </div>
                 <div className="flex gap-2 mt-2 w-full justify-center">
                   <a
                     href={modalItem.resumeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors text-sm font-semibold shadow"
-            >
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-500 hover:to-indigo-500 transition-colors text-sm font-semibold shadow-md shadow-purple-500/10"
+                  >
                     View/Download Resume
                   </a>
-          </div>
-        </div>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
-      )}
+        )}
       </AnimatePresence>
     </div>
   );

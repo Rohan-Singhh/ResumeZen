@@ -48,7 +48,7 @@ function DashboardContent() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-zinc-950 text-zinc-100">
       {/* Sidebar */}
       <Sidebar onLogout={handleLogout} />
       
@@ -59,22 +59,22 @@ function DashboardContent() {
         }`}
       >
         {/* Top Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 z-10">
+        <header className="bg-zinc-950/40 backdrop-blur-md border-b border-white/5 z-10">
           <div className="px-4 sm:px-6 py-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-lg font-medium text-gray-800">{pageTitle}</h1>
+              <h1 className="text-lg font-semibold text-zinc-100 font-display">{pageTitle}</h1>
               
               <div className="flex items-center">
                 {/* Notifications */}
                 <div className="relative">
-                  <button className="p-1.5 rounded-full text-gray-600 hover:bg-gray-100 focus:outline-none">
+                  <button className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/5 focus:outline-none">
                     <BellIcon className="h-5 w-5" />
                   </button>
                 </div>
                 
                 {/* User Avatar - Mobile only */}
                 <div className="md:hidden ml-2">
-                  <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-primary font-medium">
+                  <div className="h-8 w-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-medium">
                     {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
                   </div>
                 </div>
@@ -84,7 +84,7 @@ function DashboardContent() {
         </header>
         
         {/* Content area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-16 md:pb-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-16 md:pb-6 bg-zinc-950">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -101,14 +101,14 @@ function DashboardContent() {
         </main>
         
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 py-3 px-4 sm:px-6 text-xs text-gray-500">
+        <footer className="bg-transparent border-t border-white/5 py-3 px-4 sm:px-6 text-xs text-zinc-500">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div>
               &copy; {new Date().getFullYear()} ResumeZen
             </div>
             <div className="flex space-x-4">
-              <a href="#" className="hover:text-primary">Privacy</a>
-              <a href="#" className="hover:text-primary">Terms</a>
+              <a href="#" className="hover:text-purple-400 transition-colors">Privacy</a>
+              <a href="#" className="hover:text-purple-400 transition-colors">Terms</a>
             </div>
           </div>
         </footer>
