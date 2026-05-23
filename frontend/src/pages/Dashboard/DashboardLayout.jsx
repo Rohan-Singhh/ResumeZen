@@ -3,14 +3,14 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import Sidebar, { SidebarProvider, useSidebar } from './Sidebar';
-import { BellIcon } from '@heroicons/react/24/outline';
+import { BellIcon, Bars3Icon } from '@heroicons/react/24/outline';
 
 function DashboardContent() {
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [pageTitle, setPageTitle] = useState('Dashboard');
-  const { isOpen } = useSidebar();
+  const { isOpen, toggleMobileMenu } = useSidebar();
 
   // Update page title based on location
   useEffect(() => {
@@ -62,7 +62,17 @@ function DashboardContent() {
         <header className="bg-zinc-950/40 backdrop-blur-md border-b border-white/5 z-10">
           <div className="px-4 sm:px-6 py-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-lg font-semibold text-zinc-100 font-display">{pageTitle}</h1>
+              <div className="flex items-center gap-3">
+                {/* Hamburger menu button for mobile */}
+                <button 
+                  onClick={toggleMobileMenu}
+                  className="md:hidden p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-white/5 focus:outline-none transition-colors"
+                  aria-label="Open menu"
+                >
+                  <Bars3Icon className="h-6 w-6" />
+                </button>
+                <h1 className="text-lg font-semibold text-zinc-100 font-display">{pageTitle}</h1>
+              </div>
               
               <div className="flex items-center">
                 {/* Notifications */}
@@ -72,9 +82,12 @@ function DashboardContent() {
                   </button>
                 </div>
                 
-                {/* User Avatar - Mobile only */}
-                <div className="md:hidden ml-2">
-                  <div className="h-8 w-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-medium">
+                {/* User Avatar - Mobile only (clickable to open menu) */}
+                <div 
+                  onClick={toggleMobileMenu}
+                  className="md:hidden ml-2 cursor-pointer"
+                >
+                  <div className="h-8 w-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-medium hover:bg-purple-500/30 transition-colors">
                     {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
                   </div>
                 </div>

@@ -34,6 +34,7 @@ export const SidebarProvider = ({ children }) => {
   return (
     <SidebarContext.Provider value={{ 
       isOpen, 
+      setIsOpen,
       toggleSidebar, 
       isMobileMenuOpen,
       toggleMobileMenu,
@@ -202,7 +203,7 @@ export default function Sidebar({ onLogout }) {
       {/* Sidebar for Desktop */}
       <motion.div 
         ref={sidebarRef}
-        className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:z-20 bg-zinc-950/50 backdrop-blur-xl border-r border-white/5 rounded-tr-3xl rounded-br-3xl overflow-hidden overflow-x-hidden"
+        className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:z-20 bg-zinc-950/50 backdrop-blur-xl border-r border-white/5 overflow-hidden overflow-x-hidden"
         variants={sidebarVariants}
         initial={isOpen ? "open" : "closed"}
         animate={isOpen ? "open" : "closed"}
@@ -210,92 +211,114 @@ export default function Sidebar({ onLogout }) {
       >
         <div className="flex flex-col flex-grow overflow-y-auto overflow-x-hidden relative bg-zinc-950/30">
           {/* Logo and App Name */}
-          <div className="p-4 flex items-center gap-2 border-b border-white/5 bg-zinc-950/60 backdrop-blur-md">
-            {/* Responsive Profile Avatar (toggles sidebar) */}
-            <motion.div
-              className="h-11 w-11 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 text-white flex items-center justify-center font-bold text-2xl shadow-lg ring-4 ring-purple-500/20 cursor-pointer animate-pulse-glow"
-              whileHover={{ scale: 1.12, boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={toggleSidebar}
-              title="Toggle sidebar"
-            >
-                R
-            </motion.div>
-              <motion.span 
-                variants={contentVariants}
-              initial={isOpen ? "open" : "closed"}
-              animate={isOpen ? "open" : "closed"}
-              className="ml-3 text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 drop-shadow-lg"
-            >
-              ResumeZen
-            </motion.span>
-          </div>
-          
-          {/* User Profile Section - Only when expanded */}
-          {isOpen && (
-            <div className="px-4 py-6 border-b border-white/5 flex flex-col items-center gap-2 bg-zinc-950/20 backdrop-blur-sm">
-              {/* Responsive Profile Avatar (toggles sidebar) */}
+          <div className={`p-4 flex items-center border-b border-white/5 bg-zinc-950/60 backdrop-blur-md justify-between ${
+            isOpen ? 'px-4' : 'px-0 justify-center'
+          }`}>
+            <div className={`flex items-center ${isOpen ? 'gap-2' : ''}`}>
               <motion.div
-                className="relative flex items-center justify-center cursor-pointer"
-                whileHover={{ scale: 1.08 }}
+                className="h-11 w-11 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 text-white flex items-center justify-center font-bold text-2xl shadow-lg ring-4 ring-purple-500/20 cursor-pointer animate-pulse-glow flex-shrink-0"
+                whileHover={{ scale: 1.12, boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)' }}
                 whileTap={{ scale: 0.95 }}
                 onClick={toggleSidebar}
                 title="Toggle sidebar"
               >
-                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 flex items-center justify-center shadow-xl ring-4 ring-purple-500/20 animate-pulse-glow">
-                  <span className="text-2xl font-bold text-white drop-shadow-lg">{getInitials()}</span>
-                </div>
-                <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-zinc-950 animate-pulse"></span>
+                R
               </motion.div>
-                <motion.div 
+              {isOpen && (
+                <motion.span 
                   variants={contentVariants}
                   initial="open"
                   animate="open"
-                className="text-center"
+                  className="ml-3 text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 drop-shadow-lg flex-shrink-0"
                 >
-                <p className="text-base font-semibold text-zinc-100">
-                    {currentUser?.name || 'User'}
-                  </p>
-                  <p className="text-xs text-zinc-400 truncate max-w-[160px]">
-                    {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
-                  </p>
-                </motion.div>
+                  ResumeZen
+                </motion.span>
+              )}
             </div>
-          )}
+            
+            {/* Collapse toggle button next to logo */}
+            {isOpen && (
+              <button
+                onClick={toggleSidebar}
+                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-white/5 transition-colors border border-white/5"
+                title="Collapse Sidebar"
+              >
+                <ChevronDoubleLeftIcon className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          
+          {/* User Profile Section */}
+          <div className={`px-4 py-6 border-b border-white/5 flex flex-col items-center gap-2 bg-zinc-950/20 backdrop-blur-sm ${
+            isOpen ? '' : 'justify-center py-4 px-0'
+          }`}>
+            <motion.div
+              className="relative flex items-center justify-center cursor-pointer"
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleSidebar}
+              title="Toggle sidebar"
+            >
+              <div className={`rounded-full bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 flex items-center justify-center shadow-xl ring-4 ring-purple-500/20 animate-pulse-glow ${
+                isOpen ? 'h-14 w-14' : 'h-10 w-10'
+              }`}>
+                <span className={`font-bold text-white drop-shadow-lg ${isOpen ? 'text-2xl' : 'text-base'}`}>{getInitials()}</span>
+              </div>
+              <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-zinc-950 animate-pulse"></span>
+            </motion.div>
+            
+            {isOpen && (
+              <motion.div 
+                variants={contentVariants}
+                initial="open"
+                animate="open"
+                className="text-center"
+              >
+                <p className="text-base font-semibold text-zinc-100">
+                  {currentUser?.name || 'User'}
+                </p>
+                <p className="text-xs text-zinc-400 truncate max-w-[160px]">
+                  {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
+                </p>
+              </motion.div>
+            )}
+          </div>
           
           {/* Navigation Links */}
           <nav className="flex-1 py-6">
-            <div className="px-3 space-y-2">
+            <div className="space-y-2">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   end={item.path === '/dashboard'}
                   className={({ isActive }) => 
-                    `group flex items-center px-3 py-3 rounded-xl text-base font-medium transition-all duration-300 border-l-2 ${
+                    `group flex items-center py-3 rounded-xl text-base font-medium transition-all duration-300 border-l-2 ${
+                      isOpen ? 'px-3 mx-3 justify-start' : 'mx-2 justify-center px-0'
+                    } ${
                       isActive || isNavItemActive(item.path)
-                        ? 'border-purple-500 bg-white/5 text-purple-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] shadow-purple-500/5'
+                        ? 'border-purple-500 bg-white/5 text-purple-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
                         : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/5'
                     }`
                   }
                 >
                   <motion.span
-                    className="flex-shrink-0 mr-3"
+                    className={`flex-shrink-0 ${isOpen ? 'mr-3' : 'mr-0'}`}
                     whileHover={{ scale: 1.2, rotate: 8 }}
                     transition={{ type: 'spring', stiffness: 300 }}
                   >
                     {item.icon}
                   </motion.span>
-                    {isOpen && (
-                      <motion.span 
-                        variants={contentVariants}
-                        initial="open"
-                        animate="open"
+                  {isOpen && (
+                    <motion.span 
+                      variants={contentVariants}
+                      initial="open"
+                      animate="open"
                       className=""
-                      >
-                        {item.name}
-                      </motion.span>
-                    )}
+                    >
+                      {item.name}
+                    </motion.span>
+                  )}
                 </NavLink>
               ))}
             </div>
@@ -305,11 +328,13 @@ export default function Sidebar({ onLogout }) {
           <div className="p-4 mt-auto">
             <motion.button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-3 px-3 py-3 text-base rounded-xl text-zinc-400 bg-white/5 border border-white/5 hover:text-white hover:bg-white/10 shadow-md hover:shadow-xl transition-all duration-300 font-semibold"
+              className={`w-full flex items-center justify-center px-3 py-3 text-base rounded-xl text-zinc-400 bg-white/5 border border-white/5 hover:text-white hover:bg-white/10 shadow-md hover:shadow-xl transition-all duration-300 font-semibold ${
+                isOpen ? 'gap-3' : 'gap-0 px-0'
+              }`}
               whileHover={{ scale: 1.07 }}
               whileTap={{ scale: 0.97 }}
             >
-              <ArrowRightOnRectangleIcon className="h-6 w-6" />
+              <ArrowRightOnRectangleIcon className="h-6 w-6 flex-shrink-0" />
               {isOpen && (
                 <motion.span 
                   variants={contentVariants}

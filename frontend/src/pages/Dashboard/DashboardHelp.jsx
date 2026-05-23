@@ -58,33 +58,33 @@ export default function DashboardHelp() {
   const faqItems = [
     {
       id: 1,
-      question: 'How do I create my first resume?',
-      answer: 'To create your first resume, click on the "Upload Resume" box on your dashboard. You can either upload an existing resume for us to enhance or start from scratch by following the guided templates. Our AI will help you optimize content as you build.'
+      question: 'How do I analyze my first resume?',
+      answer: 'To analyze your resume, click on the drag-and-drop file upload zone on your Dashboard. Upload your resume in PDF format (max 1MB), and our AI will immediately extract the text and start processing it.'
     },
     {
       id: 2,
-      question: 'What makes ResumeZen different from other resume builders?',
-      answer: 'ResumeZen is specifically designed to optimize your resume for Applicant Tracking Systems (ATS) used by employers. Our AI analyzes job descriptions to help you include relevant keywords, we offer industry-specific templates, and provide real-time feedback on your resume content.'
+      question: 'What makes ResumeZen different from other platforms?',
+      answer: 'ResumeZen utilizes state-of-the-art LLMs to evaluate your resume against standard ATS metrics. We provide an exact ATS score percentage, extract technical and soft skills, list your key strengths, offer clear areas for improvement, and detail critical missing keywords to optimize your application.'
     },
     {
       id: 3,
-      question: 'How do I download my resume?',
-      answer: 'After creating your resume, go to the "My Resumes" section and click on the resume you want to download. You can then click the "Export" button to download it in your preferred format (PDF, DOCX, etc. depending on your plan).'
+      question: 'How do I view my previous analyses?',
+      answer: 'You can view your entire analysis history in the "Recent Uploads" section. Click on any historical card to open a detailed drawer summarizing the score, contact info, skills, strengths, areas for improvement, and to download the original file.'
     },
     {
       id: 4,
-      question: 'How do I change my account password?',
-      answer: 'To change your account password, go to the Edit Profile section in your dashboard, then select the option to update your password. Follow the on-screen instructions to complete the process.'
+      question: 'How do I update my account profile details?',
+      answer: 'Click on the "Profile" section in the sidebar to modify your personal information, contact email, mobile number, or professional links.'
     },
     {
       id: 5,
-      question: 'How do I update my account information?',
-      answer: 'You can update your account information by clicking on "Edit Profile" in the sidebar. This includes personal details, contact information, and professional links.'
+      question: 'How do credits and plans work?',
+      answer: 'Each resume analysis consumes 1 credit. You can check your current plan and remaining credits directly on the Dashboard welcome screen or click "Plans" to upgrade your subscription.'
     },
     {
       id: 6,
-      question: 'What should I do if I find a bug or have a feature request?',
-      answer: 'We value your feedback! Please contact our support team using the "Contact Support" link in the Help section. Please provide detailed information about the bug or feature request, and our team will address it promptly.'
+      question: 'Who should I contact if I have questions?',
+      answer: 'You can reach out to our team by clicking the "Contact Support" button on this page to start a Live Chat or submit a support inquiry.'
     }
   ];
 
