@@ -262,21 +262,30 @@ router.post('/process', authMiddleware, async (req, res) => {
         error: 'No userId in request context'
       });
     }
-    // Find active user plan with credits
-    const userPlan = await UserPlan.findOne({
+    // Find all active user plans and pick the first valid one
+    const userPlans = await UserPlan.find({
       userId,
       isActive: true
-    }).populate('planId');
-    if (!userPlan) {
+    }).populate('planId').sort({ purchasedAt: -1 });
+    
+    if (!userPlans || userPlans.length === 0) {
       return res.status(403).json({
         success: false,
         message: 'No active plan found. Please purchase a plan.'
       });
     }
-    if (!userPlan.planId.isUnlimited && userPlan.creditsLeft <= 0) {
+    
+    const now = new Date();
+    const userPlan = userPlans.find(p => 
+      p.planId && 
+      (!p.expiresAt || new Date(p.expiresAt) > now) && 
+      (p.planId.isUnlimited || p.creditsLeft > 0)
+    );
+    
+    if (!userPlan) {
       return res.status(403).json({
         success: false,
-        message: 'No credits remaining. Please buy more checks.'
+        message: 'No credits remaining or plan expired. Please buy more checks.'
       });
     }
     // Deduct credit if not unlimited

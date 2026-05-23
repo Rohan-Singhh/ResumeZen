@@ -17,7 +17,7 @@ import * as pdfUtils from '../../utils/pdfUtils';
 import { processResume } from '../../services/resumeService';
 
 export default function ResumeAnalysis() {
-  const { currentUser, userPlans, refundPlanCredit, usePlanCredit, fetchUserPlans } = useAuth();
+  const { currentUser, userPlans, fetchUserPlans } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [resumeFileInfo, setResumeFileInfo] = useState(null);
@@ -30,8 +30,6 @@ export default function ResumeAnalysis() {
   const [processing, setProcessing] = useState(false);
   const [processingError, setProcessingError] = useState(null);
   const [processingResults, setProcessingResults] = useState(null);
-  const [creditRefunded, setCreditRefunded] = useState(false);
-  const [creditDeducted, setCreditDeducted] = useState(false);
 
   useEffect(() => {
     const details = pdfUtils.getPdfDetails();
@@ -72,38 +70,21 @@ export default function ResumeAnalysis() {
     if (!resumeFileInfo || processing) return;
     setProcessing(true);
     setProcessingError(null);
-    setCreditRefunded(false);
     try {
-      if (!creditDeducted) {
-        const creditResult = await usePlanCredit();
-        if (!creditResult.success) {
-          throw new Error(`Credit error: ${creditResult.error}`);
-        }
-        setCreditDeducted(true);
-        await fetchUserPlans(true);
-      }
       const data = await processResume(resumeFileInfo);
       setProcessingResults(data);
+      // Fetch user plans after successful processing to update the credit count on UI
+      await fetchUserPlans(true);
     } catch (err) {
       console.error('Processing error:', err);
       let errorMsg = err.response?.data?.message || err.message || 'Analysis failed';
       setProcessingError(errorMsg);
-      if (creditDeducted && !errorMsg.includes("doesn't appear to be a resume")) {
-        try {
-          const refundResult = await refundPlanCredit();
-          if (refundResult.success) {
-            setCreditRefunded(true);
-            setCreditDeducted(false);
-            await fetchUserPlans(true);
-          }
-        } catch (refundErr) {
-          console.error('Refund failed:', refundErr);
-        }
-      }
+      // Fetch user plans to sync state if there was a backend error
+      await fetchUserPlans(true);
     } finally {
       setProcessing(false);
     }
-  }, [resumeFileInfo, processing, creditDeducted, usePlanCredit, fetchUserPlans, refundPlanCredit]);
+  }, [resumeFileInfo, processing, fetchUserPlans]);
 
   const handlePdfError = () => {
     console.error("PDF iframe failed to load");
