@@ -91,7 +91,7 @@ export const processResume = async (url, options = {}) => {
       scale: options.scale !== undefined ? options.scale : true,
       isTable: options.isTable !== undefined ? options.isTable : true,
       engine: options.engine || 2,
-      model: options.model || 'meta-llama/llama-4-maverick:free'
+      model: options.model || 'meta-llama/llama-3.3-70b-instruct:free'
     });
     
     const response = await axios.post('/api/resume/process', {
@@ -102,7 +102,7 @@ export const processResume = async (url, options = {}) => {
       isTable: options.isTable !== undefined ? options.isTable : true,
       engine: options.engine || 2,
       // AI options
-      model: options.model || 'meta-llama/llama-4-maverick:free',
+      model: options.model || 'meta-llama/llama-3.3-70b-instruct:free',
       prompt: options.prompt
     });
     // Attach resumeAnalysisId if present
@@ -126,11 +126,11 @@ export const processResume = async (url, options = {}) => {
 export const analyzeResumeWithAI = async (text, options = {}) => {
   try {
     console.log('Making AI analysis request to: /api/resume/ai-analysis');
-    console.log('AI model:', options.model || 'meta-llama/llama-4-maverick:free');
+    console.log('AI model:', options.model || 'meta-llama/llama-3.3-70b-instruct:free');
     
     const response = await axios.post('/api/resume/ai-analysis', {
       text,
-      model: options.model || 'meta-llama/llama-4-maverick:free',
+      model: options.model || 'meta-llama/llama-3.3-70b-instruct:free',
       prompt: options.prompt,
       systemPrompt: options.systemPrompt
     });

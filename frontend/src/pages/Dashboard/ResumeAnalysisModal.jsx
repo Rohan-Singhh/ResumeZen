@@ -43,7 +43,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose }) {
       
       (async () => {
         try {
-          const res = await processResume(fileDetails.url, { model: 'meta-llama/llama-4-maverick:free' });
+          const res = await processResume(fileDetails.url, { model: 'meta-llama/llama-3.3-70b-instruct:free' });
           if (res?.success && res?.data?.analysis?.structured) {
             setProgress(100);
             setCurrentStep(4);
