@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const authMiddleware = require('../middleware/authMiddleware');
+const { matchJobsWithAI } = require('../services/aiAnalysisService');
 
 /**
  * @route   GET /api/jobs
@@ -46,6 +47,62 @@ router.get('/', authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch jobs'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/jobs/match
+ * @desc    Fetch recent tech jobs and rank them using AI against user profile
+ * @access  Private
+ */
+router.post('/match', authMiddleware, async (req, res) => {
+  try {
+    const { userProfile } = req.body;
+    
+    if (!userProfile) {
+      return res.status(400).json({ success: false, message: 'User profile is required' });
+    }
+
+    // Fetch jobs first
+    const response = await axios.get('https://www.arbeitnow.com/api/job-board-api');
+    
+    if (!response.data || !response.data.data) {
+      return res.status(404).json({ success: false, message: 'No jobs found from provider' });
+    }
+
+    // Send the first 40 jobs to AI to stay within token limits
+    const jobsList = response.data.data.slice(0, 40).map(job => ({
+      title: job.title,
+      company: job.company_name,
+      location: job.location,
+      remote: job.remote,
+      url: job.url,
+      tags: job.tags || [],
+      snippet: job.description ? job.description.replace(/<[^>]+>/g, '').substring(0, 200) : ''
+    }));
+
+    // Call AI to match jobs
+    const aiMatchResult = await matchJobsWithAI(userProfile, jobsList);
+
+    if (aiMatchResult.success) {
+      return res.status(200).json({
+        success: true,
+        jobs: aiMatchResult.data.matches
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: 'AI matching failed',
+        error: aiMatchResult.error
+      });
+    }
+
+  } catch (error) {
+    console.error('Job match error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process job matches'
     });
   }
 });

@@ -387,7 +387,147 @@ const generateFallbackResponse = (resumeText, model, errorReason) => {
   };
 };
 
+/**
+ * Match user profile with jobs using OpenRouter AI
+ * @param {Object} userProfile - User's skills, experience, and preferences
+ * @param {Array} jobsList - List of jobs fetched from the API
+ * @param {Object} options - Additional options
+ * @returns {Promise<Object>} - Ranked and structured jobs list
+ */
+const matchJobsWithAI = async (userProfile, jobsList, options = {}) => {
+  if (!OPENROUTER_API_KEY) {
+    return {
+      success: false,
+      error: 'API key is missing'
+    };
+  }
+
+  const initialModel = options.model || DEFAULT_MODEL;
+  
+  // Prepare models queue (fallback mechanism)
+  let modelsToTry = [initialModel];
+  if (options.useFallbacks !== false) {
+    const fallbacks = FREE_MODELS.filter(m => m !== initialModel);
+    modelsToTry = [...modelsToTry, ...fallbacks];
+  }
+
+  const systemPrompt = `You are an AI Job Assistant.
+Your task is to help users find the most relevant jobs based on their profile, skills, experience, preferences, and resume data.
+
+Responsibilities:
+1. Understand the user's skills, experience, tech stack, and career goals.
+2. Search available job listings from the provided list.
+3. Rank jobs based on:
+   - skill match
+   - experience match
+   - location preference
+   - salary preference
+   - remote/on-site preference
+   - relevance score
+4. Reject irrelevant or low-quality jobs.
+5. Explain clearly why a job is recommended.
+6. Suggest missing skills if needed.
+7. Provide concise and structured responses.
+
+Rules:
+- Prioritize high-quality and recent jobs.
+- Prefer jobs strongly aligned with the user's stack.
+- Avoid duplicate jobs.
+- Keep explanations short but useful.
+- Rank jobs intelligently instead of listing randomly.
+
+Return ONLY a valid, parseable JSON array of the top 5 to 10 matching jobs. Do not include markdown formatting or extra text.
+Format of each job object in the array:
+{
+  "title": "Job Title",
+  "company": "Company",
+  "location": "Location",
+  "salary": "Salary (if available, else 'Not specified')",
+  "matchScore": 85,
+  "reason": "Why it matches",
+  "missingSkills": ["Missing Skill 1"],
+  "url": "Apply Link"
+}`;
+
+  const userPrompt = `
+User Profile:
+${JSON.stringify(userProfile, null, 2)}
+
+Available Jobs:
+${JSON.stringify(jobsList, null, 2)}
+
+Analyze the Available Jobs against the User Profile and return the JSON array of top matches.`;
+
+  let lastError = null;
+
+  for (const model of modelsToTry) {
+    try {
+      console.log(`\nAnalyzing job matches with OpenRouter AI...`);
+      console.log(`Trying AI model: ${model}...`);
+
+      const response = await axios.post(
+        'https://openrouter.ai/api/v1/chat/completions',
+        {
+          model: model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.2,
+          max_tokens: 2000
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://resumezen.com',
+            'X-Title': 'ResumeZen'
+          },
+          timeout: 45000 
+        }
+      );
+
+      const choice = response.data.choices[0];
+      const aiResponse = choice.message.content;
+
+      try {
+        const cleanedResponse = aiResponse
+          .replace(/```json\s*/g, '')
+          .replace(/```\s*$/g, '')
+          .replace(/```javascript\s*/g, '')
+          .replace(/```js\s*/g, '')
+          .trim();
+
+        const jsonResponse = JSON.parse(cleanedResponse);
+        console.log(`Success with model ${model}!`);
+        return {
+          success: true,
+          data: {
+            matches: jsonResponse,
+            model: model
+          }
+        };
+      } catch (parseError) {
+        console.log(`AI response from ${model} is not valid JSON.`);
+        return {
+          success: false,
+          error: 'AI did not return valid JSON'
+        };
+      }
+    } catch (error) {
+      console.error(`\n[ERROR] AI analysis failed with model ${model}:`, error.message);
+      lastError = error;
+      console.log('=> Falling back to the next available model in the queue...\n');
+    }
+  }
+
+  return {
+    success: false,
+    error: lastError ? lastError.message : 'All models failed'
+  };
+};
+
 module.exports = {
   analyzeResume,
+  matchJobsWithAI,
   FREE_MODELS
 }; 
