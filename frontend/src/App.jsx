@@ -14,6 +14,7 @@ import DashboardPlan from './pages/Dashboard/DashboardPlan';
 import DashboardHelp from './pages/Dashboard/DashboardHelp';
 import RecentUploads from './pages/Dashboard/RecentUploads';
 import ResumeAnalysis from './pages/Dashboard/ResumeAnalysis';
+import DashboardJobs from './pages/Dashboard/DashboardJobs';
 
 // Create a global loading context
 export const LoadingContext = createContext({
@@ -143,6 +144,7 @@ function AnimatedRoutes() {
             <Route path="help" element={<DashboardHelp />} />
             <Route path="recent-uploads" element={<RecentUploads />} />
             <Route path="resume-analysis" element={<ResumeAnalysis />} />
+            <Route path="jobs" element={<DashboardJobs />} />
           </Route>
         </Routes>
       </AnimatePresence>

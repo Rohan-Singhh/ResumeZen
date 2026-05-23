@@ -4,6 +4,7 @@ const planRouter = require('../../routes/planRoutes');
 const uploadRouter = require('../../routes/uploadRoutes');
 const resumeRouter = require('../../routes/resumeRoutes');
 const ocrRouter = require('../../routes/ocrRoutes');
+const jobRouter = require('../../routes/jobRoutes');
 
 /**
  * Configure API routes
@@ -30,6 +31,9 @@ const configureApiRoutes = (app) => {
   
   // Mount OCR routes for document text extraction
   app.use(`${apiPrefix}/ocr`, ocrRouter);
+  
+  // Mount job routes
+  app.use(`${apiPrefix}/jobs`, jobRouter);
   
   // Add more API routes here as they are developed
 };

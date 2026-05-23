@@ -11,7 +11,8 @@ import {
   QuestionMarkCircleIcon,
   ArrowLeftOnRectangleIcon,
   XMarkIcon,
-  SparklesIcon
+  SparklesIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/outline';
 
 const SidebarContext = createContext();
@@ -58,6 +59,7 @@ export default function Sidebar() {
 
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: HomeIcon },
+    { name: 'Jobs', path: '/dashboard/jobs', icon: BriefcaseIcon },
     { name: 'Uploads', path: '/dashboard/recent-uploads', icon: DocumentTextIcon },
     { name: 'Plans', path: '/dashboard/plans', icon: CreditCardIcon },
     { name: 'Profile', path: '/dashboard/profile', icon: Cog6ToothIcon },
