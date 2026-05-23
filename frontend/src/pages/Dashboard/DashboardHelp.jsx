@@ -1,60 +1,45 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronDownIcon, 
-  ChevronUpIcon, 
   MagnifyingGlassIcon,
-  QuestionMarkCircleIcon,
   DocumentTextIcon,
   VideoCameraIcon,
-  ChatBubbleLeftRightIcon,
-  PaperClipIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  ArrowUpTrayIcon
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
-import axios from 'axios';
 
 export default function DashboardHelp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState(null);
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState(null);
-  const [error, setError] = useState(null);
   const [showChatModal, setShowChatModal] = useState(false);
 
-  // Toggle FAQ expansion
   const toggleFaq = (id) => {
     setExpandedFaq(expandedFaq === id ? null : id);
   };
 
-  // Helper categories
   const helpCategories = [
     {
       id: 'getting-started',
       title: 'Getting Started',
       icon: DocumentTextIcon,
       description: 'Learn the basics of using ResumeZen effectively',
-      link: '#getting-started'
+      link: '#'
     },
     {
       id: 'tutorials',
       title: 'Video Tutorials',
       icon: VideoCameraIcon,
       description: 'Visual walkthroughs of all features',
-      link: '#tutorials'
+      link: '#'
     },
     {
       id: 'contact',
       title: 'Contact Support',
       icon: ChatBubbleLeftRightIcon,
       description: 'Get help from our support team',
-      link: '#contact'
+      link: '#'
     }
   ];
 
-  // FAQ items
   const faqItems = [
     {
       id: 1,
@@ -64,12 +49,12 @@ export default function DashboardHelp() {
     {
       id: 2,
       question: 'What makes ResumeZen different from other platforms?',
-      answer: 'ResumeZen utilizes state-of-the-art LLMs to evaluate your resume against standard ATS metrics. We provide an exact ATS score percentage, extract technical and soft skills, list your key strengths, offer clear areas for improvement, and detail critical missing keywords to optimize your application.'
+      answer: 'ResumeZen utilizes state-of-the-art LLMs to evaluate your resume against standard ATS metrics. We provide an exact ATS score percentage, extract technical and soft skills, list your key strengths, offer clear areas for improvement, and detail critical missing keywords.'
     },
     {
       id: 3,
       question: 'How do I view my previous analyses?',
-      answer: 'You can view your entire analysis history in the "Recent Uploads" section. Click on any historical card to open a detailed drawer summarizing the score, contact info, skills, strengths, areas for improvement, and to download the original file.'
+      answer: 'You can view your entire analysis history in the "Upload History" section. Click on any row to open a detailed modal summarizing the score, contact info, skills, strengths, areas for improvement, and a link to view the original file.'
     },
     {
       id: 4,
@@ -79,250 +64,133 @@ export default function DashboardHelp() {
     {
       id: 5,
       question: 'How do credits and plans work?',
-      answer: 'Each resume analysis consumes 1 credit. You can check your current plan and remaining credits directly on the Dashboard welcome screen or click "Plans" to upgrade your subscription.'
-    },
-    {
-      id: 6,
-      question: 'Who should I contact if I have questions?',
-      answer: 'You can reach out to our team by clicking the "Contact Support" button on this page to start a Live Chat or submit a support inquiry.'
+      answer: 'Each resume analysis consumes 1 credit. You can check your current plan and remaining credits directly on the Dashboard welcome screen or click "Plans" to manage your subscription.'
     }
   ];
 
-  // Filter FAQs based on search query
   const filteredFaqs = faqItems.filter(item => 
     item.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.answer.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
-      
-      // PDF validation
-      if (selectedFile.type !== 'application/pdf') {
-        setError('Only PDF files are allowed');
-        setFile(null);
-        return;
-      }
-      
-      // Size validation (1MB)
-      if (selectedFile.size > 1048576) {
-        setError('File size must be less than 1MB');
-        setFile(null);
-        return;
-      }
-      
-      setFile(selectedFile);
-      setError(null);
-      setUploadResult(null);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!file) return;
-    
-    try {
-      setUploading(true);
-      
-      // Create form data
-      const formData = new FormData();
-      formData.append('pdf', file);
-      
-      // Upload file
-      const response = await axios.post('/api/upload/test-pdf', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      setUploadResult(response.data);
-      setFile(null);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error uploading file');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-zinc-900/30 rounded-xl p-6 border border-white/10 backdrop-blur-md">
-        <h1 className="text-2xl font-bold text-zinc-100 mb-2 font-display">
-          Help & Resources
-        </h1>
-        <p className="text-zinc-400 text-sm">
-          Find answers to common questions and learn how to make the most of ResumeZen.
-        </p>
-      </div>
-      
-      {/* Search Box */}
-      <div className="bg-zinc-900/30 rounded-xl p-4 border border-white/10 backdrop-blur-md">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <MagnifyingGlassIcon className="h-5 w-5 text-zinc-500" />
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-zinc-100">Help & Support</h1>
+          <p className="text-sm text-zinc-500 mt-1">Find answers or get in touch with our team</p>
+        </div>
+        
+        {/* Search */}
+        <div className="relative w-full sm:w-64">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-white/10 bg-zinc-950/60 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50"
-            placeholder="Search for help topics..."
+            className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-md text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 outline-none transition-colors"
+            placeholder="Search for help..."
           />
         </div>
       </div>
-      
-      {/* Help Categories */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      {/* Categories */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {helpCategories.map((category) => (
-          <motion.a
-            key={category.id}
-            href={category.link}
-            className="bg-zinc-900/30 rounded-xl p-6 border border-white/10 backdrop-blur-md flex flex-col items-center text-center transition-all hover:border-purple-500/30"
-            whileHover={{ y: -5, boxShadow: '0 8px 30px rgba(168, 85, 247, 0.05)' }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center mb-4">
-              <category.icon className="h-6 w-6 text-purple-400" />
+          <div key={category.id} className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-5 flex items-start gap-4 transition-colors hover:border-zinc-700">
+            <div className="h-10 w-10 rounded-md bg-zinc-800 flex items-center justify-center flex-shrink-0">
+              <category.icon className="h-5 w-5 text-zinc-400" />
             </div>
-            <h3 className="text-lg font-semibold text-zinc-100 mb-2 font-display">
-              {category.title}
-            </h3>
-            <p className="text-zinc-400 text-sm">
-              {category.description}
-            </p>
-          </motion.a>
+            <div>
+              <h3 className="text-sm font-medium text-zinc-200">{category.title}</h3>
+              <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{category.description}</p>
+            </div>
+          </div>
         ))}
       </div>
-      
-      {/* FAQ Section */}
-      <div className="bg-zinc-900/30 rounded-xl p-6 border border-white/10 backdrop-blur-md">
-        <div className="flex items-center mb-6">
-          <QuestionMarkCircleIcon className="h-6 w-6 text-purple-400 mr-2" />
-          <h2 className="text-xl font-bold text-zinc-100 font-display">
-            Frequently Asked Questions
-          </h2>
-        </div>
+
+      {/* FAQs */}
+      <div>
+        <h2 className="text-sm font-medium text-zinc-200 mb-3">Frequently Asked Questions</h2>
         
         {searchQuery && filteredFaqs.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-zinc-500">No results found for "{searchQuery}"</p>
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="mt-2 text-purple-400 hover:underline"
-            >
-              Clear search
-            </button>
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-8 text-center">
+            <p className="text-sm text-zinc-400">No results found for "{searchQuery}"</p>
+            <button onClick={() => setSearchQuery('')} className="mt-2 text-xs font-medium text-violet-400 hover:text-violet-300">Clear search</button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg divide-y divide-zinc-800">
             {filteredFaqs.map((faq) => (
-              <div 
-                key={faq.id} 
-                className="border border-white/5 bg-zinc-950/20 rounded-xl overflow-hidden transition-all hover:border-purple-500/25"
-              >
+              <div key={faq.id} className="overflow-hidden">
                 <button
                   onClick={() => toggleFaq(faq.id)}
-                  className="w-full flex justify-between items-center p-4 text-left focus:outline-none"
+                  className="w-full flex items-center justify-between p-5 text-left bg-transparent hover:bg-zinc-800/30 transition-colors"
                 >
-                  <span className="font-semibold text-zinc-200 text-sm">{faq.question}</span>
-                  {expandedFaq === faq.id ? (
-                    <ChevronUpIcon className="h-4 w-4 text-zinc-400" />
-                  ) : (
-                    <ChevronDownIcon className="h-4 w-4 text-zinc-400" />
-                  )}
+                  <span className="text-sm font-medium text-zinc-200">{faq.question}</span>
+                  <ChevronDownIcon className={`h-4 w-4 text-zinc-500 transition-transform duration-200 ${expandedFaq === faq.id ? 'rotate-180' : ''}`} />
                 </button>
-                
-                <AnimatePresence>
-                  {expandedFaq === faq.id && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="p-4 pt-3 bg-zinc-950/50 text-zinc-400 text-sm border-t border-white/5 leading-relaxed">
-                        {faq.answer}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <div 
+                  className={`px-5 overflow-hidden transition-all duration-200 ease-in-out ${expandedFaq === faq.id ? 'max-h-40 pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
+                >
+                  <p className="text-sm text-zinc-400 leading-relaxed border-l-2 border-zinc-800 pl-4">{faq.answer}</p>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
-      
-      {/* Contact Support Section */}
-      <div className="bg-zinc-900/30 rounded-xl p-6 border border-white/10 backdrop-blur-md" id="contact">
-        <h3 className="text-xl font-bold text-zinc-100 mb-2 font-display">
-          Still Have Questions?
-        </h3>
-        <p className="text-zinc-400 text-sm mb-6">
-          Our support team is ready to help you with any questions or concerns you may have.
-        </p>
+
+      {/* Contact Section */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
+        <h3 className="text-sm font-medium text-zinc-200 mb-1">Still need help?</h3>
+        <p className="text-xs text-zinc-500 mb-5">Our support team is ready to assist you.</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-white/5 pt-6">
-          <div>
-            <h4 className="text-lg font-semibold text-purple-300 mb-2">
-              Email Support
-            </h4>
-            <p className="text-zinc-400 text-sm mb-2">
-              Send us an email and we'll get back to you within 24 hours.
-            </p>
-            <a 
-              href="mailto:support@resumezen.com" 
-              className="text-purple-400 hover:text-purple-300 hover:underline text-sm font-semibold transition-colors"
-            >
-              support@resumezen.com
-            </a>
-          </div>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <a 
+            href="mailto:support@resumezen.com" 
+            className="flex-1 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 rounded-md p-4 transition-colors flex items-center justify-between group"
+          >
+            <div>
+              <p className="text-sm font-medium text-zinc-200">Email Support</p>
+              <p className="text-xs text-zinc-500 mt-0.5">support@resumezen.com</p>
+            </div>
+            <span className="text-xs font-medium text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">Write to us →</span>
+          </a>
           
-          <div>
-            <h4 className="text-lg font-semibold text-purple-300 mb-2">
-              Live Chat
-            </h4>
-            <p className="text-zinc-400 text-sm mb-4">
-              Available Monday to Friday, 9 AM to 5 PM EST.
-            </p>
-            <motion.button
-              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors flex items-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowChatModal(true)}
-            >
-              <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
-              Start Chat
-            </motion.button>
-          </div>
+          <button 
+            onClick={() => setShowChatModal(true)}
+            className="flex-1 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 rounded-md p-4 transition-colors flex items-center justify-between text-left group"
+          >
+            <div>
+              <p className="text-sm font-medium text-zinc-200">Live Chat</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Available 9am - 5pm EST</p>
+            </div>
+            <span className="text-xs font-medium text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">Start chat →</span>
+          </button>
         </div>
+      </div>
+
       {/* Live Chat Coming Soon Modal */}
       {showChatModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-white/10 rounded-2xl shadow-xl p-8 max-w-sm w-full relative text-center">
-            <button
-              className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-200 text-2xl font-bold focus:outline-none p-1 rounded-lg hover:bg-white/5 transition-colors"
-              onClick={() => setShowChatModal(false)}
-              aria-label="Close"
-            >
-              ×
-            </button>
-            <div className="flex flex-col items-center">
-              <ChatBubbleLeftRightIcon className="h-10 w-10 text-purple-400 mb-4" />
-              <h4 className="text-lg font-bold text-zinc-100 mb-2">Live Chat Coming Soon</h4>
-              <p className="text-zinc-300 text-sm mb-6 leading-relaxed">Live chat is not available yet.<br/>This feature is coming soon!</p>
-              <button
-                className="w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors"
-                onClick={() => setShowChatModal(false)}
-              >
-                Close
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowChatModal(false)}>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center mb-4">
+              <div className="h-12 w-12 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                <ChatBubbleLeftRightIcon className="h-6 w-6 text-violet-400" />
+              </div>
             </div>
+            <h4 className="text-base font-semibold text-zinc-100 text-center mb-2">Live Chat</h4>
+            <p className="text-sm text-zinc-400 text-center mb-6 leading-relaxed">Live chat is currently unavailable. This feature will be rolling out soon.</p>
+            <button
+              className="w-full bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+              onClick={() => setShowChatModal(false)}
+            >
+              Okay
+            </button>
           </div>
         </div>
       )}
-      </div>
     </div>
   );
-} 
+}

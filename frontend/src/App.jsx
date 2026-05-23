@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useState, createContext, useContext, useEffect, useCallback, useRef } from 'react';
 import Landing from './pages/Landing';
 import SuccessStoriesPage from './pages/SuccessStoriesPage';
@@ -106,16 +106,23 @@ function AnimatedRoutes() {
   return (
     <AnimatePresence mode="wait" initial={false}>
       {isLoading ? (
-        <div key="loading" className="fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50">
+        <motion.div 
+          key="global-loading"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center z-[100]"
+        >
           <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+            <div className="h-12 w-12 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
             {loadingMessage && (
-              <p className="mt-4 text-lg text-gray-600">{loadingMessage}</p>
+              <p className="mt-4 text-sm font-medium text-zinc-400">{loadingMessage}</p>
             )}
           </div>
-        </div>
+        </motion.div>
       ) : (
-        <Routes location={location} key={skipTransitions ? 'no-animation' : location.pathname}>
+        <Routes location={location} key={skipTransitions ? 'no-animation' : 'main-routes'}>
           <Route path="/" element={<Landing />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
           <Route path="/login" element={<Login />} />

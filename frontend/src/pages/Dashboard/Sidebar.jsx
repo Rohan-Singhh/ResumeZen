@@ -1,467 +1,194 @@
-import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-
-import { 
-  HomeIcon, 
-  UserCircleIcon, 
-  CreditCardIcon, 
-  QuestionMarkCircleIcon,
-  ArrowRightOnRectangleIcon,
+import {
+  HomeIcon,
   DocumentTextIcon,
-  DocumentMagnifyingGlassIcon,
+  ChartBarIcon,
+  CreditCardIcon,
+  Cog6ToothIcon,
+  QuestionMarkCircleIcon,
+  ArrowLeftOnRectangleIcon,
   XMarkIcon,
-  Bars3Icon,
-  EllipsisHorizontalIcon,
-  ChevronDoubleLeftIcon,
-  ChevronDoubleRightIcon,
-  DocumentChartBarIcon
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
-// Create context for sidebar state
-export const SidebarContext = createContext();
+const SidebarContext = createContext();
 
-export const useSidebar = () => useContext(SidebarContext);
-
-export const SidebarProvider = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+export function SidebarProvider({ children }) {
+  const [isOpen, setIsOpen] = useState(false);
   const toggleSidebar = () => setIsOpen(!isOpen);
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-  
+  const closeSidebar = () => setIsOpen(false);
+
   return (
-    <SidebarContext.Provider value={{ 
-      isOpen, 
-      setIsOpen,
-      toggleSidebar, 
-      isMobileMenuOpen,
-      toggleMobileMenu,
-      setIsMobileMenuOpen
-    }}>
+    <SidebarContext.Provider value={{ isOpen, toggleSidebar, closeSidebar }}>
       {children}
     </SidebarContext.Provider>
   );
-};
+}
 
-export default function Sidebar({ onLogout }) {
+export const useSidebar = () => useContext(SidebarContext);
+
+export default function Sidebar() {
+  const { logout, currentUser } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, logout } = useAuth();
-  const [isMobileView, setIsMobileView] = useState(false);
-  
-  // If used outside provider, create local state
-  const sidebarContext = useSidebar();
-  const [isLocalOpen, setIsLocalOpen] = useState(true);
-  const [isLocalMobileOpen, setIsLocalMobileOpen] = useState(false);
-  
-  // Use context if available, otherwise use local state
-  const isOpen = sidebarContext?.isOpen ?? isLocalOpen;
-  const toggleSidebar = sidebarContext?.toggleSidebar ?? (() => setIsLocalOpen(!isLocalOpen));
-  const isMobileMenuOpen = sidebarContext?.isMobileMenuOpen ?? isLocalMobileOpen;
-  const toggleMobileMenu = sidebarContext?.toggleMobileMenu ?? (() => setIsLocalMobileOpen(!isLocalMobileOpen));
-  const setIsMobileMenuOpen = sidebarContext?.setIsMobileMenuOpen ?? setIsLocalMobileOpen;
+  const { isOpen, closeSidebar } = useSidebar();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const sidebarRef = useRef(null);
-
-  // Check if mobile view on initial render and when window resizes
+  // Close sidebar on route change (mobile)
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobileView(window.innerWidth < 768);
-      
-      // Auto-close sidebar on small screens
-      if (window.innerWidth < 768 && isOpen && !isMobileMenuOpen) {
-        if (sidebarContext?.setIsOpen) {
-          sidebarContext.setIsOpen(false);
-        } else {
-          setIsLocalOpen(false);
-        }
-      }
-    };
-    
-    // Check on initial load
-    checkIfMobile();
-    
-    // Add event listener for resize
-    window.addEventListener('resize', checkIfMobile);
-    
-    // Cleanup
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
+    closeSidebar();
+  }, [location.pathname]);
 
-  // Close sidebar when clicking outside (desktop only)
-  useEffect(() => {
-    function handleClickOutside(event) {
-      // Only on desktop
-      if (window.innerWidth < 768) return;
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-        if (isOpen) toggleSidebar();
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, toggleSidebar]);
-
-  // Get user initials for the avatar
-  const getInitials = () => {
-    if (!currentUser || !currentUser.name) return 'U';
-    return currentUser.name
-      .split(' ')
-      .map(name => name[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
-  // Navigation items
-  const navItems = [
-    {
-      name: 'Dashboard',
-      icon: <HomeIcon className="h-5 w-5" />,
-      path: '/dashboard'
-    },
-    {
-      name: 'Profile',
-      icon: <UserCircleIcon className="h-5 w-5" />,
-      path: '/dashboard/profile'
-    },
-    {
-      name: 'Plans',
-      icon: <CreditCardIcon className="h-5 w-5" />,
-      path: '/dashboard/plans'
-    },
-    {
-      name: 'Recent Uploads',
-      icon: <DocumentTextIcon className="h-5 w-5" />,
-      path: '/dashboard/recent-uploads'
-    },
-    {
-      name: 'Help & Support',
-      icon: <QuestionMarkCircleIcon className="h-5 w-5" />,
-      path: '/dashboard/help'
-    }
-  ];
-
-  // Mobile menu animation variants
-  const mobileMenuVariants = {
-    hidden: { x: '-100%', opacity: 0 },
-    visible: { 
-      x: 0, 
-      opacity: 1,
-      transition: { 
-        type: 'spring',
-        stiffness: 300,
-        damping: 30
-      }
-    },
-    exit: { 
-      x: '-100%', 
-      opacity: 0,
-      transition: { 
-        duration: 0.3
-      }
-    }
-  };
-  
-  // Desktop sidebar variants
-  const sidebarVariants = {
-    open: { width: 'var(--sidebar-width)', transition: { duration: 0.3 } },
-    closed: { width: 'var(--sidebar-collapsed-width)', transition: { duration: 0.3 } }
-  };
-  
-  const sidebarIconVariants = {
-    open: { rotate: 0 },
-    closed: { rotate: 180 }
-  };
-  
-  const contentVariants = {
-    open: { opacity: 1, x: 0, display: 'block', transition: { delay: 0.2, duration: 0.2 } },
-    closed: { opacity: 0, x: -10, transitionEnd: { display: 'none' }, transition: { duration: 0.2 } }
-  };
-
-  // Handle logout
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await logout();
-      // Close mobile menu if open
-      setIsMobileMenuOpen(false);
+      navigate('/login', { replace: true });
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Failed to log out', error);
+      setIsLoggingOut(false);
     }
   };
 
-  // Check if nav item is active
-  const isNavItemActive = (path) => {
-    if (path === '/dashboard' && location.pathname === '/dashboard') {
-      return true;
-    }
-    return location.pathname.startsWith(path) && path !== '/dashboard';
-  };
+  const navItems = [
+    { name: 'Overview', path: '/dashboard', icon: HomeIcon },
+    { name: 'Uploads', path: '/dashboard/recent-uploads', icon: DocumentTextIcon },
+    { name: 'Plans', path: '/dashboard/plans', icon: CreditCardIcon },
+    { name: 'Profile', path: '/dashboard/profile', icon: Cog6ToothIcon },
+    { name: 'Help', path: '/dashboard/help', icon: QuestionMarkCircleIcon },
+  ];
+
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full bg-[#0f0f13]/80 backdrop-blur-2xl border-r border-white/5 w-64 shadow-2xl relative overflow-hidden">
+      {/* Subtle top glow */}
+      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-violet-500/10 to-transparent pointer-events-none" />
+
+      {/* Brand */}
+      <div className="h-20 flex items-center px-6 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+            <span className="text-white font-bold font-display text-sm tracking-tighter">RZ</span>
+          </div>
+          <span className="font-bold text-zinc-100 font-display tracking-tight text-lg">ResumeZen</span>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar relative z-10">
+        <div className="px-3 mb-2 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Main Menu</div>
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path || 
+                          (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+          
+          return (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 relative overflow-hidden ${
+                isActive 
+                  ? 'text-white' 
+                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
+              }`}
+            >
+              {/* Active Background Glow */}
+              {isActive && (
+                <motion.div 
+                  layoutId="activeNavBg"
+                  className="absolute inset-0 bg-gradient-to-r from-violet-600/20 to-transparent border-l-2 border-violet-500"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+              
+              <item.icon className={`h-5 w-5 mr-3 relative z-10 transition-colors ${isActive ? 'text-violet-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+              <span className="relative z-10">{item.name}</span>
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* Upgrade Callout */}
+      <div className="px-4 mb-4 relative z-10">
+        <div className="bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 rounded-xl p-4 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/20 rounded-full blur-xl -mr-10 -mt-10 transition-transform group-hover:scale-150 duration-500" />
+          <div className="relative z-10">
+            <SparklesIcon className="h-5 w-5 text-violet-400 mb-2" />
+            <h4 className="text-sm font-semibold text-zinc-100 mb-1">Go Unlimited</h4>
+            <p className="text-xs text-zinc-400 mb-3 leading-relaxed">Get infinite AI resume reviews and land your dream job faster.</p>
+            <button onClick={() => navigate('/dashboard/plans')} className="w-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold py-2 rounded-lg transition-colors border border-white/5 shadow-sm">
+              Upgrade Plan
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* User Profile & Logout */}
+      <div className="p-4 border-t border-white/5 relative z-10">
+        <div className="flex items-center gap-3 px-2 mb-4">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-violet-600 to-cyan-600 p-[2px] shadow-lg">
+            <div className="h-full w-full rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+              <span className="text-sm font-bold text-zinc-200">
+                {currentUser?.name?.charAt(0)?.toUpperCase() || currentUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-zinc-200 truncate font-display">{currentUser?.name || 'User'}</p>
+            <p className="text-xs text-zinc-500 truncate">{currentUser?.email || 'No email'}</p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="w-full flex items-center px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg hover:text-red-400 hover:bg-red-500/10 transition-colors group"
+        >
+          <ArrowLeftOnRectangleIcon className="h-5 w-5 mr-3 text-zinc-500 group-hover:text-red-400 transition-colors" />
+          {isLoggingOut ? 'Logging out...' : 'Log out'}
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <>
-      {/* Sidebar for Desktop */}
-      <motion.div 
-        ref={sidebarRef}
-        className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:z-20 bg-zinc-950/50 backdrop-blur-xl border-r border-white/5 overflow-hidden overflow-x-hidden"
-        variants={sidebarVariants}
-        initial={isOpen ? "open" : "closed"}
-        animate={isOpen ? "open" : "closed"}
-        style={{"--sidebar-width": "18rem", "--sidebar-collapsed-width": "5rem"}}
-      >
-        <div className="flex flex-col flex-grow overflow-y-auto overflow-x-hidden relative bg-zinc-950/30">
-          {/* Logo and App Name */}
-          <div className={`p-4 flex items-center border-b border-white/5 bg-zinc-950/60 backdrop-blur-md justify-between ${
-            isOpen ? 'px-4' : 'px-0 justify-center'
-          }`}>
-            <div className={`flex items-center ${isOpen ? 'gap-2' : ''}`}>
-              <motion.div
-                className="h-11 w-11 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 text-white flex items-center justify-center font-bold text-2xl shadow-lg ring-4 ring-purple-500/20 cursor-pointer animate-pulse-glow flex-shrink-0"
-                whileHover={{ scale: 1.12, boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)' }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleSidebar}
-                title="Toggle sidebar"
-              >
-                R
-              </motion.div>
-              {isOpen && (
-                <motion.span 
-                  variants={contentVariants}
-                  initial="open"
-                  animate="open"
-                  className="ml-3 text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 drop-shadow-lg flex-shrink-0"
-                >
-                  ResumeZen
-                </motion.span>
-              )}
-            </div>
-            
-            {/* Collapse toggle button next to logo */}
-            {isOpen && (
-              <button
-                onClick={toggleSidebar}
-                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-white/5 transition-colors border border-white/5"
-                title="Collapse Sidebar"
-              >
-                <ChevronDoubleLeftIcon className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          
-          {/* User Profile Section */}
-          <div className={`px-4 py-6 border-b border-white/5 flex flex-col items-center gap-2 bg-zinc-950/20 backdrop-blur-sm ${
-            isOpen ? '' : 'justify-center py-4 px-0'
-          }`}>
-            <motion.div
-              className="relative flex items-center justify-center cursor-pointer"
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={toggleSidebar}
-              title="Toggle sidebar"
-            >
-              <div className={`rounded-full bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 flex items-center justify-center shadow-xl ring-4 ring-purple-500/20 animate-pulse-glow ${
-                isOpen ? 'h-14 w-14' : 'h-10 w-10'
-              }`}>
-                <span className={`font-bold text-white drop-shadow-lg ${isOpen ? 'text-2xl' : 'text-base'}`}>{getInitials()}</span>
-              </div>
-              <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-zinc-950 animate-pulse"></span>
-            </motion.div>
-            
-            {isOpen && (
-              <motion.div 
-                variants={contentVariants}
-                initial="open"
-                animate="open"
-                className="text-center"
-              >
-                <p className="text-base font-semibold text-zinc-100">
-                  {currentUser?.name || 'User'}
-                </p>
-                <p className="text-xs text-zinc-400 truncate max-w-[160px]">
-                  {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
-                </p>
-              </motion.div>
-            )}
-          </div>
-          
-          {/* Navigation Links */}
-          <nav className="flex-1 py-6">
-            <div className="space-y-2">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/dashboard'}
-                  className={({ isActive }) => 
-                    `group flex items-center py-3 rounded-xl text-base font-medium transition-all duration-300 border-l-2 ${
-                      isOpen ? 'px-3 mx-3 justify-start' : 'mx-2 justify-center px-0'
-                    } ${
-                      isActive || isNavItemActive(item.path)
-                        ? 'border-purple-500 bg-white/5 text-purple-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
-                        : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/5'
-                    }`
-                  }
-                >
-                  <motion.span
-                    className={`flex-shrink-0 ${isOpen ? 'mr-3' : 'mr-0'}`}
-                    whileHover={{ scale: 1.2, rotate: 8 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                  >
-                    {item.icon}
-                  </motion.span>
-                  {isOpen && (
-                    <motion.span 
-                      variants={contentVariants}
-                      initial="open"
-                      animate="open"
-                      className=""
-                    >
-                      {item.name}
-                    </motion.span>
-                  )}
-                </NavLink>
-              ))}
-            </div>
-          </nav>
-          
-          {/* Logout Button */}
-          <div className="p-4 mt-auto">
-            <motion.button
-              onClick={handleLogout}
-              className={`w-full flex items-center justify-center px-3 py-3 text-base rounded-xl text-zinc-400 bg-white/5 border border-white/5 hover:text-white hover:bg-white/10 shadow-md hover:shadow-xl transition-all duration-300 font-semibold ${
-                isOpen ? 'gap-3' : 'gap-0 px-0'
-              }`}
-              whileHover={{ scale: 1.07 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <ArrowRightOnRectangleIcon className="h-6 w-6 flex-shrink-0" />
-              {isOpen && (
-                <motion.span 
-                  variants={contentVariants}
-                  initial="open"
-                  animate="open"
-                  className=""
-                >
-                  Logout
-                </motion.span>
-              )}
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
-      
-      {/* Mobile Menu (no three-dot button, avatar toggles menu) */}
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex h-full z-20 sticky top-0">
+        <SidebarContent />
+      </div>
+
+      {/* Mobile Sidebar */}
       <AnimatePresence>
-        {isMobileMenuOpen && (
+        {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={closeSidebar}
             />
-            
-            {/* Sidebar Menu */}
             <motion.div
-              variants={mobileMenuVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="fixed top-0 bottom-0 left-0 w-72 bg-zinc-950/90 backdrop-blur-2xl border-r border-white/10 z-50 shadow-2xl flex flex-col md:hidden rounded-tr-3xl rounded-br-3xl overflow-hidden"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed inset-y-0 left-0 z-50 md:hidden"
             >
-              {/* Mobile Header with responsive avatar */}
-              <div className="flex items-center justify-between p-5 border-b border-white/5 bg-zinc-950/60 backdrop-blur-md">
-                <div className="flex items-center gap-2">
-                  <motion.div
-                    className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-400 to-blue-400 text-white flex items-center justify-center font-bold text-xl shadow-lg ring-2 ring-purple-500/20 cursor-pointer"
-                    whileHover={{ scale: 1.12 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    title="Close menu"
-                  >
-                    R
-                  </motion.div>
-                  <span className="ml-2 text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 drop-shadow-lg">
-                    ResumeZen
-                  </span>
-                </div>
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              {/* Mobile User Profile with responsive avatar */}
-              <div className="p-5 border-b border-white/5 flex flex-col items-center gap-2 bg-zinc-950/40 backdrop-blur-sm">
-                <motion.div
-                  className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-50 via-pink-400 to-blue-400 flex items-center justify-center shadow-xl ring-2 ring-purple-500/20 cursor-pointer"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  title="Close menu"
-                >
-                  <span className="text-xl font-bold text-white drop-shadow-lg">{getInitials()}</span>
-                </motion.div>
-                <div className="text-center">
-                  <p className="text-base font-semibold text-zinc-100">
-                      {currentUser?.name || 'User'}
-                    </p>
-                    <p className="text-xs text-zinc-400 truncate max-w-[160px]">
-                      {currentUser?.email || currentUser?.mobileNumber || 'No email provided'}
-                    </p>
-                </div>
-              </div>
-              
-              {/* Mobile Navigation */}
-              <nav className="flex-1 py-6 overflow-y-auto">
-                <div className="px-4 space-y-2">
-                  {navItems.map((item) => (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      end={item.path === '/dashboard'}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={({ isActive }) => 
-                        `group flex items-center px-4 py-3 rounded-xl text-base font-medium transition-all duration-300 border-l-2 ${
-                          isActive || isNavItemActive(item.path)
-                            ? 'border-purple-500 bg-white/5 text-purple-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
-                            : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/5'
-                        }`
-                      }
-                    >
-                      <motion.span
-                        className="flex-shrink-0 mr-3"
-                        whileHover={{ scale: 1.2, rotate: 8 }}
-                        transition={{ type: 'spring', stiffness: 300 }}
-                      >
-                        {item.icon}
-                      </motion.span>
-                      <span>{item.name}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              </nav>
-              
-              {/* Mobile Logout */}
-              <div className="p-5 border-t border-white/5">
-                <motion.button
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 text-base rounded-xl text-zinc-400 bg-white/5 hover:text-white hover:bg-white/10 shadow-md transition-all duration-300 font-semibold"
-                  whileHover={{ scale: 1.07 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <ArrowRightOnRectangleIcon className="h-6 w-6" />
-                  <span>Logout</span>
-                </motion.button>
-              </div>
+              <SidebarContent />
+              <button
+                onClick={closeSidebar}
+                className="absolute top-4 -right-12 p-2 text-zinc-400 hover:text-white bg-zinc-900/50 backdrop-blur-md rounded-lg border border-white/10"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
             </motion.div>
           </>
         )}
       </AnimatePresence>
     </>
   );
-} 
+}

@@ -1,366 +1,502 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import PlanModal from '../../components/PlanModal';
 import * as pdfUtils from '../../utils/pdfUtils';
-import DashboardGreetingSection from './dashboardwelcome/DashboardGreetingSection';
-import DashboardCurrentPlanSection from './dashboardwelcome/DashboardCurrentPlanSection';
-import DashboardFileUploadSection from './dashboardwelcome/DashboardFileUploadSection';
+import { getResumeHistory } from '../../services/resumeService';
+import PlanModal from '../../components/PlanModal';
 import DashboardCreditConfirmationPopup from './dashboardwelcome/DashboardCreditConfirmationPopup';
 import DashboardNoCreditPopup from './dashboardwelcome/DashboardNoCreditPopup';
-import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
-import DashboardFeedbackQuotes from './dashboardwelcome/DashboardFeedbackQuotes';
-import DashboardCustomerReviews from './dashboardwelcome/DashboardCustomerReviews';
-import { useNavigate } from 'react-router-dom';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
-import { AnimatePresence, motion } from 'framer-motion';
+import ResumeDetailModal from './ResumeDetailModal';
+import { motion } from 'framer-motion';
+import {
+  ArrowUpTrayIcon,
+  DocumentTextIcon,
+  ChartBarIcon,
+  SparklesIcon,
+  CreditCardIcon,
+  CheckCircleIcon,
+  ArrowRightIcon,
+} from '@heroicons/react/24/outline';
 
 export default function DashboardWelcome() {
   const { currentUser, userPlans, fetchUserPlans, usePlanCredit } = useAuth();
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  // Upload state
+  const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [activePlan, setActivePlan] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
-  const [lastActive, setLastActive] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Modal state
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [showNoCreditPopup, setShowNoCreditPopup] = useState(false);
   const [showCreditConfirmation, setShowCreditConfirmation] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const fileInputRef = useRef(null);
-  const uploadBoxRef = useRef(null);
-  const navigate = useNavigate();
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisFileDetails, setAnalysisFileDetails] = useState(null);
   const [fileSizeError, setFileSizeError] = useState(false);
+  const [selectedResume, setSelectedResume] = useState(null);
+
+  // Data state
+  const [activePlan, setActivePlan] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  // Fetch plans and history
+  useEffect(() => { fetchUserPlans(true); }, [currentUser]);
 
   useEffect(() => {
-    fetchUserPlans(true);
-    if (currentUser && currentUser.lastLoginAt) {
-      setLastActive(new Date(currentUser.lastLoginAt));
-    }
+    const fetchHistory = async () => {
+      try {
+        const data = await getResumeHistory();
+        setHistory(data);
+      } catch { /* silent */ } finally { setHistoryLoading(false); }
+    };
+    fetchHistory();
   }, [currentUser]);
 
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'planPurchased') {
-        fetchUserPlans(true);
-      }
+      if (e.key === 'planPurchased') fetchUserPlans(true);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [fetchUserPlans]);
 
   useEffect(() => {
-    if (userPlans && userPlans.length > 0) {
-      // Only consider active, non-expired plans
+    if (userPlans?.length > 0) {
       const now = new Date();
-      const validPlans = userPlans.filter(plan => {
-        if (!plan.isActive) return false;
-        if (plan.expiresAt && new Date(plan.expiresAt) < now) return false;
-        if (!plan.planId) return false;
-        // Must have credits left or be unlimited
-        return plan.planId.isUnlimited || plan.creditsLeft > 0;
-      });
-      if (validPlans.length > 0) {
-        // Sort by purchase date, most recent first
-        const sortedPlans = [...validPlans].sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt));
-        setActivePlan(sortedPlans[0]);
-      } else {
-        setActivePlan(null);
-      }
+      const valid = userPlans
+        .filter(p => p.isActive && p.planId && (!p.expiresAt || new Date(p.expiresAt) > now) && (p.planId.isUnlimited || p.creditsLeft > 0))
+        .sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt));
+      setActivePlan(valid[0] || null);
     } else {
       setActivePlan(null);
     }
   }, [userPlans]);
 
-  useEffect(() => {
-    if (isDragging && uploadBoxRef.current) {
-      uploadBoxRef.current.classList.add('animate-pulse');
-    } else if (uploadBoxRef.current) {
-      uploadBoxRef.current.classList.remove('animate-pulse');
-    }
-  }, [isDragging]);
+  // Computed values
+  const avgScore = (() => {
+    const scores = history.map(h => h.analysis?.atsScore).filter(s => typeof s === 'number');
+    return scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+  })();
 
-  const getInitials = () => {
-    if (!currentUser || !currentUser.name) return 'U';
-    return currentUser.name.split(' ').map(name => name[0]).join('').toUpperCase().substring(0, 2);
+  const creditsText = activePlan
+    ? activePlan.planId.isUnlimited ? '∞' : String(activePlan.creditsLeft)
+    : '0';
+
+  const hasCredits = activePlan && (activePlan.planId.isUnlimited || activePlan.creditsLeft > 0);
+
+  // File handlers
+  const validateFile = (file) => {
+    if (file.size > 1024 * 1024) { setFileSizeError(true); return false; }
+    return true;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'No expiration';
-    return new Date(dateString).toLocaleDateString();
+  const handleFileSelect = (file) => {
+    if (!validateFile(file)) return;
+    setSelectedFile(file);
+    setUploadSuccess(false);
+    setErrorMessage('');
+    if (!activePlan || !hasCredits) { setShowNoCreditPopup(true); return; }
+    setShowCreditConfirmation(true);
   };
 
-  const formatLastActive = (date) => {
-    if (!date) return 'First time here';
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffMins < 5) return 'Just now';
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
-  };
-
-  const getDaysRemaining = (expiresAt) => {
-    if (!expiresAt) return null;
-    const today = new Date();
-    const expDate = new Date(expiresAt);
-    const diffTime = expDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  };
-
-  const hasCreditsRemaining = () => {
-    if (!activePlan) return false;
-    return activePlan.planId.isUnlimited || activePlan.creditsLeft > 0;
-  };
-
-  const handleDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
-  const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
-  const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); if (!isDragging) setIsDragging(true); };
   const handleDrop = (e) => {
-    e.preventDefault(); e.stopPropagation(); setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      if (file.size > 1024 * 1024) {
-        setFileSizeError(true);
-        setSelectedFile(null);
-        setUploadSuccess(false);
-        setErrorMessage('');
-        return;
-      }
-      setSelectedFile(file);
-      setUploadSuccess(false);
-      setErrorMessage('');
-      if (!activePlan) {
-        setShowNoCreditPopup(true);
-        return;
-      }
-      if (!activePlan.planId.isUnlimited && activePlan.creditsLeft <= 0) {
-        setShowNoCreditPopup(true);
-        return;
-      }
-      setShowCreditConfirmation(true);
-      e.dataTransfer.clearData();
-    }
+    e.preventDefault(); setIsDragging(false);
+    if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
   };
+
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      if (file.size > 1024 * 1024) {
-        setFileSizeError(true);
-        setSelectedFile(null);
-        setUploadSuccess(false);
-        setErrorMessage('');
-        return;
-      }
-      setSelectedFile(file);
-      setUploadSuccess(false);
-      setErrorMessage('');
-      if (!activePlan) {
-        setShowNoCreditPopup(true);
-        return;
-      }
-      if (!activePlan.planId.isUnlimited && activePlan.creditsLeft <= 0) {
-        setShowNoCreditPopup(true);
-        return;
-      }
-      setShowCreditConfirmation(true);
-    }
+    if (e.target.files?.[0]) handleFileSelect(e.target.files[0]);
   };
-  const handleFileUpload = async () => {
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    if (selectedFile.type !== 'application/pdf') { setErrorMessage('Only PDF files are allowed'); return; }
+    if (selectedFile.size > 1024 * 1024) { setErrorMessage('File size exceeds 1MB limit'); return; }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setErrorMessage('');
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 10) + 5;
+      if (progress >= 80) progress = 80;
+      setUploadProgress(progress);
+    }, 120);
+
     try {
-      setErrorMessage('');
-      if (!selectedFile) { setErrorMessage('Please select a file'); return; }
-      if (selectedFile.size > 1024 * 1024) { setErrorMessage('File size exceeds 1MB limit'); return; }
-      if (selectedFile.type !== 'application/pdf') { setErrorMessage('Only PDF files are allowed'); return; }
-      setIsUploading(true);
-      setUploadProgress(0);
-      // Animate progress from 0 to 80% while uploading
-      let progress = 0;
-      const progressInterval = setInterval(() => {
-        progress += Math.floor(Math.random() * 10) + 5; // random step for realism
-        if (progress >= 80) progress = 80;
-        setUploadProgress(progress);
-      }, 120);
       const formData = new FormData();
       formData.append('resume', selectedFile);
       const response = await axios.post('/api/upload/resume', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      clearInterval(progressInterval);
+      clearInterval(interval);
       setUploadProgress(100);
-      if (response.data && response.data.success) {
+
+      if (response.data?.success) {
         const fileData = response.data.data;
-        setUploadedFile({ name: selectedFile.name, originalName: selectedFile.name, size: selectedFile.size, type: selectedFile.type, url: fileData.url, cloudinaryUrl: fileData.cloudinaryUrl, viewUrl: fileData.viewUrl, downloadUrl: fileData.downloadUrl, publicId: fileData.publicId, assetId: fileData.assetId, format: fileData.format || 'pdf', resourceType: fileData.resourceType || 'image', createdAt: new Date().toISOString() });
+        const uploaded = { name: selectedFile.name, originalName: selectedFile.name, size: selectedFile.size, type: selectedFile.type, url: fileData.url, cloudinaryUrl: fileData.cloudinaryUrl, viewUrl: fileData.viewUrl, downloadUrl: fileData.downloadUrl, publicId: fileData.publicId, assetId: fileData.assetId, format: fileData.format || 'pdf', resourceType: fileData.resourceType || 'image', createdAt: new Date().toISOString() };
+        setUploadedFile(uploaded);
         pdfUtils.storePdfDetails(fileData, selectedFile);
         setUploadSuccess(true);
-        setIsUploading(false);
       } else {
-        setErrorMessage(response.data.message || 'Error uploading file');
-        setIsUploading(false);
+        setErrorMessage(response.data.message || 'Upload failed');
       }
-    } catch (error) {
-      setUploadProgress(0);
-      setErrorMessage('Upload failed: ' + (error.response?.data?.message || error.message || 'Unknown error'));
+    } catch (err) {
+      clearInterval(interval);
+      setErrorMessage('Upload failed: ' + (err.response?.data?.message || err.message));
+    } finally {
       setIsUploading(false);
     }
   };
-  const confirmCreditUsage = () => {
-    setShowCreditConfirmation(false);
-    // Do not upload here; wait for explicit user action in DashboardFileUploadSection
-  };
-  const handleProceed = async () => {
-    if (!uploadedFile) {
-      if (fileInputRef.current) fileInputRef.current.click();
-        return;
-      }
+
+  const confirmCreditUsage = () => { setShowCreditConfirmation(false); };
+
+  const handleProceed = () => {
+    if (!uploadedFile) { if (fileInputRef.current) fileInputRef.current.click(); return; }
     setAnalysisFileDetails(uploadedFile);
     setShowAnalysisModal(true);
-    // Clear upload state and file input after opening modal
     setSelectedFile(null);
     setUploadedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
-  const openPlanModal = () => { setIsPlanModalOpen(true); setShowNoCreditPopup(false); };
 
-  // Called by DashboardFileUploadSection when user clicks 'Upload to Continue'
-  const handleUploadButtonClick = () => {
-    if (!selectedFile) return;
-    if (selectedFile.type !== 'application/pdf') {
-      setErrorMessage('Only PDF files are allowed.');
-        return;
-      }
-    if (selectedFile.size > 1024 * 1024) {
-      setErrorMessage('File size exceeds 1MB limit.');
-        return;
-    }
-    setErrorMessage('');
-    handleFileUpload(selectedFile);
-  };
-
-  const handleAnalysisModalClose = () => {
+  const handleAnalysisClose = () => {
     setShowAnalysisModal(false);
     setAnalysisFileDetails(null);
-    // Reset upload state so the upload box is cleared after analysis/close
     setSelectedFile(null);
     setUploadedFile(null);
-    setUploadSuccess(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    // Refresh user plans/credits after analysis
     fetchUserPlans(true);
   };
 
+  const firstName = currentUser?.name?.split(' ')[0] || 'there';
+
   return (
-    <div className="relative">
-      {errorMessage && (
-        <div className="bg-red-950/20 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
-          <div className="flex">
-            <ExclamationCircleIcon className="h-5 w-5 text-red-400 mr-2" />
-            <p className="text-red-400">{errorMessage}</p>
-          </div>
-        </div>
-      )}
-      <AnimatePresence>
-        {fileSizeError && (
+    <div className="space-y-8 relative z-10">
+      {/* Hero Welcome Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-2xl bg-[#131318]/60 backdrop-blur-xl border border-white/10 p-8 sm:p-10 overflow-hidden shadow-2xl"
+      >
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-violet-600/30 rounded-full blur-[80px] pointer-events-none mix-blend-screen" />
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-cyan-600/20 rounded-full blur-[60px] pointer-events-none mix-blend-screen" />
+        
+        <div className="relative z-10 max-w-3xl">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6"
           >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-8 max-w-md w-full text-center relative"
-            >
-              <motion.div
-                initial={{ rotate: -10, scale: 1.2 }}
-                animate={{ rotate: [0, 10, -10, 0], scale: [1.2, 1.1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                className="text-5xl mb-2"
-              >
-                📦
-              </motion.div>
-              <h4 className="text-2xl font-bold text-red-500 mb-2">File Too Large!</h4>
-              <p className="text-zinc-300 mb-6 text-sm">Your PDF exceeds 1MB. Please upload a smaller file.</p>
-              <button
-                onClick={() => {
-                  setFileSizeError(false);
-                  setSelectedFile(null);
-                  setUploadSuccess(false);
-                  setErrorMessage('');
-                }}
-                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg font-semibold transition-all duration-200 focus:outline-none shadow-md shadow-purple-500/10"
-              >
-                Close
-              </button>
-            </motion.div>
+            <SparklesIcon className="h-4 w-4 text-violet-400" />
+            <span className="text-xs font-semibold tracking-wide text-zinc-300 uppercase">Dashboard</span>
           </motion.div>
-        )}
-      </AnimatePresence>
-      <DashboardGreetingSection
-        currentUser={currentUser}
-        lastActive={lastActive}
-        getInitials={getInitials}
-        formatLastActive={formatLastActive}
-      />
-      <DashboardCurrentPlanSection
-        activePlan={activePlan}
-        getDaysRemaining={getDaysRemaining}
-        formatDate={formatDate}
-        openPlanModal={openPlanModal}
-      />
-      <DashboardFileUploadSection
-        isDragging={isDragging}
-        isUploading={isUploading}
-        uploadSuccess={uploadSuccess}
-        uploadProgress={uploadProgress}
-        selectedFile={selectedFile}
-        uploadedFile={uploadedFile}
-        isProcessing={isProcessing}
-        handleDragEnter={handleDragEnter}
-        handleDragLeave={handleDragLeave}
-        handleDragOver={handleDragOver}
-        handleDrop={handleDrop}
-        handleFileChange={handleFileChange}
-        confirmCreditUsage={confirmCreditUsage}
-        handleProceed={handleProceed}
-        hasCreditsRemaining={hasCreditsRemaining}
-        onUploadButtonClick={handleUploadButtonClick}
-        activePlan={activePlan}
-        errorMessage={errorMessage}
-        setErrorMessage={setErrorMessage}
-      />
-      <DashboardFeedbackQuotes />
-      <DashboardCustomerReviews />
+          
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight font-display mb-4 text-white">
+            Welcome back, <br className="sm:hidden" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 animate-shimmer bg-[length:200%_auto]">
+              {firstName}
+            </span>
+          </h1>
+          <p className="text-lg text-zinc-400 font-light max-w-xl">
+            Upload your latest resume to see how it performs against standard ATS metrics, and discover the exact keywords you're missing.
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <StatCard 
+          icon={DocumentTextIcon} 
+          label="Resumes Analyzed" 
+          value={String(history.length)} 
+          gradient="from-violet-500 to-fuchsia-500" 
+          delay={0.1}
+        />
+        <StatCard 
+          icon={ChartBarIcon} 
+          label="Avg. ATS Score" 
+          value={`${avgScore}%`} 
+          gradient="from-cyan-500 to-blue-500" 
+          delay={0.2}
+        />
+        <StatCard 
+          icon={CreditCardIcon} 
+          label="Credits Left" 
+          value={creditsText} 
+          gradient="from-emerald-500 to-teal-500" 
+          delay={0.3}
+        />
+      </div>
+
+      {/* Two Column Layout for Desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Column: Upload & Plan (takes 2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Premium Upload Zone */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-[#131318]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden"
+          >
+            {/* Subtle glow behind the title */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-violet-500/5 blur-3xl pointer-events-none" />
+            
+            <div className="flex items-center justify-between mb-6 relative z-10">
+              <h2 className="text-lg font-bold text-zinc-100 font-display flex items-center gap-2">
+                <ArrowUpTrayIcon className="h-5 w-5 text-violet-400" />
+                Upload Resume
+              </h2>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-6 px-4 py-3 bg-red-950/40 border border-red-500/20 rounded-xl text-sm text-red-400 backdrop-blur-sm relative z-10">
+                {errorMessage}
+              </div>
+            )}
+
+            {!uploadSuccess && !isUploading && !selectedFile && (
+              <div
+                onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300 relative z-10 group ${
+                  isDragging 
+                    ? 'border-violet-500 bg-violet-500/10 scale-[1.02] shadow-glow-primary' 
+                    : 'border-white/10 bg-white/5 hover:border-violet-500/50 hover:bg-white/10'
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div className={`h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4 transition-colors duration-300 ${isDragging ? 'bg-violet-500/20 text-violet-400' : 'bg-white/5 text-zinc-400 group-hover:bg-violet-500/10 group-hover:text-violet-400'}`}>
+                  <ArrowUpTrayIcon className="h-8 w-8" />
+                </div>
+                <p className="text-base font-semibold text-zinc-200 mb-2 font-display">Click to upload or drag & drop</p>
+                <p className="text-sm text-zinc-500 font-medium">PDF only (Max 1MB)</p>
+                <input ref={fileInputRef} type="file" className="hidden" accept=".pdf" onChange={handleFileChange} />
+              </div>
+            )}
+
+            {selectedFile && !isUploading && !uploadSuccess && (
+              <div className="space-y-6 relative z-10">
+                <div className="flex items-center gap-4 px-5 py-4 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
+                  <div className="h-10 w-10 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0 border border-violet-500/30">
+                    <DocumentTextIcon className="h-6 w-6 text-violet-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-zinc-100 truncate">{selectedFile.name}</p>
+                    <p className="text-xs text-zinc-400">{Math.round(selectedFile.size / 1024)} KB</p>
+                  </div>
+                  <button onClick={() => setSelectedFile(null)} className="text-xs font-medium text-zinc-500 hover:text-red-400 transition-colors px-2 py-1 bg-white/5 rounded-md hover:bg-red-500/10">
+                    Remove
+                  </button>
+                </div>
+                <button 
+                  onClick={handleUpload} 
+                  disabled={!hasCredits} 
+                  className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.3)] disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2 group"
+                >
+                  <SparklesIcon className="h-5 w-5" />
+                  Analyze this resume
+                </button>
+              </div>
+            )}
+
+            {isUploading && (
+              <div className="py-12 text-center relative z-10">
+                <div className="relative h-24 w-24 mx-auto mb-6">
+                  <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+                  <div 
+                    className="absolute inset-0 rounded-full border-4 border-violet-500 border-t-transparent animate-spin" 
+                    style={{ clipPath: `polygon(0 0, 100% 0, 100% ${uploadProgress}%, 0 ${uploadProgress}%)` }} 
+                  ></div>
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    <span className="text-lg font-bold text-zinc-100">{uploadProgress}%</span>
+                  </div>
+                </div>
+                <p className="text-base font-medium text-zinc-300 mb-1">Uploading your document...</p>
+                <p className="text-xs text-zinc-500">Securely encrypting and storing file</p>
+              </div>
+            )}
+
+            {uploadSuccess && (
+              <div className="space-y-6 py-4 relative z-10 text-center">
+                <div className="h-20 w-20 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative">
+                  <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping opacity-20"></div>
+                  <CheckCircleIcon className="h-10 w-10 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-100 mb-1">Upload Successful!</h3>
+                  <p className="text-sm text-zinc-400">"{uploadedFile?.originalName || 'Resume'}" is ready for analysis.</p>
+                </div>
+                <button 
+                  onClick={handleProceed} 
+                  disabled={isProcessing || !hasCredits} 
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2 group"
+                >
+                  <ChartBarIcon className="h-5 w-5" />
+                  Generate ATS Report
+                  <ArrowRightIcon className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Active Plan Banner - Moved Below Upload */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            {activePlan ? (
+              <div className="bg-[#131318]/80 backdrop-blur-md border border-white/10 rounded-2xl px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden group">
+                <div className="absolute -right-20 -top-20 w-40 h-40 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-colors" />
+                <div className="flex items-center gap-4 relative z-10">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20 p-0.5">
+                     <div className="w-full h-full bg-[#131318] rounded-[10px] flex items-center justify-center">
+                       <SparklesIcon className="h-6 w-6 text-violet-400" />
+                     </div>
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-zinc-100 font-display">{activePlan.planId.name}</p>
+                    <p className="text-sm text-zinc-400">
+                      {activePlan.planId.isUnlimited ? 'Unlimited checks available' : `${activePlan.creditsLeft} of ${activePlan.planId.credits} checks remaining`}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => navigate('/dashboard/plans')} className="text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap relative z-10">
+                  Manage Plan
+                </button>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 backdrop-blur-md border border-violet-500/30 rounded-2xl px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p className="text-base font-bold text-white font-display">No Active Plan</p>
+                  <p className="text-sm text-violet-200">Select a plan to start analyzing your resumes instantly.</p>
+                </div>
+                <button onClick={() => navigate('/dashboard/plans')} className="bg-white text-violet-900 hover:bg-zinc-100 font-bold px-6 py-2.5 rounded-xl transition-colors shadow-glow-primary">
+                  View Pricing
+                </button>
+              </div>
+            )}
+          </motion.div>
+
+        </div>
+
+        {/* Right Column: Recent Activity */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-[#131318]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col h-full min-h-[400px]"
+        >
+          <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+            <h2 className="text-lg font-bold text-zinc-100 font-display">Recent Activity</h2>
+            {history.length > 5 && (
+              <button onClick={() => navigate('/dashboard/recent-uploads')} className="text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors uppercase tracking-wider bg-violet-500/10 px-2 py-1 rounded-md">
+                View All
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar -mr-2">
+            {historyLoading ? (
+              <div className="flex justify-center items-center h-full min-h-[200px]">
+                <div className="h-8 w-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : history.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center px-4">
+                <div className="h-16 w-16 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10">
+                  <DocumentTextIcon className="h-8 w-8 text-zinc-600" />
+                </div>
+                <p className="text-base font-semibold text-zinc-300 mb-1">No history found</p>
+                <p className="text-sm text-zinc-500">Your recent analyses will appear here once you upload a resume.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {history.slice(0, 7).map((item) => {
+                  const score = typeof item.analysis?.atsScore === 'number' ? item.analysis.atsScore : null;
+                  return (
+                    <div 
+                      key={item._id} 
+                      onClick={() => setSelectedResume(item)}
+                      className="group flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-10 w-10 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-white/5 group-hover:bg-violet-500/20 group-hover:border-violet-500/30 transition-colors flex-shrink-0">
+                          <DocumentTextIcon className="h-5 w-5 text-zinc-400 group-hover:text-violet-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-zinc-200 truncate">{item.contactInformation?.name || 'Unnamed Resume'}</p>
+                          <p className="text-xs text-zinc-500">{new Date(item.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      
+                      {score !== null && (
+                        <div className="flex-shrink-0">
+                          <div className={`px-2.5 py-1 rounded-md text-xs font-bold tabular-nums border ${
+                            score >= 70 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                            score >= 40 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
+                            'bg-red-500/10 text-red-400 border-red-500/20'
+                          }`}>
+                            {score}%
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+      </div>
+
+      {/* Modals */}
       <PlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} />
-      <DashboardCreditConfirmationPopup
-        show={showCreditConfirmation}
-        onClose={() => setShowCreditConfirmation(false)}
-        onConfirm={confirmCreditUsage}
-        activePlan={activePlan}
-      />
-      <DashboardNoCreditPopup
-        show={showNoCreditPopup}
-        onClose={() => setShowNoCreditPopup(false)}
-        onViewPlans={openPlanModal}
-        activePlan={activePlan}
-      />
-      <ResumeAnalysisModal
-        fileDetails={analysisFileDetails}
-        open={showAnalysisModal}
-        onClose={handleAnalysisModalClose}
-      />
+      <DashboardCreditConfirmationPopup show={showCreditConfirmation} onClose={() => setShowCreditConfirmation(false)} onConfirm={confirmCreditUsage} activePlan={activePlan} />
+      <DashboardNoCreditPopup show={showNoCreditPopup} onClose={() => setShowNoCreditPopup(false)} onViewPlans={() => { setIsPlanModalOpen(true); setShowNoCreditPopup(false); }} activePlan={activePlan} />
+      <ResumeAnalysisModal fileDetails={analysisFileDetails} open={showAnalysisModal} onClose={handleAnalysisClose} />
+      <ResumeDetailModal modalItem={selectedResume} onClose={() => setSelectedResume(null)} />
     </div>
   );
-} 
+}
+
+function StatCard({ icon: Icon, label, value, gradient, delay }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="relative bg-[#131318]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5 overflow-hidden group hover:border-white/20 transition-all duration-300"
+    >
+      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradient} opacity-5 blur-2xl rounded-full -mt-10 -mr-10 group-hover:opacity-15 transition-opacity duration-500`} />
+      
+      <div className="flex items-start gap-4 relative z-10">
+        <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${gradient} p-[1px] shadow-lg flex-shrink-0`}>
+          <div className="w-full h-full bg-[#131318] rounded-[11px] flex items-center justify-center">
+            <Icon className="h-6 w-6 text-white/80" />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">{label}</p>
+          <p className="text-3xl font-extrabold text-white font-display tabular-nums tracking-tight">{value}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}

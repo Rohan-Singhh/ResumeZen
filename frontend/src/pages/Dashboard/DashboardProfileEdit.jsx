@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, UserCircleIcon, LinkIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 
 export default function DashboardProfileEdit() {
   const { currentUser, updateProfile } = useAuth();
@@ -37,265 +37,174 @@ export default function DashboardProfileEdit() {
     }
   }, [currentUser]);
 
-  // Add validation helpers
   const isValidPhone = (value) => /^\+?\d*$/.test(value);
   const isValidUrl = (value) => {
     if (!value) return true;
-    try {
-      new URL(value);
-      return true;
-    } catch {
-      return false;
-    }
+    try { new URL(value); return true; } catch { return false; }
   };
   const isValidGradYear = (value) => /^[\d\syearsxperience\/]*$/i.test(value);
 
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'mobileNumber') {
-      if (!isValidPhone(value)) return;
-    }
-    if (name === 'graduationYear') {
-      if (!isValidGradYear(value)) return;
-    }
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+    if (name === 'mobileNumber' && !isValidPhone(value)) return;
+    if (name === 'graduationYear' && !isValidGradYear(value)) return;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
-    
     try {
-      // Call the API to update the user profile
       const result = await updateProfile(formData);
-      
       if (result.success) {
         setSubmitSuccess(true);
-        
-        // Reset success message after 3 seconds
-        setTimeout(() => {
-          setSubmitSuccess(false);
-        }, 3000);
+        setTimeout(() => setSubmitSuccess(false), 3000);
       } else {
         setError(result.error || 'Failed to update profile');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to update profile. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-500 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 outline-none transition-all duration-300 backdrop-blur-sm";
+  const labelClass = "block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider";
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="bg-zinc-900/30 rounded-xl p-6 border border-white/10 backdrop-blur-md">
-        <h1 className="text-2xl font-bold text-zinc-100 mb-6 font-display">Edit Your Profile</h1>
-        
+    <div className="space-y-8 relative z-10 max-w-4xl mx-auto">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="text-3xl font-extrabold text-zinc-100 font-display tracking-tight">Profile Settings</h1>
+        <p className="text-base text-zinc-400 mt-2 font-light">Manage your personal information and professional links</p>
+      </motion.div>
+
+      {/* Alerts */}
+      <AnimatePresence>
         {error && (
-          <div className="mb-4 p-3 bg-red-950/20 text-red-400 border border-red-500/20 rounded-xl text-sm">
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-5 py-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm font-medium text-red-400 backdrop-blur-md">
             {error}
-          </div>
-        )}
-        
-        {submitSuccess && (
-          <motion.div 
-            className="mb-4 p-3 bg-green-950/20 text-green-400 border border-green-500/20 rounded-xl flex items-center text-sm"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <CheckCircleIcon className="h-5 w-5 mr-2 text-green-400" />
-            Profile updated successfully!
           </motion.div>
         )}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Basic Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-purple-300 mb-4">Basic Information</h3>
-              
-              <div className="mb-4">
-                <label htmlFor="fullName" className="block text-sm font-medium text-zinc-300 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="fullName"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
-                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
-                  placeholder="John Doe"
-                />
+        {submitSuccess && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-5 py-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm font-medium text-emerald-400 flex items-center gap-2 backdrop-blur-md">
+            <CheckCircleIcon className="h-5 w-5" />
+            Profile updated successfully
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Form */}
+      <motion.form 
+        onSubmit={handleSubmit}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <div className="bg-[#131318]/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[80px] pointer-events-none" />
+
+          {/* Personal Info */}
+          <div className="p-8 border-b border-white/5 relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-violet-500/10 rounded-lg border border-violet-500/20">
+                <UserCircleIcon className="h-5 w-5 text-violet-400" />
               </div>
-              
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-white/5 rounded-xl bg-zinc-950/20 text-zinc-500 cursor-not-allowed"
-                  placeholder="john@example.com"
-                  disabled
-                />
-                <p className="mt-1.5 text-xs text-zinc-500 font-medium">Email address cannot be changed</p>
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="mobileNumber" className="block text-sm font-medium text-zinc-300 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  id="mobileNumber"
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
-                  placeholder="+1 (123) 456-7890"
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="occupation" className="block text-sm font-medium text-zinc-300 mb-1">
-                  Occupation / Role
-                </label>
-                <input
-                  type="text"
-                  id="occupation"
-                  name="occupation"
-                  value={formData.occupation}
-                  onChange={handleInputChange}
-                  onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
-                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
-                  placeholder="Software Engineer"
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="graduationYear" className="block text-sm font-medium text-zinc-300 mb-1">
-                  Experience Level / Graduation Year
-                </label>
-                <input
-                  type="text"
-                  id="graduationYear"
-                  name="graduationYear"
-                  value={formData.graduationYear}
-                  onChange={handleInputChange}
-                  onBlur={e => {
-                    if (!isValidGradYear(e.target.value)) setError('Please enter a valid graduation year format');
-                    else setError('');
-                  }}
-                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
-                  placeholder="5 years experience / 2022"
-                />
-              </div>
+              <h3 className="text-lg font-bold text-zinc-100 font-display">Personal Information</h3>
             </div>
             
-            {/* Additional Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-purple-300 mb-4">Additional Information</h3>
-              
-              <div className="mb-4">
-                <label htmlFor="linkedin" className="block text-sm font-medium text-zinc-300 mb-1">
-                  LinkedIn Profile
-                </label>
-                <input
-                  type="url"
-                  id="linkedin"
-                  name="linkedin"
-                  value={formData.linkedin}
-                  onChange={handleInputChange}
-                  onBlur={e => {
-                    if (!isValidUrl(e.target.value)) setError('Please enter a valid LinkedIn URL');
-                    else setError('');
-                  }}
-                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
-                  placeholder="https://linkedin.com/in/username"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="fullName" className={labelClass}>Full Name</label>
+                <input type="text" id="fullName" name="fullName" value={formData.fullName} onChange={handleInputChange} onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))} className={inputClass} placeholder="John Doe" />
               </div>
-              
-              <div className="mb-4">
-                <label htmlFor="github" className="block text-sm font-medium text-zinc-300 mb-1">
-                  GitHub Profile
-                </label>
-                <input
-                  type="url"
-                  id="github"
-                  name="github"
-                  value={formData.github}
-                  onChange={handleInputChange}
-                  onBlur={e => {
-                    if (!isValidUrl(e.target.value)) setError('Please enter a valid GitHub URL');
-                    else setError('');
-                  }}
-                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
-                  placeholder="https://github.com/username"
-                />
+              <div>
+                <label htmlFor="email" className={labelClass}>Email Address</label>
+                <input type="email" id="email" name="email" value={formData.email} className={`${inputClass} text-zinc-500 cursor-not-allowed bg-black/20`} disabled />
+                <p className="mt-2 text-[11px] text-zinc-500 font-medium">Email cannot be changed</p>
               </div>
-              
-              <div className="mb-4">
-                <label htmlFor="website" className="block text-sm font-medium text-zinc-300 mb-1">
-                  Personal Website
-                </label>
-                <input
-                  type="url"
-                  id="website"
-                  name="website"
-                  value={formData.website}
-                  onChange={handleInputChange}
-                  onBlur={e => {
-                    if (!isValidUrl(e.target.value)) setError('Please enter a valid website URL');
-                    else setError('');
-                  }}
-                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600"
-                  placeholder="https://yourwebsite.com"
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="bio" className="block text-sm font-medium text-zinc-300 mb-1">
-                  Professional Bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleInputChange}
-                  onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))}
-                  rows={5}
-                  className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 min-h-[120px]"
-                  placeholder="Tell us about yourself, your experience, and your career goals."
-                ></textarea>
+              <div>
+                <label htmlFor="mobileNumber" className={labelClass}>Phone Number</label>
+                <input type="text" id="mobileNumber" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} className={inputClass} placeholder="+1 (123) 456-7890" />
               </div>
             </div>
           </div>
-          
-          <div className="mt-8 flex justify-end">
-            <motion.button
-              type="submit"
-              className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-semibold inline-flex items-center disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed shadow-md shadow-purple-500/10"
-              disabled={isSubmitting}
-              whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
-              whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
-            >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </motion.button>
+
+          {/* Professional */}
+          <div className="p-8 border-b border-white/5 relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                <BriefcaseIcon className="h-5 w-5 text-cyan-400" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 font-display">Professional Details</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="occupation" className={labelClass}>Current Role / Occupation</label>
+                <input type="text" id="occupation" name="occupation" value={formData.occupation} onChange={handleInputChange} onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))} className={inputClass} placeholder="e.g. Senior Software Engineer" />
+              </div>
+              <div>
+                <label htmlFor="graduationYear" className={labelClass}>Experience / Graduation</label>
+                <input type="text" id="graduationYear" name="graduationYear" value={formData.graduationYear} onChange={handleInputChange} onBlur={e => { if (!isValidGradYear(e.target.value)) setError('Invalid format'); else setError(''); }} className={inputClass} placeholder="e.g. 5 years OR 2022" />
+              </div>
+            </div>
           </div>
-        </form>
-      </div>
+
+          {/* Links */}
+          <div className="p-8 border-b border-white/5 relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                <LinkIcon className="h-5 w-5 text-emerald-400" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 font-display">Web Links</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="linkedin" className={labelClass}>LinkedIn URL</label>
+                <input type="url" id="linkedin" name="linkedin" value={formData.linkedin} onChange={handleInputChange} onBlur={e => { if (!isValidUrl(e.target.value)) setError('Invalid LinkedIn URL'); else setError(''); }} className={inputClass} placeholder="https://linkedin.com/in/username" />
+              </div>
+              <div>
+                <label htmlFor="github" className={labelClass}>GitHub URL</label>
+                <input type="url" id="github" name="github" value={formData.github} onChange={handleInputChange} onBlur={e => { if (!isValidUrl(e.target.value)) setError('Invalid GitHub URL'); else setError(''); }} className={inputClass} placeholder="https://github.com/username" />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="website" className={labelClass}>Personal Portfolio / Website</label>
+                <input type="url" id="website" name="website" value={formData.website} onChange={handleInputChange} onBlur={e => { if (!isValidUrl(e.target.value)) setError('Invalid URL'); else setError(''); }} className={inputClass} placeholder="https://yourwebsite.com" />
+              </div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="p-8 relative z-10">
+            <label htmlFor="bio" className={labelClass}>Professional Bio</label>
+            <textarea id="bio" name="bio" value={formData.bio} onChange={handleInputChange} onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))} rows="4" className={`${inputClass} resize-y min-h-[100px]`} placeholder="Tell us a little bit about yourself and your career goals..." />
+          </div>
+
+          {/* Footer Actions */}
+          <div className="p-6 bg-black/20 border-t border-white/5 flex items-center justify-end gap-4 relative z-10">
+            <button type="button" className="text-sm font-semibold text-zinc-400 hover:text-white px-5 py-2.5 transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 text-white text-sm font-bold px-8 py-3 rounded-xl shadow-glow-primary disabled:shadow-none transition-all duration-300 flex items-center justify-center min-w-[140px]"
+            >
+              {isSubmitting ? (
+                <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
+
+        </div>
+      </motion.form>
     </div>
   );
-} 
+}
+
+// Needed for AnimatePresence
+import { AnimatePresence } from 'framer-motion';

@@ -31,10 +31,10 @@ export default function AuthGuard({ children }) {
   if (loading && !authStatusChecked) {
     console.log('AuthGuard: Loading state, waiting for auth check');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <div className="h-10 w-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-sm font-medium text-zinc-400">Authenticating...</p>
         </div>
       </div>
     );
