@@ -5,8 +5,8 @@ import './index.css'
 import { AuthProvider } from './context/AuthContext'
 import axios from 'axios'
 
-// Configure axios defaults
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Configure axios defaults - use proxy in dev if VITE_API_URL is not set
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 // Configure default timeout

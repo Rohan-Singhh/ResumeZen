@@ -1,18 +1,20 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DocumentTextIcon, XMarkIcon, ChartBarIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 export default function ResumeDetailModal({ modalItem, onClose }) {
-  if (!modalItem) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
-          className="absolute inset-0 bg-black/60 backdrop-blur-md" 
-          onClick={onClose} 
-        />
+      {modalItem && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+            className="absolute inset-0 bg-black/60 backdrop-blur-md" 
+            onClick={onClose} 
+          />
         
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }} 
@@ -127,7 +129,9 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }
 

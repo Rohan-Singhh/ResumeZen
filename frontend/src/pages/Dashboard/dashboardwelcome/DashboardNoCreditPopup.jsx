@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -10,7 +11,10 @@ import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
  * @param {Function} props.onViewPlans - Function to view plans
  * @param {Object} props.activePlan - The user's active plan
  */
-const DashboardNoCreditPopup = ({ show, onClose, onViewPlans, activePlan }) => (
+const DashboardNoCreditPopup = ({ show, onClose, onViewPlans, activePlan }) => {
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
   <AnimatePresence>
     {show && (
       <motion.div
@@ -62,7 +66,9 @@ const DashboardNoCreditPopup = ({ show, onClose, onViewPlans, activePlan }) => (
         </motion.div>
       </motion.div>
     )}
-  </AnimatePresence>
-);
+  </AnimatePresence>,
+  document.body
+  );
+};
 
 export default DashboardNoCreditPopup; 

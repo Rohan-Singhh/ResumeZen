@@ -152,7 +152,18 @@ export default function RecentUploads() {
                     )}
                   </div>
                   
-                  <div className="hidden sm:flex items-center justify-end">
+                  <div className="hidden sm:flex items-center justify-end gap-2">
+                    {item.resumeUrl && (
+                      <a
+                        href={item.resumeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs font-semibold text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                      >
+                        Preview
+                      </a>
+                    )}
                     <button className="text-xs font-semibold text-violet-400 hover:text-white bg-violet-500/10 hover:bg-violet-500/30 px-3 py-1.5 rounded-md transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0">
                       Details
                     </button>

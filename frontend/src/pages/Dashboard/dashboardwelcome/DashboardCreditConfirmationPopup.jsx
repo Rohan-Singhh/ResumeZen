@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -22,7 +23,9 @@ const DashboardCreditConfirmationPopup = ({ show, onClose, onConfirm, activePlan
   // Do not render popup for unlimited plan
   if (show && activePlan?.planId?.isUnlimited) return null;
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {show && (
         <motion.div
@@ -71,7 +74,8 @@ const DashboardCreditConfirmationPopup = ({ show, onClose, onConfirm, activePlan
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

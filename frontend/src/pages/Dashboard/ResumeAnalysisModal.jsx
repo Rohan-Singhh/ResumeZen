@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { processResume } from '../../services/resumeService';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -168,12 +169,13 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
     }
   }, [open, fileDetails]);
 
-  if (!open) return null;
+  if (typeof document === 'undefined') return null;
 
   const activeColor = COLOR_MAP[STEPS[currentStep]?.color || 'violet'];
 
-  return (
+  return createPortal(
     <AnimatePresence>
+      {open && (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -414,6 +416,8 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
           ) : null}
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }
