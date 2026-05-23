@@ -242,14 +242,14 @@ export default function DashboardWelcome() {
   return (
     <div className="space-y-8 relative z-10">
       {/* Hero Welcome Banner */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative rounded-2xl bg-[#131318]/60 backdrop-blur-xl border border-white/10 p-8 sm:p-10 overflow-hidden shadow-2xl"
       >
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-violet-600/30 rounded-full blur-[80px] pointer-events-none mix-blend-screen" />
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-cyan-600/20 rounded-full blur-[60px] pointer-events-none mix-blend-screen" />
-        
+
         <div className="relative z-10 max-w-3xl">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -260,7 +260,7 @@ export default function DashboardWelcome() {
             <SparklesIcon className="h-4 w-4 text-violet-400" />
             <span className="text-xs font-semibold tracking-wide text-zinc-300 uppercase">Dashboard</span>
           </motion.div>
-          
+
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight font-display mb-4 text-white">
             Welcome back, <br className="sm:hidden" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 animate-shimmer bg-[length:200%_auto]">
@@ -275,37 +275,37 @@ export default function DashboardWelcome() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <StatCard 
-          icon={DocumentTextIcon} 
-          label="Resumes Analyzed" 
-          value={String(history.length)} 
-          gradient="from-violet-500 to-fuchsia-500" 
+        <StatCard
+          icon={DocumentTextIcon}
+          label="Resumes Analyzed"
+          value={String(history.length)}
+          gradient="from-violet-500 to-fuchsia-500"
           delay={0.1}
         />
-        <StatCard 
-          icon={ChartBarIcon} 
-          label="Avg. ATS Score" 
-          value={`${avgScore}%`} 
-          gradient="from-cyan-500 to-blue-500" 
+        <StatCard
+          icon={ChartBarIcon}
+          label="Avg. ATS Score"
+          value={`${avgScore}%`}
+          gradient="from-cyan-500 to-blue-500"
           delay={0.2}
         />
-        <StatCard 
-          icon={CreditCardIcon} 
-          label="Credits Left" 
-          value={creditsText} 
-          gradient="from-emerald-500 to-teal-500" 
+        <StatCard
+          icon={CreditCardIcon}
+          label="Credits Left"
+          value={creditsText}
+          gradient="from-emerald-500 to-teal-500"
           delay={0.3}
         />
       </div>
 
       {/* Two Column Layout for Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column: Upload & Plan (takes 2/3 width) */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Premium Upload Zone */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -313,7 +313,7 @@ export default function DashboardWelcome() {
           >
             {/* Subtle glow behind the title */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-violet-500/5 blur-3xl pointer-events-none" />
-            
+
             <div className="flex items-center justify-between mb-6 relative z-10">
               <h2 className="text-lg font-bold text-zinc-100 font-display flex items-center gap-2">
                 <ArrowUpTrayIcon className="h-5 w-5 text-violet-400" />
@@ -337,11 +337,10 @@ export default function DashboardWelcome() {
                 onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300 relative z-10 group ${
-                  isDragging 
-                    ? 'border-violet-500 bg-violet-500/10 scale-[1.02] shadow-glow-primary' 
+                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300 relative z-10 group ${isDragging
+                    ? 'border-violet-500 bg-violet-500/10 scale-[1.02] shadow-glow-primary'
                     : 'border-white/10 bg-white/5 hover:border-violet-500/50 hover:bg-white/10'
-                }`}
+                  }`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <div className={`h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4 transition-colors duration-300 ${isDragging ? 'bg-violet-500/20 text-violet-400' : 'bg-white/5 text-zinc-400 group-hover:bg-violet-500/10 group-hover:text-violet-400'}`}>
@@ -367,9 +366,9 @@ export default function DashboardWelcome() {
                     Remove
                   </button>
                 </div>
-                <button 
-                  onClick={handleUpload} 
-                  disabled={!hasCredits} 
+                <button
+                  onClick={handleUpload}
+                  disabled={!hasCredits}
                   className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.3)] disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2 group"
                 >
                   <SparklesIcon className="h-5 w-5" />
@@ -382,7 +381,7 @@ export default function DashboardWelcome() {
               <div className="py-6 relative z-10 overflow-hidden">
                 {/* Ambient glow */}
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 w-40 h-40 bg-violet-500/15 rounded-full blur-[60px] pointer-events-none" />
-                
+
                 <div className="relative z-10 flex flex-col items-center">
                   {/* Progress Ring */}
                   <div className="relative h-20 w-20 mb-5 flex-shrink-0">
@@ -405,8 +404,8 @@ export default function DashboardWelcome() {
                       </defs>
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-lg font-extrabold text-white font-display tabular-nums leading-none">{Math.round(uploadProgress)}%</span>
-                      <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Upload</span>
+                      <span className="text-base font-extrabold text-white font-display tabular-nums leading-none mb-0.5">{Math.round(uploadProgress)}%</span>
+                      <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Upload</span>
                     </div>
                   </div>
 
@@ -423,22 +422,19 @@ export default function DashboardWelcome() {
                       return (
                         <div
                           key={i}
-                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all duration-500 ${
-                            isActive ? 'bg-white/5 border border-white/10' : isDone ? 'opacity-50' : 'opacity-25'
-                          }`}
+                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all duration-500 ${isActive ? 'bg-white/5 border border-white/10' : isDone ? 'opacity-50' : 'opacity-25'
+                            }`}
                         >
-                          <div className={`h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
-                            isDone ? 'bg-emerald-500/20 border border-emerald-500/30' : isActive ? 'bg-white/10 border border-white/15' : 'bg-white/5 border border-white/5'
-                          }`}>
+                          <div className={`h-6 w-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-500 ${isDone ? 'bg-emerald-500/20 border border-emerald-500/30' : isActive ? 'bg-white/10 border border-white/15' : 'bg-white/5 border border-white/5'
+                            }`}>
                             {isDone ? (
                               <CheckCircleIcon className="h-3 w-3 text-emerald-400" />
                             ) : (
                               <step.icon className={`h-3 w-3 ${isActive ? 'text-violet-400' : 'text-zinc-600'}`} />
                             )}
                           </div>
-                          <span className={`text-xs font-semibold truncate transition-colors duration-500 ${
-                            isActive ? 'text-zinc-200' : isDone ? 'text-zinc-400 line-through' : 'text-zinc-600'
-                          }`}>{step.label}</span>
+                          <span className={`text-xs font-semibold truncate transition-colors duration-500 ${isActive ? 'text-zinc-200' : isDone ? 'text-zinc-400 line-through' : 'text-zinc-600'
+                            }`}>{step.label}</span>
                           {isDone && <span className="ml-auto text-[9px] font-bold text-emerald-400 uppercase tracking-wider flex-shrink-0">Done</span>}
                           {isActive && (
                             <motion.div className="ml-auto h-1 w-4 rounded-full bg-violet-500 opacity-60 flex-shrink-0" animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 1.2, repeat: Infinity }} />
@@ -466,9 +462,9 @@ export default function DashboardWelcome() {
                   <h3 className="text-lg font-bold text-zinc-100 mb-1">Upload Successful!</h3>
                   <p className="text-sm text-zinc-400">"{uploadedFile?.originalName || 'Resume'}" is ready for analysis.</p>
                 </div>
-                <button 
-                  onClick={handleProceed} 
-                  disabled={isProcessing || !hasCredits} 
+                <button
+                  onClick={handleProceed}
+                  disabled={isProcessing || !hasCredits}
                   className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2 group"
                 >
                   <ChartBarIcon className="h-5 w-5" />
@@ -480,7 +476,7 @@ export default function DashboardWelcome() {
           </motion.div>
 
           {/* Active Plan Banner - Moved Below Upload */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -490,9 +486,9 @@ export default function DashboardWelcome() {
                 <div className="absolute -right-20 -top-20 w-40 h-40 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-colors" />
                 <div className="flex items-center gap-4 relative z-10">
                   <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20 p-0.5">
-                     <div className="w-full h-full bg-[#131318] rounded-[10px] flex items-center justify-center">
-                       <SparklesIcon className="h-6 w-6 text-violet-400" />
-                     </div>
+                    <div className="w-full h-full bg-[#131318] rounded-[10px] flex items-center justify-center">
+                      <SparklesIcon className="h-6 w-6 text-violet-400" />
+                    </div>
                   </div>
                   <div>
                     <p className="text-base font-bold text-zinc-100 font-display">{activePlan.planId.name}</p>
@@ -521,7 +517,7 @@ export default function DashboardWelcome() {
         </div>
 
         {/* Right Column: Recent Activity */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
@@ -554,8 +550,8 @@ export default function DashboardWelcome() {
                 {history.slice(0, 7).map((item) => {
                   const score = typeof item.analysis?.atsScore === 'number' ? item.analysis.atsScore : null;
                   return (
-                    <div 
-                      key={item._id} 
+                    <div
+                      key={item._id}
                       onClick={() => setSelectedResume(item)}
                       className="group flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all cursor-pointer"
                     >
@@ -568,14 +564,13 @@ export default function DashboardWelcome() {
                           <p className="text-xs text-zinc-500">{new Date(item.createdAt).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      
+
                       {score !== null && (
                         <div className="flex-shrink-0">
-                          <div className={`px-2.5 py-1 rounded-md text-xs font-bold tabular-nums border ${
-                            score >= 70 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                            score >= 40 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
-                            'bg-red-500/10 text-red-400 border-red-500/20'
-                          }`}>
+                          <div className={`px-2.5 py-1 rounded-md text-xs font-bold tabular-nums border ${score >= 70 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                              score >= 40 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                'bg-red-500/10 text-red-400 border-red-500/20'
+                            }`}>
                             {score}%
                           </div>
                         </div>
@@ -602,14 +597,14 @@ export default function DashboardWelcome() {
 
 function StatCard({ icon: Icon, label, value, gradient, delay }) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       className="relative bg-[#131318]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5 overflow-hidden group hover:border-white/20 transition-all duration-300"
     >
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradient} opacity-5 blur-2xl rounded-full -mt-10 -mr-10 group-hover:opacity-15 transition-opacity duration-500`} />
-      
+
       <div className="flex items-start gap-4 relative z-10">
         <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${gradient} p-[1px] shadow-lg flex-shrink-0`}>
           <div className="w-full h-full bg-[#131318] rounded-[11px] flex items-center justify-center">

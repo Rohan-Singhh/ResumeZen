@@ -234,17 +234,16 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
                         </linearGradient>
                       </defs>
                     </svg>
-                    {/* Inner content */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <motion.span
                         key={Math.round(progress)}
                         initial={{ scale: 1.2, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="text-2xl font-extrabold text-white font-display tabular-nums"
+                        className="text-xl font-extrabold text-white font-display tabular-nums leading-none"
                       >
                         {Math.round(progress)}%
                       </motion.span>
-                      <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mt-0.5">
+                      <span className="text-[8px] font-semibold text-zinc-500 uppercase tracking-widest mt-1">
                         Processing
                       </span>
                     </div>
@@ -283,24 +282,22 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
                         initial={{ opacity: 0, x: -15 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.08 }}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-500 min-w-0 ${
-                          isActive
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-500 min-w-0 ${isActive
                             ? `bg-white/5 border border-white/10 ${color.glow}`
                             : isDone
-                            ? 'opacity-60'
-                            : 'opacity-30'
-                        }`}
+                              ? 'opacity-60'
+                              : 'opacity-30'
+                          }`}
                       >
                         {/* Step icon circle */}
                         <div className="relative flex-shrink-0">
                           <div
-                            className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all duration-500 ${
-                              isDone
+                            className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all duration-500 ${isDone
                                 ? 'bg-emerald-500/20 border border-emerald-500/30'
                                 : isActive
-                                ? `bg-white/10 border border-white/20`
-                                : 'bg-white/5 border border-white/5'
-                            }`}
+                                  ? `bg-white/10 border border-white/20`
+                                  : 'bg-white/5 border border-white/5'
+                              }`}
                           >
                             {isDone ? (
                               <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-400" />
@@ -320,9 +317,8 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
 
                         {/* Step label */}
                         <span
-                          className={`text-xs font-semibold truncate min-w-0 transition-colors duration-500 ${
-                            isActive ? 'text-zinc-100' : isDone ? 'text-zinc-400 line-through' : 'text-zinc-600'
-                          }`}
+                          className={`text-xs font-semibold truncate min-w-0 transition-colors duration-500 ${isActive ? 'text-zinc-100' : isDone ? 'text-zinc-400 line-through' : 'text-zinc-600'
+                            }`}
                         >
                           {step.label}
                         </span>
