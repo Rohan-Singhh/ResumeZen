@@ -5,6 +5,7 @@ import Landing from './pages/Landing';
 import SuccessStoriesPage from './pages/SuccessStoriesPage';
 import Login from './pages/Login';
 import AuthGuard from './components/auth/AuthGuard';
+import PageTransition from './components/PageTransition';
 
 // Dashboard components
 import DashboardLayout from './pages/Dashboard/DashboardLayout';
@@ -127,15 +128,17 @@ function AnimatedRoutes() {
       </AnimatePresence>
       
       <AnimatePresence mode="wait" initial={false}>
-        <Routes location={location} key={skipTransitions ? 'no-animation' : 'main-routes'}>
-          <Route path="/" element={<Landing />} />
-          <Route path="/success-stories" element={<SuccessStoriesPage />} />
-          <Route path="/login" element={<Login />} />
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+          <Route path="/success-stories" element={<PageTransition><SuccessStoriesPage /></PageTransition>} />
+          <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
           
           {/* Dashboard routes with auth protection */}
           <Route path="/dashboard" element={
             <AuthGuard>
-              <DashboardLayout />
+              <PageTransition>
+                <DashboardLayout />
+              </PageTransition>
             </AuthGuard>
           }>
             <Route index element={<DashboardWelcome />} />

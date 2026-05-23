@@ -19,6 +19,9 @@
 }
 
 /* Improve page transitions */
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   margin: 0;
