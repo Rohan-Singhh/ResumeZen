@@ -15,11 +15,14 @@ import {
 } from '@heroicons/react/24/outline';
 
 function TopNav() {
-  const { logout, currentUser } = useAuth();
+  const { logout, currentUser, userPlans } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Check if user already has an active unlimited plan
+  const hasUnlimitedPlan = userPlans?.some(p => p.isActive && p.planId?.isUnlimited);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -86,12 +89,14 @@ function TopNav() {
 
             {/* Right Side Actions (Desktop) */}
             <div className="hidden md:flex items-center gap-4">
-              <button 
-                onClick={() => navigate('/dashboard/plans')} 
-                className="flex items-center gap-2 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors"
-              >
-                <SparklesIcon className="h-4 w-4" /> Go Unlimited
-              </button>
+              {!hasUnlimitedPlan && (
+                <button 
+                  onClick={() => navigate('/dashboard/plans')} 
+                  className="flex items-center gap-2 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors"
+                >
+                  <SparklesIcon className="h-4 w-4" /> Go Unlimited
+                </button>
+              )}
               
               <div className="h-6 w-px bg-white/10"></div>
               
@@ -146,12 +151,14 @@ function TopNav() {
                 })}
                 
                 <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
-                  <button 
-                    onClick={() => { setIsMobileMenuOpen(false); navigate('/dashboard/plans'); }} 
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-4 py-3 rounded-xl text-sm font-bold shadow-glow-primary transition-all"
-                  >
-                    <SparklesIcon className="h-5 w-5" /> Go Unlimited
-                  </button>
+                  {!hasUnlimitedPlan && (
+                    <button 
+                      onClick={() => { setIsMobileMenuOpen(false); navigate('/dashboard/plans'); }} 
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-4 py-3 rounded-xl text-sm font-bold shadow-glow-primary transition-all"
+                    >
+                      <SparklesIcon className="h-5 w-5" /> Go Unlimited
+                    </button>
+                  )}
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}

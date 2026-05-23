@@ -84,15 +84,28 @@ export default function DashboardProfileEdit() {
       {/* Alerts */}
       <AnimatePresence>
         {error && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-5 py-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm font-medium text-red-400 backdrop-blur-md">
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-5 py-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm font-medium text-red-400 backdrop-blur-md mb-6">
             {error}
           </motion.div>
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {submitSuccess && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-5 py-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm font-medium text-emerald-400 flex items-center gap-2 backdrop-blur-md">
-            <CheckCircleIcon className="h-5 w-5" />
-            Profile updated successfully
-          </motion.div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-none">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }} 
+              exit={{ opacity: 0, scale: 0.9, y: 20 }} 
+              className="px-8 py-6 bg-[#1a1a24] border border-emerald-500/30 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.2)] flex flex-col items-center gap-3"
+            >
+              <div className="h-14 w-14 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 mb-2">
+                <CheckCircleIcon className="h-7 w-7 text-emerald-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white font-display tracking-tight">Profile Updated</h3>
+              <p className="text-sm text-zinc-400">Your changes have been saved successfully.</p>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

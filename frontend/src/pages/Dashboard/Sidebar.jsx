@@ -31,11 +31,14 @@ export function SidebarProvider({ children }) {
 export const useSidebar = () => useContext(SidebarContext);
 
 export default function Sidebar() {
-  const { logout, currentUser } = useAuth();
+  const { logout, currentUser, userPlans } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { isOpen, closeSidebar } = useSidebar();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Check if user already has an active unlimited plan
+  const hasUnlimitedPlan = userPlans?.some(p => p.isActive && p.planId?.isUnlimited);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -111,19 +114,21 @@ export default function Sidebar() {
       </nav>
 
       {/* Upgrade Callout */}
-      <div className="px-4 mb-4 relative z-10">
-        <div className="bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 rounded-xl p-4 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/20 rounded-full blur-xl -mr-10 -mt-10 transition-transform group-hover:scale-150 duration-500" />
-          <div className="relative z-10">
-            <SparklesIcon className="h-5 w-5 text-violet-400 mb-2" />
-            <h4 className="text-sm font-semibold text-zinc-100 mb-1">Go Unlimited</h4>
-            <p className="text-xs text-zinc-400 mb-3 leading-relaxed">Get infinite AI resume reviews and land your dream job faster.</p>
-            <button onClick={() => navigate('/dashboard/plans')} className="w-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold py-2 rounded-lg transition-colors border border-white/5 shadow-sm">
-              Upgrade Plan
-            </button>
+      {!hasUnlimitedPlan && (
+        <div className="px-4 mb-4 relative z-10">
+          <div className="bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 rounded-xl p-4 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/20 rounded-full blur-xl -mr-10 -mt-10 transition-transform group-hover:scale-150 duration-500" />
+            <div className="relative z-10">
+              <SparklesIcon className="h-5 w-5 text-violet-400 mb-2" />
+              <h4 className="text-sm font-semibold text-zinc-100 mb-1">Go Unlimited</h4>
+              <p className="text-xs text-zinc-400 mb-3 leading-relaxed">Get infinite AI resume reviews and land your dream job faster.</p>
+              <button onClick={() => navigate('/dashboard/plans')} className="w-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold py-2 rounded-lg transition-colors border border-white/5 shadow-sm">
+                Upgrade Plan
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* User Profile & Logout */}
       <div className="p-4 border-t border-white/5 relative z-10">
