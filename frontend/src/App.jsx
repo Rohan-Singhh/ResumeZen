@@ -104,24 +104,28 @@ function AnimatedRoutes() {
   }, [isLoading, setLoading]);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {isLoading ? (
-        <motion.div 
-          key="global-loading"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center z-[100]"
-        >
-          <div className="flex flex-col items-center">
-            <div className="h-12 w-12 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
-            {loadingMessage && (
-              <p className="mt-4 text-sm font-medium text-zinc-400">{loadingMessage}</p>
-            )}
-          </div>
-        </motion.div>
-      ) : (
+    <>
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div 
+            key="global-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center z-[100]"
+          >
+            <div className="flex flex-col items-center">
+              <div className="h-12 w-12 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+              {loadingMessage && (
+                <p className="mt-4 text-sm font-medium text-zinc-400">{loadingMessage}</p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={skipTransitions ? 'no-animation' : 'main-routes'}>
           <Route path="/" element={<Landing />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
@@ -141,8 +145,8 @@ function AnimatedRoutes() {
             <Route path="resume-analysis" element={<ResumeAnalysis />} />
           </Route>
         </Routes>
-      )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </>
   );
 }
 

@@ -5,6 +5,7 @@ import LoginOptions from '../components/auth/LoginOptions';
 import { useLoading } from '../App';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useAuth } from '../context/AuthContext';
 
 // Page transition variants
 const pageVariants = {
@@ -21,6 +22,7 @@ export default function Login() {
   const loginBoxRef = useRef(null);
   const navigatingRef = useRef(false);
   const { setLoading } = useLoading();
+  const { currentUser } = useAuth();
 
   const { from } = location.state || { from: { pathname: '/dashboard' } };
 
@@ -56,6 +58,7 @@ export default function Login() {
   }, []);
   
   const handleNavigate = useCallback(() => {
+    if (navigatingRef.current) return;
     navigatingRef.current = true;
     
     setLoading(false);
@@ -64,6 +67,14 @@ export default function Login() {
       navigate(from.pathname, { replace: true });
     }, 100);
   }, [navigate, from, setLoading]);
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (currentUser && !navigatingRef.current) {
+      console.log("User fully authenticated, proceeding to dashboard...");
+      handleNavigate();
+    }
+  }, [currentUser, handleNavigate]);
 
   const Decorations = () => (
     <>
