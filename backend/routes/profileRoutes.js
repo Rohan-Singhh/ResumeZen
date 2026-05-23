@@ -43,7 +43,8 @@ router.get('/', authMiddleware, async (req, res) => {
       // Add profile data if available
       ...(userProfile && {
         occupation: userProfile.occupation,
-        graduationYear: userProfile.graduationYear
+        graduationYear: userProfile.graduationYear,
+        completedTasks: userProfile.completedTasks || []
       }),
       // Add links data if available
       ...(userLinks && {
@@ -83,7 +84,8 @@ router.put('/', authMiddleware, async (req, res) => {
       linkedin,
       github,
       website,
-      bio
+      bio,
+      completedTasks
     } = req.body;
 
     // Update UserAuth
@@ -110,6 +112,7 @@ router.put('/', authMiddleware, async (req, res) => {
     // Update profile data
     if (occupation !== undefined) userProfile.occupation = occupation;
     if (graduationYear !== undefined) userProfile.graduationYear = graduationYear;
+    if (completedTasks !== undefined) userProfile.completedTasks = completedTasks;
     await userProfile.save();
 
     // Find or create UserLinks
@@ -134,6 +137,7 @@ router.put('/', authMiddleware, async (req, res) => {
       lastLoginAt: userAuth.lastLoginAt,
       occupation: userProfile.occupation,
       graduationYear: userProfile.graduationYear,
+      completedTasks: userProfile.completedTasks || [],
       linkedin: userLinks.linkedin,
       github: userLinks.github,
       website: userLinks.website,

@@ -10,6 +10,7 @@ const UserProfileSchema = new mongoose.Schema({
   phoneNumber: String,
   occupation: String,
   graduationYear: String,
+  completedTasks: { type: [String], default: [] },
 }, { timestamps: true });
 
 module.exports = mongoose.model('UserProfile', UserProfileSchema); 

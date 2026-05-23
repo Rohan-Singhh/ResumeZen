@@ -208,7 +208,32 @@ const handleAuthUser = async (firebaseUID, userData) => {
         { expiresIn: '7d' }
       );
       
-      return { user, token };
+      // Fetch full profile data concurrently to return in the initial login response
+      const [userProfile, userLinks] = await Promise.all([
+        UserProfile.findOne({ userId: user._id }),
+        UserLinks.findOne({ userId: user._id })
+      ]);
+      
+      const fullUserData = {
+        _id: user._id,
+        name: user.fullName,
+        email: user.email,
+        phone: user.mobileNumber,
+        lastLoginAt: user.lastLoginAt,
+        ...(userProfile && {
+          occupation: userProfile.occupation,
+          graduationYear: userProfile.graduationYear,
+          completedTasks: userProfile.completedTasks || []
+        }),
+        ...(userLinks && {
+          linkedin: userLinks.linkedin,
+          github: userLinks.github,
+          website: userLinks.website,
+          bio: userLinks.bio
+        })
+      };
+      
+      return { user: fullUserData, token };
     } catch (jwtError) {
       console.error('JWT token generation error:', jwtError);
       throw new Error('Failed to generate authentication token');
