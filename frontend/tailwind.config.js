@@ -5,11 +5,26 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Outfit', 'Inter', 'sans-serif'],
+        display: ['Space Grotesk', 'Outfit', 'sans-serif'],
+      },
       colors: {
-        primary: '#3b82f6',
-        'primary-dark': '#2563eb',
-        'primary-light': '#60a5fa',
-        secondary: '#4f46e5',
+        // Neon Electric Purple / Blue vibe
+        primary: '#8b5cf6', // Violet
+        'primary-dark': '#7c3aed',
+        'primary-light': '#a78bfa',
+        secondary: '#06b6d4', // Cyan
+        'secondary-dark': '#0891b2',
+        accent: '#f472b6', // Pink
+        
+        // Dark Mode Base Colors
+        dark: {
+          bg: '#09090b', // Zinc 950
+          card: '#18181b', // Zinc 900
+          border: '#27272a', // Zinc 800
+        },
+
         blue: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -58,6 +73,9 @@ export default {
         'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
         'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        'glow-primary': '0 0 20px rgba(139, 92, 246, 0.5)',
+        'glow-secondary': '0 0 20px rgba(6, 182, 212, 0.5)',
+        'glow-accent': '0 0 20px rgba(244, 114, 182, 0.5)',
       },
       transitionProperty: {
         'width': 'width',
@@ -72,11 +90,18 @@ export default {
         fadeIn: {
           '0%': { opacity: '0', transform: 'translateY(-10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        blob: {
+          '0%': { transform: 'translate(0px, 0px) scale(1)' },
+          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+          '100%': { transform: 'translate(0px, 0px) scale(1)' },
         }
       },
       animation: {
         shimmer: 'shimmer 1.5s infinite linear',
         'fade-in': 'fadeIn 0.3s ease-out',
+        'blob': 'blob 7s infinite',
       }
     },
   },

@@ -90,75 +90,79 @@ const successStories = [
 
 export default function SuccessStories() {
   return (
-    <section className="bg-white py-12 sm:py-16">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <section className="bg-transparent py-12 sm:py-16">
+      <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-20 lg:mb-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <span className="inline-block text-lg font-bold uppercase tracking-[0.2em] text-primary mb-4 bg-primary/10 px-6 py-2 rounded-full">
-              SUCCESS STORIES
+            <span className="inline-block text-sm font-bold uppercase tracking-[0.2em] text-accent mb-6 bg-accent/10 border border-accent/20 px-6 py-2 rounded-full">
+              Success Stories
             </span>
-            <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-6">
-              From Dreams to Offers 🎯
+            <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 font-display">
+              From Dreams to <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">Offers</span> 🎯
             </h2>
-            <p className="text-lg leading-8 text-gray-600 max-w-2xl mx-auto">
-              Real stories of real success. See how ResumeZen has helped students and professionals land their dream jobs.
+            <p className="text-xl leading-8 text-gray-400 max-w-3xl mx-auto font-light">
+              Real stories of real success. See how ResumeZen has helped students and professionals land their dream jobs in the most competitive tech companies.
             </p>
           </motion.div>
         </div>
 
-        {/* Success Stories */}
-        <div className="grid gap-12 lg:grid-cols-2 mb-20">
+        {/* Success Stories Grid */}
+        <div className="grid gap-8 lg:grid-cols-2 xl:grid-cols-3 mb-24">
           {successStories.map((story, index) => (
             <motion.div
               key={story.id}
-              className="group rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-gray-100 p-8 transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl"
-              initial={{ opacity: 0, y: 20 }}
+              className="group rounded-3xl border border-white/10 bg-dark-card p-8 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-primary/50 hover:bg-white/5"
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.2, duration: 0.5 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: (index % 3) * 0.15, duration: 0.5 }}
             >
-              <div className="flex items-start gap-6 mb-6">
-                <img
-                  src={story.image}
-                  alt={story.name}
-                  className="h-16 w-16 rounded-full ring-4 ring-white transition-transform duration-300 group-hover:scale-105"
-                />
+              <div className="flex items-center gap-6 mb-8 border-b border-white/10 pb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-md group-hover:bg-primary/40 transition-colors"></div>
+                  <img
+                    src={story.image}
+                    alt={story.name}
+                    className="relative h-16 w-16 rounded-full border-2 border-white/20 transition-transform duration-300 group-hover:scale-105 object-cover"
+                  />
+                </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">{story.name}</h3>
-                  <p className="font-semibold text-primary transition-colors duration-300 group-hover:text-secondary">{story.role}</p>
+                  <h3 className="text-xl font-bold text-white mb-1 font-display">{story.name}</h3>
+                  <p className="text-sm font-bold text-primary-light uppercase tracking-wider">{story.role}</p>
                 </div>
               </div>
               
-              <div className="space-y-6">
-                <div className="rounded-xl bg-white p-6 shadow-sm transition-all duration-300 group-hover:shadow-md">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 transition-colors duration-300 group-hover:border-gray-300">
-                      <h4 className="mb-2 text-sm font-medium text-gray-500">BEFORE</h4>
-                      <p className="text-gray-900">{story.before}</p>
+              <div className="space-y-8">
+                <div className="rounded-2xl bg-black/40 border border-white/5 p-5">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+                      <h4 className="mb-2 text-xs font-bold text-gray-500 tracking-wider">BEFORE</h4>
+                      <p className="text-gray-300 font-light text-sm">{story.before}</p>
                     </div>
-                    <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
-                      <h4 className="mb-2 text-sm font-medium text-primary">AFTER</h4>
-                      <p className="text-gray-900">{story.after}</p>
+                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 shadow-glow-primary/10 relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+                      <h4 className="mb-2 text-xs font-bold text-primary tracking-wider">AFTER</h4>
+                      <p className="text-white font-medium text-sm">{story.after}</p>
                     </div>
                   </div>
                 </div>
 
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {story.key_improvements.map((improvement, i) => (
-                    <li key={i} className="flex translate-y-1 items-center gap-3 opacity-90 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100" style={{ transitionDelay: `${i * 50}ms` }}>
-                      <CheckCircleIcon className="h-5 w-5 text-primary flex-shrink-0" />
-                      <span className="text-gray-700">{improvement}</span>
+                    <li key={i} className="flex items-start gap-3 text-sm">
+                      <CheckCircleIcon className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-300">{improvement}</span>
                     </li>
                   ))}
                 </ul>
 
-                <blockquote className="border-l-4 border-primary/60 pl-4 italic text-gray-700 transition-all duration-300 group-hover:border-primary group-hover:text-gray-800">
+                <blockquote className="border-l-2 border-primary/50 pl-4 py-1 italic text-gray-400 text-sm">
                   "{story.quote}"
                 </blockquote>
               </div>
@@ -166,39 +170,47 @@ export default function SuccessStories() {
           ))}
         </div>
 
-        {/* Price Comparison */}
+        {/* Price Comparison Widget */}
         <motion.div
-          className="bg-primary/5 rounded-3xl p-8 lg:p-12"
-          initial={{ opacity: 0, y: 20 }}
+          className="relative rounded-3xl p-1 overflow-hidden"
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <div className="max-w-3xl mx-auto text-center">
-            <SparklesIcon className="h-12 w-12 text-primary mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Invest Smart in Your Future 🎯
-            </h3>
-            <p className="text-lg text-gray-600 mb-8">
-              For just ₹19, less than the price of your favorite cookie combo, you can transform your job search journey. 
-              While those cookies last a moment, ResumeZen's impact on your career? That's forever! 🍪✨
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="bg-white rounded-xl p-4">
-                <p className="text-2xl font-bold text-primary">₹19</p>
-                <p className="text-sm text-gray-600">ResumeZen</p>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-secondary opacity-20"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-secondary animate-shimmer opacity-50 blur-xl"></div>
+          <div className="bg-dark-card border border-white/10 rounded-[23px] p-8 lg:p-12 relative z-10">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="mx-auto w-16 h-16 bg-primary/20 border border-primary/30 rounded-2xl flex items-center justify-center mb-8">
+                <SparklesIcon className="h-8 w-8 text-primary" />
               </div>
-              <div className="bg-white rounded-xl p-4">
-                <p className="text-2xl font-bold text-gray-400">₹25</p>
-                <p className="text-sm text-gray-600">Cookie Pack</p>
-              </div>
-              <div className="bg-white rounded-xl p-4">
-                <p className="text-2xl font-bold text-gray-400">₹30</p>
-                <p className="text-sm text-gray-600">Biscuit Box</p>
-              </div>
-              <div className="bg-white rounded-xl p-4">
-                <p className="text-2xl font-bold text-gray-400">₹35</p>
-                <p className="text-sm text-gray-600">Snack Combo</p>
+              <h3 className="text-3xl font-bold text-white mb-6 font-display">
+                Invest Smart in Your Future 🎯
+              </h3>
+              <p className="text-lg text-gray-400 mb-12 font-light max-w-2xl mx-auto">
+                For just ₹19, less than the price of your favorite cookie combo, you can transform your job search journey. 
+                While those cookies last a moment, ResumeZen's impact on your career? That's forever! 🍪✨
+              </p>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div className="bg-primary/20 border border-primary/30 rounded-2xl p-6 shadow-glow-primary relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-primary/10 group-hover:bg-primary/20 transition-colors"></div>
+                  <p className="text-3xl font-extrabold text-white mb-2 relative z-10">₹19</p>
+                  <p className="text-sm text-primary-light font-bold uppercase tracking-wider relative z-10">ResumeZen</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm transition-colors hover:bg-white/10">
+                  <p className="text-3xl font-bold text-gray-400 mb-2">₹25</p>
+                  <p className="text-sm text-gray-500 font-medium">Cookie Pack</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm transition-colors hover:bg-white/10">
+                  <p className="text-3xl font-bold text-gray-400 mb-2">₹30</p>
+                  <p className="text-sm text-gray-500 font-medium">Biscuit Box</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm transition-colors hover:bg-white/10">
+                  <p className="text-3xl font-bold text-gray-400 mb-2">₹35</p>
+                  <p className="text-sm text-gray-500 font-medium">Snack Combo</p>
+                </div>
               </div>
             </div>
           </div>
@@ -206,4 +218,4 @@ export default function SuccessStories() {
       </div>
     </section>
   );
-} 
+}

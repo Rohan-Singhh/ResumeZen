@@ -45,59 +45,71 @@ export default function Steps() {
   const navigate = useNavigate();
 
   return (
-    <section id="how-it-works" className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">
-            How ResumeZen Works 🚀
+    <section id="how-it-works" className="py-24 sm:py-32 bg-dark-bg border-t border-white/5 relative overflow-hidden">
+      {/* Decorative Glow */}
+      <div className="absolute right-0 bottom-0 w-[600px] h-[600px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+      <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
+        <div className="text-left md:text-center mb-16 lg:mb-24">
+          <span className="inline-block text-sm font-bold uppercase tracking-[0.2em] text-secondary mb-6 bg-secondary/10 border border-secondary/20 px-6 py-2 rounded-full">
+            Process
+          </span>
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white font-display tracking-tight">
+            How It <span className="text-secondary">Works</span> 🚀
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Get your ATS score in minutes with our simple 5-step process
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl md:mx-auto font-light">
+            Get your ATS score in minutes with our simple 5-step process. No waiting, no BS.
           </p>
         </div>
+        
         <div className="relative">
-          <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-100 -translate-y-1/2 hidden lg:block"></div>
-          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-8">
+          {/* Connecting line for desktop */}
+          <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/10 -translate-y-1/2 hidden xl:block"></div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 xl:gap-4">
             {steps.map((step, index) => {
               const Icon = step.icon;
               return (
                 <motion.div
                   key={index}
-                  className="relative bg-white p-6 rounded-xl shadow-lg"
-                  initial={{ opacity: 0, y: 20 }}
+                  className="relative bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md hover:bg-white/10 transition-colors duration-300 group"
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.2 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ delay: index * 0.15, type: "spring", stiffness: 100 }}
                 >
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-br from-primary to-accent text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-glow-primary z-10">
                     {step.id}
                   </div>
-                  <div className="text-center">
-                    <div className="flex justify-center mb-4">
-                      <Icon className="h-12 w-12 text-primary" />
+                  <div className="text-center pt-4">
+                    <div className="flex justify-center mb-6">
+                      <div className="p-4 rounded-2xl bg-white/5 group-hover:scale-110 transition-transform duration-300">
+                        <Icon className="h-10 w-10 text-secondary" />
+                      </div>
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                    <p className="text-gray-600">{step.description}</p>
+                    <h3 className="text-xl font-bold mb-3 text-white font-display">{step.title}</h3>
+                    <p className="text-gray-400 font-light">{step.description}</p>
                   </div>
                 </motion.div>
               );
             })}
           </div>
         </div>
+        
         <motion.div 
-          className="mt-12 text-center"
+          className="mt-20 text-center"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 0.8 }}
         >
           <motion.button
             onClick={() => navigate('/login')}
-            className="bg-primary hover:bg-secondary text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300"
+            className="bg-white text-dark-bg hover:shadow-glow-secondary font-bold py-4 px-10 rounded-full text-lg transition-all duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Start Now
+            Get Started Now
           </motion.button>
         </motion.div>
       </div>

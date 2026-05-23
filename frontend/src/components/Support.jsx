@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { EnvelopeIcon, PhoneIcon, ChatBubbleLeftRightIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
@@ -10,6 +10,9 @@ const contactMethods = [
     description: "Get detailed assistance via email",
     detail: "support@resumezen.com",
     response: "Response within 24 hours",
+    color: "text-primary",
+    bg: "bg-primary/10",
+    border: "border-primary/20",
   },
   {
     id: 2,
@@ -18,6 +21,9 @@ const contactMethods = [
     description: "Direct line for urgent queries",
     detail: "+91 (800) 123-4567",
     response: "Available 9 AM - 6 PM IST",
+    color: "text-secondary",
+    bg: "bg-secondary/10",
+    border: "border-secondary/20",
   },
   {
     id: 3,
@@ -26,6 +32,9 @@ const contactMethods = [
     description: "Instant help from our experts",
     detail: "Available on website",
     response: "Typical response in 5 mins",
+    color: "text-accent",
+    bg: "bg-accent/10",
+    border: "border-accent/20",
   },
   {
     id: 4,
@@ -34,6 +43,9 @@ const contactMethods = [
     description: "Browse our knowledge base",
     detail: "help.resumezen.com",
     response: "Updated regularly",
+    color: "text-green-400",
+    bg: "bg-green-400/10",
+    border: "border-green-400/20",
   }
 ];
 
@@ -56,131 +68,139 @@ export default function Support() {
   }
 
   return (
-    <section id="support" className="bg-white pt-8 pb-24 sm:pt-12 sm:pb-32">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="text-center">
+    <section id="support" className="bg-dark-bg py-24 sm:py-32 border-t border-white/5 relative">
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] pointer-events-none"></div>
+
+      <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
+        <div className="text-center mb-16 lg:mb-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <span className="inline-block text-lg font-bold uppercase tracking-[0.2em] text-primary mb-4 bg-primary/10 px-6 py-2 rounded-full">
-              SUPPORT
+            <span className="inline-block text-sm font-bold uppercase tracking-[0.2em] text-secondary mb-6 bg-secondary/10 border border-secondary/20 px-6 py-2 rounded-full">
+              Help Desk
             </span>
-            <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-3">
-              We're Here to Help 🤝
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-6 font-display">
+              We're Here to <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-primary">Help 🤝</span>
             </h2>
-            <p className="text-lg leading-8 text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl leading-8 text-gray-400 max-w-2xl mx-auto font-light">
               Get assistance anytime, anywhere. Our dedicated support team is ready to help you create the perfect resume.
             </p>
           </motion.div>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 mb-20">
           {contactMethods.map((method, index) => (
             <motion.div
               key={method.id}
-              className="relative bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
+              className={`relative bg-dark-card p-8 rounded-3xl border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300 group`}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
             >
-              <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-xl mb-4">
-                <method.icon className="h-6 w-6 text-primary" />
+              <div className={`flex items-center justify-center w-14 h-14 ${method.bg} border ${method.border} rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                <method.icon className={`h-7 w-7 ${method.color}`} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{method.title}</h3>
-              <p className="text-gray-600 mb-4">{method.description}</p>
-              <div className="text-primary font-semibold mb-2">{method.detail}</div>
-              <div className="text-sm text-gray-500">{method.response}</div>
+              <h3 className="text-xl font-bold text-white mb-2 font-display">{method.title}</h3>
+              <p className="text-gray-400 font-light mb-6">{method.description}</p>
+              <div className={`${method.color} font-bold mb-2`}>{method.detail}</div>
+              <div className="text-sm text-gray-500 font-medium">{method.response}</div>
             </motion.div>
           ))}
         </div>
 
         <motion.div
-          className="mt-16 rounded-3xl overflow-hidden border border-primary/20 shadow-[0_0_0_1px_rgba(99,102,241,0.08),0_30px_60px_-35px_rgba(79,70,229,0.55)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),rgba(255,255,255,0.85)_45%),linear-gradient(120deg,rgba(99,102,241,0.08),rgba(167,139,250,0.1),rgba(56,189,248,0.07))] backdrop-blur-sm"
-          initial={{ opacity: 0, y: 20 }}
+          className="rounded-3xl overflow-hidden border border-white/10 bg-dark-card/50 backdrop-blur-xl shadow-2xl relative"
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          transition={{ duration: 0.6 }}
         >
-          <div className="grid md:grid-cols-2 gap-8 p-8 lg:p-12">
-            <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-gray-900">Quick Support Form</h3>
-              <p className="text-gray-600">
-                Have a specific question? Fill out this form and we'll get back to you as soon as possible.
-              </p>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                Live Support Queue
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm">
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center text-gray-600">
-                    <svg className="h-4 w-4 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Guaranteed response within 24 hours
-                  </li>
-                  <li className="flex items-center text-gray-600">
-                    <svg className="h-4 w-4 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Detailed solutions to your queries
-                  </li>
-                  <li className="flex items-center text-gray-600">
-                    <svg className="h-4 w-4 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Follow-up support if needed
-                  </li>
-                </ul>
+          {/* Form Background Decor */}
+          <div className="absolute top-0 right-0 w-full h-full overflow-hidden z-0">
+             <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 blur-[100px] rounded-full"></div>
+             <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-accent/20 blur-[100px] rounded-full"></div>
+          </div>
+
+          <div className="grid lg:grid-cols-5 gap-0 relative z-10">
+            <div className="p-8 lg:p-12 lg:col-span-2 border-b lg:border-b-0 lg:border-r border-white/10 bg-white/5">
+              <div className="space-y-6">
+                <h3 className="text-3xl font-bold text-white font-display">Quick Support Form</h3>
+                <p className="text-gray-400 font-light text-lg">
+                  Have a specific question? Fill out this form and we'll get back to you as soon as possible.
+                </p>
+                <div className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-green-400">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+                  Live Support Queue
+                </div>
+                
+                <div className="mt-10 space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 rounded-full bg-primary/10 text-primary mt-1">
+                      <ClockIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold mb-1">Fast Response Time</h4>
+                      <p className="text-gray-400 text-sm font-light">Guaranteed response within 24 hours for all inquiries.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 rounded-full bg-secondary/10 text-secondary mt-1">
+                      <ChatBubbleLeftRightIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold mb-1">Detailed Solutions</h4>
+                      <p className="text-gray-400 text-sm font-light">Comprehensive answers to help you get unstuck quickly.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <form className="space-y-4 rounded-2xl border border-white/50 bg-white/80 p-5 backdrop-blur-md" onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <form className="p-8 lg:p-12 lg:col-span-3 space-y-6" onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
                   <input
                     type="text"
                     placeholder="Your Name"
-                    className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
+                    className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                   <input
                     type="email"
                     placeholder="Your Email"
-                    className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
+                    className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Subject</label>
                 <input
                   type="text"
                   placeholder="How can we help?"
-                  className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
+                  className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none"
                 />
               </div>
               <div>
-                <span className="block text-sm font-medium text-gray-700 mb-2">Priority</span>
-                <div className="flex flex-wrap gap-2">
+                <span className="block text-sm font-medium text-gray-300 mb-3">Priority</span>
+                <div className="flex flex-wrap gap-3">
                   {priorities.map((priority) => {
                     const isActive = selectedPriority === priority;
-
                     return (
                       <button
                         key={priority}
                         type="button"
                         onClick={() => setSelectedPriority(priority)}
-                        className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+                        className={`rounded-xl border px-6 py-2 text-sm font-bold transition-all duration-200 ${
                           isActive
-                            ? 'border-primary bg-primary text-white shadow-lg shadow-primary/25'
-                            : 'border-gray-300 bg-white text-gray-700 hover:border-primary/50 hover:text-primary'
+                            ? 'border-primary bg-primary text-white shadow-glow-primary'
+                            : 'border-white/10 bg-dark-bg text-gray-400 hover:border-primary/50 hover:text-primary'
                         }`}
                       >
                         {priority}
@@ -190,9 +210,9 @@ export default function Support() {
                 </div>
               </div>
               <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700">Message</label>
-                  <span className="text-xs text-gray-500">{message.length}/{maxCharacters}</span>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-300">Message</label>
+                  <span className="text-xs text-gray-500 font-medium">{message.length}/{maxCharacters}</span>
                 </div>
                 <textarea
                   placeholder="Your Message"
@@ -200,11 +220,11 @@ export default function Support() {
                   maxLength={maxCharacters}
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
-                  className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 placeholder:text-gray-500"
+                  className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none resize-none"
                 ></textarea>
-                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-dark-bg border border-white/5">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-primary via-violet-500 to-cyan-400"
+                    className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-secondary"
                     animate={{ width: `${progress}%` }}
                     transition={{ type: 'spring', stiffness: 120, damping: 20 }}
                   />
@@ -212,44 +232,49 @@ export default function Support() {
               </div>
               <motion.button
                 type="submit"
-                className="w-full bg-primary text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-secondary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-80"
+                className="w-full bg-white text-dark-bg font-bold py-4 px-8 rounded-xl hover:shadow-glow-primary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 text-lg mt-4"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Sending...' : `Send Message • ${selectedPriority}`}
+                {isSubmitting ? 'Sending Transmission...' : `Send Message • ${selectedPriority}`}
               </motion.button>
             </form>
           </div>
         </motion.div>
 
         {/* Animated Modal Popup */}
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
-          >
+        <AnimatePresence>
+          {showModal && (
             <motion.div
-              initial={{ scale: 0.8, y: 40 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 40 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm px-4"
             >
-              <h4 className="text-2xl font-bold text-primary mb-2">Signal Received!</h4>
-              <p className="text-gray-700 mb-6">Thanks for reaching out. Our support crew has your message in the queue and will respond soon.</p>
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-secondary transition-all duration-200 focus:outline-none"
-                autoFocus
+              <motion.div
+                initial={{ scale: 0.8, y: 40 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.8, y: 40 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                className="bg-dark-card border border-white/10 rounded-3xl shadow-glow-primary p-10 max-w-sm w-full text-center relative"
               >
-                Close
-              </button>
+                <div className="w-16 h-16 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="text-green-400 text-2xl font-bold">✓</span>
+                </div>
+                <h4 className="text-2xl font-bold text-white mb-3 font-display">Signal Received!</h4>
+                <p className="text-gray-400 mb-8 font-light">Thanks for reaching out. Our support crew has your message in the queue and will respond soon.</p>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="w-full px-6 py-3 bg-white text-dark-bg rounded-xl font-bold hover:bg-gray-200 transition-all duration-200 focus:outline-none"
+                  autoFocus
+                >
+                  Close
+                </button>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );

@@ -79,66 +79,83 @@ const reviews = [
 
 export default function Reviews() {
   return (
-    <section id="reviews" className="bg-white pt-8 pb-24 sm:pt-12 sm:pb-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
+    <section id="reviews" className="bg-dark-bg py-24 sm:py-32 border-t border-white/5 relative">
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-secondary/5 rounded-full blur-[120px]"></div>
+      </div>
+
+      <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 lg:mb-20 gap-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
+            className="max-w-2xl"
           >
-            <span className="inline-block text-lg font-bold uppercase tracking-[0.2em] text-primary mb-4 bg-primary/10 px-6 py-2 rounded-full">
-              REVIEWS
+            <span className="inline-block text-sm font-bold uppercase tracking-[0.2em] text-primary mb-6 bg-primary/10 border border-primary/20 px-6 py-2 rounded-full">
+              Wall of Love
             </span>
-            <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-3">What Our Users Say</h2>
-            <p className="text-lg leading-8 text-gray-600">
-              Real stories from learners and professionals improving their resumes one step at a time.
-            </p>
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-white font-display">
+              Don't Just Take <br className="hidden md:block"/> Our Word For It.
+            </h2>
+          </motion.div>
+          
+          <motion.div
+             initial={{ opacity: 0, x: 30 }}
+             whileInView={{ opacity: 1, x: 0 }}
+             viewport={{ once: true }}
+             transition={{ duration: 0.5, delay: 0.2 }}
+             className="text-left md:text-right"
+          >
+             <p className="text-xl leading-8 text-gray-400 font-light max-w-lg">
+                Real stories from Gen Z professionals and grads who hacked the ATS and landed their dream roles.
+             </p>
           </motion.div>
         </div>
 
-        <div className="mx-auto mt-12 grid max-w-7xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Masonry-style Grid */}
+        <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
           {reviews.map((review, index) => (
             <motion.article
               key={review.id}
-              className="group flex flex-col justify-between rounded-2xl border border-gray-100 bg-gray-50/80 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:bg-white hover:shadow-xl"
-              initial={{ opacity: 0, y: 20 }}
+              className="break-inside-avoid flex flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:bg-white/10 hover:border-white/20 group"
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.08, duration: 0.5 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: (index % 3) * 0.15, duration: 0.5 }}
             >
               <div>
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-6 flex items-center justify-between">
                   <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <StarIcon key={i} className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
+                      <StarIcon key={i} className={`h-5 w-5 ${i < review.rating ? 'text-accent' : 'text-gray-600'}`} />
                     ))}
                   </div>
-                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{review.plan}</span>
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary-light uppercase tracking-wider">{review.plan}</span>
                 </div>
 
-                <p className="text-base leading-7 text-gray-700 transition-colors duration-300 group-hover:text-gray-800">
-                  {review.content}
+                <p className="text-lg leading-relaxed text-gray-300 font-light group-hover:text-white transition-colors duration-300">
+                  "{review.content}"
                 </p>
 
-                <div className="mt-4 space-y-2 text-xs text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <MapPinIcon className="h-4 w-4" />
+                <div className="mt-6 flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500">
+                  <div className="flex items-center gap-1.5 bg-dark-bg/50 px-3 py-1.5 rounded-full">
+                    <MapPinIcon className="h-4 w-4 text-secondary" />
                     <span>{review.location}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <ClockIcon className="h-4 w-4" />
+                  <div className="flex items-center gap-1.5 bg-dark-bg/50 px-3 py-1.5 rounded-full">
+                    <ClockIcon className="h-4 w-4 text-secondary" />
                     <span>{review.timeline}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-5 flex items-center gap-4 border-t border-gray-200/80 pt-4">
-                <img className="h-12 w-12 rounded-full bg-gray-50 ring-2 ring-transparent transition-all duration-300 group-hover:ring-primary/20" src={review.image} alt={review.name} />
+              <div className="mt-8 flex items-center gap-4 border-t border-white/10 pt-6">
+                <img className="h-14 w-14 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-colors duration-300" src={review.image} alt={review.name} />
                 <div>
-                  <h3 className="font-semibold text-gray-900">{review.name}</h3>
-                  <p className="text-sm text-gray-600">{review.role}</p>
+                  <h3 className="font-bold text-white text-lg">{review.name}</h3>
+                  <p className="text-sm text-primary-light font-medium">{review.role}</p>
                 </div>
               </div>
             </motion.article>
