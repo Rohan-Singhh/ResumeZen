@@ -46,6 +46,9 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
       
       console.log("Initiating Google sign-in process...");
       
+      // Force account selection prompt so users don't get auto-logged back in
+      googleProvider.setCustomParameters({ prompt: 'select_account' });
+      
       // Sign in with Google using Firebase
       const result = await signInWithPopup(auth, googleProvider);
       
