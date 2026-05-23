@@ -14,7 +14,7 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
   const [authState, setAuthState] = useState({ isSignedIn: false, user: null });
   // Keep reference to loading context for backward compatibility
   const { setLoading } = useLoading();
-  const { login } = useAuth();
+  const { login, setCurrentUser } = useAuth();
   const navigate = useNavigate();
 
   // Monitor auth state changes
@@ -58,31 +58,40 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
       
       console.log("Google sign-in successful for:", user.email);
       
-      // Get Google token
-      const idToken = await user.getIdToken();
+      // OPTIMISTIC UI Trick: We set a temporary user and navigate immediately!
+      // This saves 100-300ms of perceived latency while the backend syncs.
+      setCurrentUser({
+        name: user.displayName || 'User',
+        email: user.email,
+        _isOptimistic: true // internal flag just in case
+      });
       
-      console.log("Firebase ID token obtained, sending to backend...");
-      
-      // Send token to our backend to verify and create session
-      const response = await axios.post('/api/auth/google', { idToken });
-      
-      console.log('Google auth successful:', response.data);
-      
-      // Handle successful authentication
-      await login(response.data.user, response.data.token);
-      
-      // IMPORTANT: Reset loading state
-      setIsLoading(false);
-      setLoading(false);
-      
-      // Navigate to the desired location after login
       if (onSuccessNavigation) {
         onSuccessNavigation();
       } else {
         navigate('/dashboard', { replace: true });
       }
+
+      // Do the backend handshake asynchronously in the background
+      user.getIdToken().then(idToken => {
+        return axios.post('/api/auth/google', { idToken });
+      }).then(response => {
+        // Backend sync complete, update to the real database user
+        login(response.data.user, response.data.token);
+      }).catch(err => {
+        console.error('Background backend sync failed:', err);
+        // If it critically fails, we log them out and redirect back
+        if (err.response?.status === 401 || err.response?.status === 403) {
+           setCurrentUser(null);
+           navigate('/login');
+        }
+      }).finally(() => {
+        setIsLoading(false);
+        setLoading(false);
+      });
+
     } catch (err) {
-      setLoading(false); // Make sure to turn off global loading
+      setLoading(false);
       setIsLoading(false);
       
       console.error('Google sign in error:', err);
