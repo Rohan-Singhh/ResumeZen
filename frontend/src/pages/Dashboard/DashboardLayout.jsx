@@ -11,7 +11,8 @@ import {
   ArrowLeftOnRectangleIcon,
   SparklesIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/outline';
 
 function TopNav() {
@@ -38,6 +39,7 @@ function TopNav() {
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: HomeIcon },
     { name: 'Uploads', path: '/dashboard/recent-uploads', icon: DocumentTextIcon },
+    { name: 'Jobs', path: '/dashboard/jobs', icon: BriefcaseIcon },
     { name: 'Plans', path: '/dashboard/plans', icon: CreditCardIcon },
     { name: 'Profile', path: '/dashboard/profile', icon: Cog6ToothIcon },
     { name: 'Help', path: '/dashboard/help', icon: QuestionMarkCircleIcon },
