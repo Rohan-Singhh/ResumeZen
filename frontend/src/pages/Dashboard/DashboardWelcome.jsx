@@ -9,6 +9,7 @@ import DashboardCreditConfirmationPopup from './dashboardwelcome/DashboardCredit
 import DashboardNoCreditPopup from './dashboardwelcome/DashboardNoCreditPopup';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
 import ResumeDetailModal from './ResumeDetailModal';
+import sadRobotError from '../../assets/sad_robot_error.png';
 import { motion } from 'framer-motion';
 import {
   ArrowUpTrayIcon,
@@ -263,8 +264,12 @@ export default function DashboardWelcome() {
             </div>
 
             {errorMessage && (
-              <div className="mb-6 px-4 py-3 bg-red-950/40 border border-red-500/20 rounded-xl text-sm text-red-400 backdrop-blur-sm relative z-10">
-                {errorMessage}
+              <div className="mb-6 px-5 py-4 bg-red-950/40 border border-red-500/20 rounded-xl text-red-400 backdrop-blur-sm relative z-10 flex items-start gap-4 shadow-xl">
+                <img src={sadRobotError} alt="Sad Robot Error" className="w-16 h-16 rounded-lg object-cover shadow-[0_0_15px_rgba(239,68,68,0.2)] border border-red-500/30 flex-shrink-0" />
+                <div className="flex-1">
+                  <h4 className="text-base font-bold text-red-300 mb-1 font-display tracking-wide">Yikes! Something broke 💔</h4>
+                  <p className="text-sm font-medium">{errorMessage}</p>
+                </div>
               </div>
             )}
 
