@@ -32,6 +32,7 @@ export default function DashboardProfileEdit() {
   const fileInputRef = useRef(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -121,9 +122,11 @@ export default function DashboardProfileEdit() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!window.confirm("Are you absolutely sure you want to delete your account? This action cannot be undone.")) return;
-    
+  const handleDeleteAccount = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
     setIsDeleting(true);
     try {
       if (auth.currentUser) {
@@ -139,6 +142,7 @@ export default function DashboardProfileEdit() {
         setError('Failed to delete account. Please try again or contact support.');
       }
       setIsDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -368,6 +372,55 @@ export default function DashboardProfileEdit() {
           </div>
         </div>
       </motion.div>
+
+      {/* Gen Z Sad Delete Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }} 
+              exit={{ opacity: 0, scale: 0.9, y: 20 }} 
+              className="px-8 py-8 bg-[#1a1a24] border border-red-500/30 rounded-3xl shadow-[0_0_80px_rgba(239,68,68,0.2)] max-w-sm w-full flex flex-col items-center text-center relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-rose-500 to-red-600" />
+              
+              <img 
+                src="https://media.tenor.com/FwGZk2xH-uMAAAAM/sad-cat.gif" 
+                alt="Sad cat" 
+                className="w-32 h-32 rounded-2xl object-cover mb-6 border-2 border-white/10 shadow-lg"
+              />
+              
+              <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2 uppercase">No cap?</h3>
+              <p className="text-sm text-zinc-400 mb-8 leading-relaxed">
+                You're really gonna delete all your hard work? We'll miss you fr fr. 🥺 All your resumes and ATS scores will be gone forever into the void.
+              </p>
+              
+              <div className="flex flex-col w-full gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="w-full py-3.5 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  Nvm, I'm staying
+                </button>
+                <button 
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={isDeleting}
+                  className="w-full py-3.5 rounded-xl font-bold text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors flex items-center justify-center"
+                >
+                  {isDeleting ? (
+                    <div className="h-5 w-5 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+                  ) : (
+                    'Yeah, delete it'
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

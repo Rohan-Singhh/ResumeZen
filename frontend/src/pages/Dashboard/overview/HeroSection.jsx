@@ -59,79 +59,27 @@ export default function HeroSection({ currentUser, latestAnalysis, previousAnaly
       <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-[60px] pointer-events-none" />
 
       <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center gap-8">
-        {/* Score Ring */}
+        {/* Profile Avatar */}
         <div className="flex-shrink-0 relative">
-          <div className="relative h-40 w-40">
-            {/* Background ring */}
-            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 160 160">
-              <circle cx="80" cy="80" r="66" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="7" />
-              {latestScore !== null && (
-                <circle
-                  cx="80" cy="80" r="66"
-                  fill="none"
-                  stroke={`url(#heroScoreGrad)`}
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeOffset}
-                  className="transition-all duration-1000 ease-out"
-                />
-              )}
-              <defs>
-                <linearGradient id="heroScoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor={latestScore >= 70 ? '#34d399' : latestScore >= 40 ? '#fbbf24' : '#f87171'} />
-                  <stop offset="100%" stopColor={latestScore >= 70 ? '#14b8a6' : latestScore >= 40 ? '#f97316' : '#e11d48'} />
-                </linearGradient>
-              </defs>
-            </svg>
-
-            {/* Outer glow */}
-            {latestScore !== null && (
-              <motion.div
-                className={`absolute inset-0 rounded-full bg-${scoreColor}-500/10 blur-xl`}
-                animate={{ opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              />
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 100 }}
+            className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-4 border-white/[0.08] overflow-hidden shadow-[0_0_40px_rgba(139,92,246,0.15)] group"
+          >
+            {currentUser?.avatarUrl ? (
+              <img src={currentUser.avatarUrl} alt="Profile" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                <span className="text-5xl font-display font-bold text-zinc-700">
+                  {currentUser?.name?.charAt(0)?.toUpperCase() || '?'}
+                </span>
+              </div>
             )}
-
-            {/* Center content */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              {latestScore !== null ? (
-                <>
-                  <span className="text-4xl font-extrabold text-white font-display tabular-nums tracking-tighter leading-none mb-1">
-                    {displayScore}
-                  </span>
-                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">ATS Score</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-2xl font-bold text-zinc-600 font-display">—</span>
-                  <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mt-1">No Data</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Score trend badge */}
-          {scoreDiff !== null && scoreDiff !== 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1 }}
-              className={`absolute -bottom-1 -right-1 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${
-                scoreDiff > 0
-                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                  : 'bg-red-500/15 text-red-400 border-red-500/30'
-              }`}
-            >
-              {scoreDiff > 0 ? (
-                <ArrowTrendingUpIcon className="h-3.5 w-3.5" />
-              ) : (
-                <ArrowTrendingDownIcon className="h-3.5 w-3.5" />
-              )}
-              {scoreDiff > 0 ? '+' : ''}{scoreDiff}%
-            </motion.div>
-          )}
+            
+            {/* Subtle inner ring glow */}
+            <div className="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(255,255,255,0.1)] pointer-events-none" />
+          </motion.div>
         </div>
 
         {/* Text Content */}
