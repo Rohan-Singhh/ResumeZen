@@ -423,3 +423,5 @@ export default function DashboardProfileEdit() {
         document.body
       )}
     </div>
+  );
+}
