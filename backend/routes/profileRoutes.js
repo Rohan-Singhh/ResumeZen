@@ -7,10 +7,12 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
-const { uploadImage } = require('../services/uploadService');
+const { uploadImage, deleteFromCloudinary } = require('../services/uploadService');
 const UserAuth = require('../models/UserAuth');
 const UserProfile = require('../models/UserProfile');
 const UserLinks = require('../models/UserLinks');
+const ResumeAnalysis = require('../models/ResumeAnalysis');
+const UserPlan = require('../models/UserPlan');
 const authMiddleware = require('../middleware/authMiddleware');
 const admin = require('firebase-admin');
 
@@ -207,9 +209,25 @@ router.delete('/', authMiddleware, async (req, res) => {
     const userId = req.user.userId;
     const firebaseUid = req.user.firebaseUid;
     
-    // Delete profile and links
+    // Find profile to delete avatar if it exists
+    const userProfile = await UserProfile.findOne({ userId });
+    if (userProfile && userProfile.avatarUrl) {
+      await deleteFromCloudinary(userProfile.avatarUrl);
+    }
+    
+    // Find all resumes and delete them from Cloudinary
+    const userResumes = await ResumeAnalysis.find({ userId });
+    for (const resume of userResumes) {
+      if (resume.resumeUrl) {
+        await deleteFromCloudinary(resume.resumeUrl);
+      }
+    }
+    
+    // Delete all related records from MongoDB
     await UserProfile.deleteOne({ userId });
     await UserLinks.deleteOne({ userId });
+    await ResumeAnalysis.deleteMany({ userId });
+    await UserPlan.deleteMany({ userId });
     
     // Delete auth record
     await UserAuth.findByIdAndDelete(userId);

@@ -217,7 +217,52 @@ const uploadImage = async (file) => {
   }
 };
 
+/**
+ * Delete a file from Cloudinary given its URL
+ * @param {string} fileUrl - The Cloudinary URL of the file
+ * @returns {Promise<boolean>} - True if deleted successfully
+ */
+const deleteFromCloudinary = async (fileUrl) => {
+  if (!fileUrl) return false;
+  
+  try {
+    // Typical URL: https://res.cloudinary.com/cloud_name/image/upload/v12345/folder/filename.ext
+    // We need to extract 'folder/filename'
+    const urlParts = fileUrl.split('/upload/');
+    if (urlParts.length !== 2) return false;
+    
+    let pathPart = urlParts[1];
+    
+    // Remove version prefix if present (e.g., v1234567890/)
+    if (pathPart.match(/^v\d+\//)) {
+      pathPart = pathPart.replace(/^v\d+\//, '');
+    }
+    
+    // Extract public_id (everything before the last dot)
+    const publicId = pathPart.substring(0, pathPart.lastIndexOf('.'));
+    
+    if (!publicId) return false;
+    
+    console.log(`Attempting to delete Cloudinary file with public_id: ${publicId}`);
+    
+    // Try to delete as 'image' (default for avatars and pdfs in our setup)
+    let result = await cloudinary.uploader.destroy(publicId, { invalidate: true, resource_type: 'image' });
+    
+    // If not found, try 'raw' just in case
+    if (result.result === 'not found') {
+      result = await cloudinary.uploader.destroy(publicId, { invalidate: true, resource_type: 'raw' });
+    }
+    
+    console.log(`Cloudinary deletion result for ${publicId}:`, result);
+    return result.result === 'ok';
+  } catch (error) {
+    console.error(`Error deleting ${fileUrl} from Cloudinary:`, error);
+    return false;
+  }
+};
+
 module.exports = {
   uploadPdf,
-  uploadImage
+  uploadImage,
+  deleteFromCloudinary
 }; 
