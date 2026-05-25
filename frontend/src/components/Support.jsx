@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnvelopeIcon, PhoneIcon, ChatBubbleLeftRightIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
+import axios from 'axios';
 
 const contactMethods = [
   {
@@ -54,6 +55,12 @@ export default function Support() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState('Normal');
   const [message, setMessage] = useState('');
+  
+  // New state variables for form fields and errors
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState('');
+  const [formError, setFormError] = useState('');
 
   const priorities = ['Low', 'Normal', 'Urgent'];
   const maxCharacters = 500;
@@ -61,10 +68,34 @@ export default function Support() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setFormError('');
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    setIsSubmitting(false);
-    setShowModal(true);
+    
+    try {
+      const payload = {
+        name,
+        email,
+        subject,
+        priority: selectedPriority,
+        message
+      };
+
+      const response = await axios.post('/api/support', payload);
+
+      if (response.data.success) {
+        setShowModal(true);
+        // Reset form
+        setName('');
+        setEmail('');
+        setSubject('');
+        setMessage('');
+        setSelectedPriority('Normal');
+      }
+    } catch (err) {
+      setFormError(err.response?.data?.error || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -161,11 +192,19 @@ export default function Support() {
             </div>
             
             <form className="p-8 lg:p-12 lg:col-span-3 space-y-6" onSubmit={handleSubmit}>
+              {formError && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm font-medium">
+                  {formError}
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
                   <input
                     type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="Your Name"
                     className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none"
                   />
@@ -174,6 +213,9 @@ export default function Support() {
                   <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                   <input
                     type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Your Email"
                     className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none"
                   />
@@ -183,6 +225,9 @@ export default function Support() {
                 <label className="block text-sm font-medium text-gray-300 mb-2">Subject</label>
                 <input
                   type="text"
+                  required
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
                   placeholder="How can we help?"
                   className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none"
                 />
@@ -216,6 +261,7 @@ export default function Support() {
                 </div>
                 <textarea
                   placeholder="Your Message"
+                  required
                   rows="4"
                   maxLength={maxCharacters}
                   value={message}

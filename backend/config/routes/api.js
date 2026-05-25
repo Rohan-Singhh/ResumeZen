@@ -5,6 +5,7 @@ const uploadRouter = require('../../routes/uploadRoutes');
 const resumeRouter = require('../../routes/resumeRoutes');
 const ocrRouter = require('../../routes/ocrRoutes');
 const jobRouter = require('../../routes/jobRoutes');
+const supportRouter = require('../../routes/supportRoutes');
 
 /**
  * Configure API routes
@@ -34,6 +35,9 @@ const configureApiRoutes = (app) => {
   
   // Mount job routes
   app.use(`${apiPrefix}/jobs`, jobRouter);
+  
+  // Mount support routes
+  app.use(`${apiPrefix}/support`, supportRouter);
   
   // Add more API routes here as they are developed
 };

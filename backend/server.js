@@ -49,19 +49,19 @@ const startServer = async () => {
   try {
     // Check environment variables
     checkEnvironmentVariables();
-    
+
     // Apply middleware
     config.middleware(app);
-    
+
     // Connect to database
     await config.database.connect();
-    
+
     // Set up API routes
     config.routes(app);
-    
+
     // Configure error handling (must be last)
     config.errorHandlers(app);
-    
+
     // Start the server
     app.listen(PORT, () => {
       console.log(`✅ Server is running on port ${PORT}`);
