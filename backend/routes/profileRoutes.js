@@ -12,6 +12,7 @@ const UserAuth = require('../models/UserAuth');
 const UserProfile = require('../models/UserProfile');
 const UserLinks = require('../models/UserLinks');
 const authMiddleware = require('../middleware/authMiddleware');
+const admin = require('firebase-admin');
 
 /**
  * @route   GET /api/profile
@@ -204,6 +205,7 @@ router.post('/avatar', authMiddleware, upload.single('avatar'), async (req, res)
 router.delete('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
+    const firebaseUid = req.user.firebaseUid;
     
     // Delete profile and links
     await UserProfile.deleteOne({ userId });
@@ -211,6 +213,17 @@ router.delete('/', authMiddleware, async (req, res) => {
     
     // Delete auth record
     await UserAuth.findByIdAndDelete(userId);
+
+    // Delete from Firebase using Admin SDK (bypasses recent-login requirements)
+    if (firebaseUid && admin.apps.length > 0) {
+      try {
+        await admin.auth().deleteUser(firebaseUid);
+        console.log(`Deleted Firebase user: ${firebaseUid}`);
+      } catch (fbErr) {
+        console.error('Error deleting Firebase user:', fbErr);
+        // We continue even if this fails, since DB is already cleaned
+      }
+    }
 
     res.json({ success: true, message: 'Account deleted successfully' });
   } catch (err) {
