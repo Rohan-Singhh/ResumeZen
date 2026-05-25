@@ -5,6 +5,9 @@
 
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+const { uploadImage } = require('../services/uploadService');
 const UserAuth = require('../models/UserAuth');
 const UserProfile = require('../models/UserProfile');
 const UserLinks = require('../models/UserLinks');
@@ -44,6 +47,7 @@ router.get('/', authMiddleware, async (req, res) => {
       ...(userProfile && {
         occupation: userProfile.occupation,
         graduationYear: userProfile.graduationYear,
+        avatarUrl: userProfile.avatarUrl,
         completedTasks: userProfile.completedTasks || []
       }),
       // Add links data if available
@@ -137,6 +141,7 @@ router.put('/', authMiddleware, async (req, res) => {
       lastLoginAt: userAuth.lastLoginAt,
       occupation: userProfile.occupation,
       graduationYear: userProfile.graduationYear,
+      avatarUrl: userProfile.avatarUrl,
       completedTasks: userProfile.completedTasks || [],
       linkedin: userLinks.linkedin,
       github: userLinks.github,
@@ -156,6 +161,61 @@ router.put('/', authMiddleware, async (req, res) => {
       message: 'Server error',
       error: 'Failed to update profile data'
     });
+  }
+});
+
+/**
+ * @route   POST /api/profile/avatar
+ * @desc    Upload user avatar
+ * @access  Private
+ */
+router.post('/avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const result = await uploadImage(req.file);
+    
+    let userProfile = await UserProfile.findOne({ userId: req.user.userId });
+    if (!userProfile) {
+      userProfile = new UserProfile({ userId: req.user.userId });
+    }
+    
+    userProfile.avatarUrl = result.url;
+    await userProfile.save();
+
+    res.json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      avatarUrl: result.url
+    });
+  } catch (err) {
+    console.error('Error uploading avatar:', err);
+    res.status(500).json({ success: false, message: 'Failed to upload avatar' });
+  }
+});
+
+/**
+ * @route   DELETE /api/profile
+ * @desc    Delete user account and data
+ * @access  Private
+ */
+router.delete('/', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    // Delete profile and links
+    await UserProfile.deleteOne({ userId });
+    await UserLinks.deleteOne({ userId });
+    
+    // Delete auth record
+    await UserAuth.findByIdAndDelete(userId);
+
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting account:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete account' });
   }
 });
 

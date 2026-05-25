@@ -167,6 +167,57 @@ const uploadPdf = async (file) => {
   }
 };
 
+/**
+ * Upload an image file to Cloudinary
+ * @param {Object} file - The file object (path, originalname, etc)
+ * @returns {Promise<Object>} - The upload result containing URL and other properties
+ */
+const uploadImage = async (file) => {
+  try {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || 
+        !process.env.CLOUDINARY_API_KEY || 
+        !process.env.CLOUDINARY_API_SECRET) {
+      throw new Error('Cloudinary credentials are missing or incomplete. Please check your .env file.');
+    }
+    
+    const uploadOptions = {
+      folder: 'avatars',
+      use_filename: true,
+      unique_filename: true,
+      overwrite: true,
+      resource_type: 'image',
+    };
+    
+    let result;
+    
+    if (file.path) {
+      result = await cloudinary.uploader.upload(file.path, uploadOptions);
+      try {
+        fs.unlinkSync(file.path);
+      } catch (err) {
+        console.error('Error removing temp file:', err);
+      }
+    } else {
+      throw new Error('Invalid file format provided for image upload');
+    }
+    
+    if (!result || !result.secure_url) {
+      throw new Error('Cloudinary upload failed to return a secure URL');
+    }
+    
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+      format: result.format,
+      size: result.bytes,
+    };
+  } catch (error) {
+    console.error('Error uploading image to Cloudinary:', error);
+    throw error;
+  }
+};
+
 module.exports = {
-  uploadPdf
+  uploadPdf,
+  uploadImage
 }; 

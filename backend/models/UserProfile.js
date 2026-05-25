@@ -10,6 +10,7 @@ const UserProfileSchema = new mongoose.Schema({
   phoneNumber: String,
   occupation: String,
   graduationYear: String,
+  avatarUrl: String,
   completedTasks: { type: [String], default: [] },
 }, { timestamps: true });
 
