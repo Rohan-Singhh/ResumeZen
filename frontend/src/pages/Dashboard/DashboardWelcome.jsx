@@ -11,6 +11,7 @@ import ResumeAnalysisModal from './ResumeAnalysisModal';
 import ResumeDetailModal from './ResumeDetailModal';
 import { motion } from 'framer-motion';
 import { SparklesIcon } from '@heroicons/react/24/outline';
+import { useResumeHistory } from '../../hooks/useResumeHistory';
 
 // Overview sub-components
 import HeroSection from './overview/HeroSection';
@@ -48,21 +49,10 @@ export default function DashboardWelcome() {
 
   // Data state
   const [activePlan, setActivePlan] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(true);
+  const { data: history = [], isLoading: historyLoading } = useResumeHistory();
 
-  // Fetch plans and history
+  // Fetch plans
   useEffect(() => { fetchUserPlans(true); }, [currentUser]);
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const data = await getResumeHistory();
-        setHistory(data);
-      } catch { /* silent */ } finally { setHistoryLoading(false); }
-    };
-    fetchHistory();
-  }, [currentUser]);
 
   useEffect(() => {
     const handleStorageChange = (e) => {
@@ -146,10 +136,8 @@ export default function DashboardWelcome() {
     setUploadedFile(null);
     setUploadSuccess(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    fetchUserPlans(true);
-    (async () => {
-      try { const data = await getResumeHistory(); setHistory(data); } catch { /* silent */ }
-    })();
+    // The query cache invalidation happens automatically inside the modal's useProcessResume hook,
+    // so we don't need to manually refetch history here!
   };
 
   const handleViewReport = (analysisResponse) => {
@@ -174,10 +162,7 @@ export default function DashboardWelcome() {
       analysis: structured.analysis || {},
     };
     setSelectedResume(resumeDetail);
-
-    (async () => {
-      try { const data = await getResumeHistory(); setHistory(data); } catch { /* silent */ }
-    })();
+    // React Query automatically handles refetching the history
   };
 
   const handleViewReportFromInsights = () => {

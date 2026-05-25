@@ -4,6 +4,17 @@ import App from './App.jsx'
 import './index.css'
 import { AuthProvider } from './context/AuthContext'
 import axios from 'axios'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+    },
+  },
+})
 
 // Configure axios defaults - use proxy in dev if VITE_API_URL is not set
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
@@ -22,8 +33,10 @@ if (import.meta.env.MODE === 'development') {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </QueryClientProvider>
   </React.StrictMode>,
 )

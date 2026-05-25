@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { analyzeUploadResume } from '../../services/resumeService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../context/AuthContext';
 import {
   CheckCircleIcon,
   XMarkIcon,
@@ -41,6 +43,8 @@ const LOADING_PHRASES = [
 ];
 
 export default function ResumeAnalysisModal({ fileDetails, open, onClose, onViewReport }) {
+  const queryClient = useQueryClient();
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -137,6 +141,10 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
             setCurrentStep(4);
             // Store the full response so we can pass it to the detail modal
             setSavedAnalysisData(res);
+            
+            // Invalidate React Query cache so the history updates instantly
+            queryClient.invalidateQueries({ queryKey: ['resumeHistory', currentUser?.uid] });
+
             setTimeout(() => {
               setResult(res.data.analysis.structured);
               setLoading(false);

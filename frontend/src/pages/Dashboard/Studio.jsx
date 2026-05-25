@@ -12,6 +12,7 @@ import {
   BriefcaseIcon
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
+import { useResumeHistory } from '../../hooks/useResumeHistory';
 
 function timeAgo(dateStr) {
   const now = new Date();
@@ -29,25 +30,17 @@ function timeAgo(dateStr) {
 }
 
 export default function Studio() {
-  const [history, setHistory] = useState([]);
   const [activeResume, setActiveResume] = useState(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  const { data: history = [], isLoading: loading } = useResumeHistory();
 
+  // Automatically select the latest resume if none is active
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const data = await getResumeHistory();
-        setHistory(data);
-        if (data.length > 0) setActiveResume(data[0]);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHistory();
-  }, []);
+    if (history.length > 0 && !activeResume) {
+      setActiveResume(history[0]);
+    }
+  }, [history, activeResume]);
 
   if (loading) {
     return (
