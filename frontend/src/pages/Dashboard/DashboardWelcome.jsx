@@ -6,7 +6,6 @@ import * as pdfUtils from '../../utils/pdfUtils';
 import { getResumeHistory } from '../../services/resumeService';
 import PlanModal from '../../components/PlanModal';
 import DashboardCreditConfirmationPopup from './dashboardwelcome/DashboardCreditConfirmationPopup';
-import DashboardNoCreditPopup from './dashboardwelcome/DashboardNoCreditPopup';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
 import ResumeDetailModal from './ResumeDetailModal';
 import { motion } from 'framer-motion';
@@ -40,7 +39,6 @@ export default function DashboardWelcome() {
 
   // Modal state
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
-  const [showNoCreditPopup, setShowNoCreditPopup] = useState(false);
   const [showCreditConfirmation, setShowCreditConfirmation] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisFileDetails, setAnalysisFileDetails] = useState(null);
@@ -96,7 +94,10 @@ export default function DashboardWelcome() {
     setSelectedFile(file);
     setUploadSuccess(false);
     setErrorMessage('');
-    if (!activePlan || !hasCredits) { setShowNoCreditPopup(true); return; }
+    if (!activePlan || !hasCredits) { 
+      navigate('/dashboard/plans');
+      return; 
+    }
     setShowCreditConfirmation(true);
   };
 
@@ -280,7 +281,6 @@ export default function DashboardWelcome() {
       {/* Modals */}
       <PlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} />
       <DashboardCreditConfirmationPopup show={showCreditConfirmation} onClose={() => setShowCreditConfirmation(false)} onConfirm={confirmCreditUsage} activePlan={activePlan} />
-      <DashboardNoCreditPopup show={showNoCreditPopup} onClose={() => setShowNoCreditPopup(false)} onViewPlans={() => { setIsPlanModalOpen(true); setShowNoCreditPopup(false); }} activePlan={activePlan} />
       <ResumeAnalysisModal fileDetails={analysisFileDetails} open={showAnalysisModal} onClose={handleAnalysisClose} onViewReport={handleViewReport} />
       <ResumeDetailModal modalItem={selectedResume} onClose={() => setSelectedResume(null)} />
     </div>

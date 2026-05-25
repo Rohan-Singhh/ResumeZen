@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon, CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
@@ -170,57 +171,61 @@ export default function PlanModal({ isOpen, onClose }) {
   // If not open, don't render anything
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto"
-        onClick={onClose}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
       >
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+        ></div>
+        
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          className="relative bg-[#0a0a0c] rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] z-10"
           onClick={e => e.stopPropagation()}
         >
           {/* Modal Header */}
-          <div className="flex justify-between items-center p-6 border-b">
-            <h2 className="text-2xl font-bold text-gray-900">Choose Your Plan</h2>
+          <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/[0.02]">
+            <h2 className="text-2xl font-bold text-white font-display">Choose Your Plan</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-zinc-500 hover:text-white transition-colors"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
           </div>
 
           {/* Modal Body */}
-          <div className="p-6">
+          <div className="p-8">
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
-                <p className="text-red-700">{error}</p>
+              <div className="bg-red-500/10 border border-red-500/20 p-4 mb-6 rounded-lg">
+                <p className="text-red-400 text-sm font-medium">{error}</p>
               </div>
             )}
 
             {purchaseStatus.success && (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-md">
-                <p className="text-green-700">Purchase successful! Your plan has been activated.</p>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 mb-6 rounded-lg">
+                <p className="text-emerald-400 text-sm font-medium">Purchase successful! Your plan has been activated.</p>
               </div>
             )}
 
             {purchaseStatus.error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
-                <p className="text-red-700">{purchaseStatus.error}</p>
+              <div className="bg-red-500/10 border border-red-500/20 p-4 mb-6 rounded-lg">
+                <p className="text-red-400 text-sm font-medium">{purchaseStatus.error}</p>
               </div>
             )}
 
             {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                <p className="mt-4 text-gray-600">Loading plans...</p>
+              <div className="text-center py-16">
+                <div className="inline-block animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mb-4"></div>
+                <p className="text-zinc-400 font-medium">Loading plans...</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -228,46 +233,48 @@ export default function PlanModal({ isOpen, onClose }) {
                 {(plans.length < 3 ? FALLBACK_PLANS : plans).map((plan) => (
                   <motion.div
                     key={plan._id}
-                    className={`relative bg-white rounded-xl shadow-lg border-2 overflow-hidden flex flex-col ${
-                      plan.isSpecial ? 'border-secondary bg-secondary/5' : 
-                      plan.isPopular ? 'border-primary' : 'border-gray-200'
+                    className={`relative bg-[#0f0f12] rounded-2xl border p-1 overflow-hidden flex flex-col transition-all duration-300 ${
+                      plan.isSpecial ? 'border-secondary shadow-[0_0_30px_rgba(139,92,246,0.15)]' : 
+                      plan.isPopular ? 'border-primary shadow-[0_0_30px_rgba(139,92,246,0.1)]' : 'border-white/10 hover:border-white/20'
                     }`}
                     whileHover={{ y: -5 }}
                     transition={{ duration: 0.2 }}
                   >
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
+
                     {/* Popular badge */}
                     {plan.isPopular && (
-                      <div className="absolute -top-0 right-4 bg-primary text-white px-4 py-1 rounded-b-lg text-sm font-semibold">
+                      <div className="absolute -top-0 right-4 bg-primary text-white px-4 py-1 rounded-b-lg text-xs font-bold uppercase tracking-wider z-10">
                         Most Popular
                       </div>
                     )}
                     
                     {/* Special offer badge */}
                     {plan.isSpecial && (
-                      <div className="absolute -top-0 right-4 bg-secondary text-white px-4 py-1 rounded-b-lg text-sm font-semibold flex items-center gap-1">
-                        <SparklesIcon className="h-4 w-4" />
+                      <div className="absolute -top-0 right-4 bg-secondary text-white px-4 py-1 rounded-b-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1 z-10">
+                        <SparklesIcon className="h-3 w-3" />
                         Special Offer
                       </div>
                     )}
                     
-                    <div className="p-6 flex-grow">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">{plan.name}</h3>
+                    <div className="p-6 flex-grow relative z-10 bg-dark-bg rounded-xl">
+                      <h3 className="text-xl font-bold text-white mb-2 font-display">{plan.name}</h3>
                       
-                      <div className="mb-4">
-                        <span className="text-3xl font-bold text-primary">
+                      <div className="mb-6">
+                        <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
                           {formatPrice(plan.price, plan.currency)}
                         </span>
-                        <span className="text-gray-500 text-sm ml-1">
+                        <span className="text-zinc-500 text-sm font-medium ml-1">
                           /{formatPeriod(plan.period, plan._id)}
                         </span>
                       </div>
                       
-                      <ul className="mb-6 space-y-2">
+                      <ul className="mb-8 space-y-3">
                         <li className="flex items-start">
-                          <CheckCircleIcon className={`h-5 w-5 mr-2 flex-shrink-0 ${
+                          <CheckCircleIcon className={`h-5 w-5 mr-3 flex-shrink-0 ${
                             plan.isSpecial ? 'text-secondary' : 'text-primary'
                           } mt-0.5`} />
-                          <span className="text-gray-600">
+                          <span className="text-zinc-300 text-sm font-medium">
                             {plan.isUnlimited ? 'Unlimited Resume Checks' : `${plan.credits} Resume ${plan.credits === 1 ? 'Check' : 'Checks'}`}
                           </span>
                         </li>
@@ -276,28 +283,24 @@ export default function PlanModal({ isOpen, onClose }) {
                         {plan.features && plan.features.length > 0 && 
                           plan.features.map((feature, i) => (
                             <li key={i} className="flex items-start">
-                              <CheckCircleIcon className={`h-5 w-5 mr-2 flex-shrink-0 ${
+                              <CheckCircleIcon className={`h-5 w-5 mr-3 flex-shrink-0 ${
                                 plan.isSpecial ? 'text-secondary' : 'text-primary'
                               } mt-0.5`} />
-                              <span className="text-gray-600">{feature}</span>
+                              <span className="text-zinc-400 text-sm">{feature}</span>
                             </li>
                           ))
                         }
                       </ul>
-                    </div>
-                    
-                    <div className="p-6 pt-0">
+                      
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`w-full py-2 rounded-lg font-medium ${
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`w-full py-3 rounded-xl font-bold transition-all duration-300 ${
                           purchaseStatus.loading 
-                            ? 'bg-gray-200 text-gray-500 relative overflow-hidden' 
-                            : plan.isSpecial 
-                              ? 'bg-secondary hover:bg-secondary/90 text-white' 
-                              : plan.isPopular
-                                ? 'bg-primary hover:bg-primary/90 text-white'
-                                : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                            ? 'bg-white/5 text-zinc-500 relative overflow-hidden cursor-not-allowed' 
+                            : plan.isSpecial || plan.isPopular
+                              ? 'bg-white text-zinc-950 hover:bg-zinc-200'
+                              : 'bg-white/10 hover:bg-white/20 text-white border border-white/5'
                         }`}
                         onClick={() => handlePurchase(plan)}
                         disabled={purchaseStatus.loading}
@@ -306,10 +309,10 @@ export default function PlanModal({ isOpen, onClose }) {
                           <>
                             <span>Processing...</span>
                             <span 
-                              className="absolute left-0 top-0 bottom-0 bg-gray-300 opacity-20 animate-shimmer" 
+                              className="absolute left-0 top-0 bottom-0 bg-white/10 animate-shimmer" 
                               style={{ 
                                 width: '100%',
-                                background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)',
+                                background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)',
                                 backgroundSize: '200% 100%'
                               }} 
                             ></span>
@@ -324,6 +327,7 @@ export default function PlanModal({ isOpen, onClose }) {
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
-} 
+}

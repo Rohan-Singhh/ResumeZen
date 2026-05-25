@@ -1,10 +1,29 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DocumentTextIcon, XMarkIcon, ChartBarIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { 
+  DocumentTextIcon, XMarkIcon, ChartBarIcon, 
+  ExclamationTriangleIcon, FireIcon, CodeBracketIcon,
+  CheckCircleIcon, MagnifyingGlassIcon
+} from '@heroicons/react/24/outline';
 
 export default function ResumeDetailModal({ modalItem, onClose }) {
   if (typeof document === 'undefined') return null;
+  
+  // Backwards compatibility check
+  const isLegacy = !!modalItem?.analysis?.atsScore;
+  const analysisData = isLegacy ? modalItem : (modalItem?.analysis?.structured || modalItem);
+
+  const getRiskColor = (level) => {
+    switch (level?.toLowerCase()) {
+      case 'low': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+      case 'medium': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+      case 'high': return 'text-red-400 bg-red-500/10 border-red-500/20';
+      default: return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
+    }
+  };
+  
+  const overallScore = analysisData.overallScore || analysisData.analysis?.atsScore || 0;
 
   return createPortal(
     <AnimatePresence>
@@ -12,7 +31,7 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
-            className="absolute inset-0 bg-black/60 backdrop-blur-md" 
+            className="absolute inset-0 bg-black/80 backdrop-blur-md" 
             onClick={onClose} 
           />
         
@@ -20,151 +39,220 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
           initial={{ opacity: 0, scale: 0.95, y: 20 }} 
           animate={{ opacity: 1, scale: 1, y: 0 }} 
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-[#131318] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl relative z-10 flex flex-col" 
+          className="bg-[#0a0a0c] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative z-10 flex flex-col" 
           onClick={e => e.stopPropagation()}
         >
+          {/* Top Gradient Bar */}
+          <div className="h-1.5 w-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500" />
+          
           {/* Modal header */}
-          <div className="bg-black/20 border-b border-white/5 px-6 py-4 flex items-center justify-between z-20">
+          <div className="bg-white/[0.02] border-b border-white/5 px-6 py-4 flex items-center justify-between z-20">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center border border-violet-500/20">
-                <DocumentTextIcon className="h-5 w-5 text-violet-400" />
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
+                <DocumentTextIcon className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-zinc-100 font-display">{modalItem.contactInformation?.name || 'Unnamed Resume'}</h3>
-                <p className="text-xs text-zinc-500 font-medium">Analyzed on {new Date(modalItem.createdAt).toLocaleString()}</p>
+                <h3 className="text-lg font-bold text-white font-display tracking-tight">{analysisData.contactInformation?.name || 'Unnamed Resume'}</h3>
+                <p className="text-xs text-zinc-500 font-medium">ATS Auditor Report</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors bg-white/5">
+            <button onClick={onClose} className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors bg-white/5 border border-white/5">
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar relative z-10">
-            {/* Ambient glow inside modal */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[80px] pointer-events-none" />
-
-            {/* ATS Score Showcase */}
-            <div className="text-center py-6 bg-white/5 border border-white/10 rounded-2xl relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
+          <div className="p-6 md:p-8 space-y-8 overflow-y-auto custom-scrollbar relative z-10">
+            {/* Header Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
-              <div className="relative z-10">
-                <p className="text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest flex items-center justify-center gap-2">
-                  <ChartBarIcon className="h-4 w-4" /> Overall ATS Score
-                </p>
-                
-                <p className={`text-6xl font-extrabold tabular-nums font-display tracking-tighter ${
-                  (modalItem.analysis?.atsScore ?? 0) >= 70 ? 'text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-teal-600' : 
-                  (modalItem.analysis?.atsScore ?? 0) >= 40 ? 'text-transparent bg-clip-text bg-gradient-to-br from-amber-400 to-orange-600' : 
-                  'text-transparent bg-clip-text bg-gradient-to-br from-red-400 to-rose-600'
-                }`}>
-                  {typeof modalItem.analysis?.atsScore === 'number' ? `${modalItem.analysis.atsScore}%` : 'N/A'}
-                </p>
-                
-                {typeof modalItem.analysis?.atsScore === 'number' && (
-                  <div className="mt-6 h-3 w-64 bg-black/40 rounded-full mx-auto overflow-hidden border border-white/5 shadow-inner">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${modalItem.analysis?.atsScore}%` }}
-                      transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-                      className={`h-full rounded-full ${
-                        modalItem.analysis.atsScore >= 70 ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 
-                        modalItem.analysis.atsScore >= 40 ? 'bg-gradient-to-r from-amber-500 to-orange-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 
-                        'bg-gradient-to-r from-red-500 to-rose-400 shadow-[0_0_10px_rgba(239,68,68,0.5)]'
-                      }`} 
-                    />
+              {/* ATS Score Card */}
+              <div className="md:col-span-1 bg-[#131318] border border-white/10 rounded-2xl p-6 relative overflow-hidden flex flex-col items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40" />
+                <div className="relative z-10 text-center">
+                  <p className="text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                    <ChartBarIcon className="h-4 w-4" /> Overall Score
+                  </p>
+                  <p className={`text-6xl font-extrabold tabular-nums font-display tracking-tighter ${
+                    overallScore >= 90 ? 'text-emerald-400' : 
+                    overallScore >= 75 ? 'text-teal-400' : 
+                    overallScore >= 60 ? 'text-amber-400' : 
+                    'text-red-500'
+                  }`}>
+                    {overallScore}<span className="text-2xl text-zinc-600">/100</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Recruiter Verdict Card */}
+              <div className="md:col-span-2 bg-[#131318] border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[50px] pointer-events-none" />
+                <div className="relative z-10 h-full flex flex-col justify-between min-h-[120px]">
+                  <div>
+                     <div className="flex items-center justify-between mb-4">
+                       <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Recruiter Verdict</p>
+                       {analysisData.hiringRiskLevel && (
+                         <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border ${getRiskColor(analysisData.hiringRiskLevel)}`}>
+                           {analysisData.hiringRiskLevel} Risk
+                         </span>
+                       )}
+                     </div>
+                     <p className={`text-3xl font-black font-display uppercase tracking-tight mb-2 ${
+                       analysisData.recruiterScreening?.verdict?.toLowerCase() === 'pass' ? 'text-emerald-400' :
+                       analysisData.recruiterScreening?.verdict?.toLowerCase() === 'reject' ? 'text-red-500' :
+                       'text-amber-400'
+                     }`}>
+                       {analysisData.recruiterScreening?.verdict || 'Unknown'}
+                     </p>
                   </div>
-                )}
+                  
+                  {analysisData.recruiterScreening?.redFlags?.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {analysisData.recruiterScreening.redFlags.map((flag, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                          <ExclamationTriangleIcon className="w-3.5 h-3.5" /> {flag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Contact info */}
-            <Section title="Contact Information" icon={DocumentTextIcon}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoCard label="Email Address" value={modalItem.contactInformation?.email} />
-                <InfoCard label="Phone Number" value={modalItem.contactInformation?.phone} />
-                <InfoCard label="Location" value={modalItem.contactInformation?.location} className="sm:col-span-2" />
+            {/* Brutal Feedback */}
+            {analysisData.recruiterScreening?.brutalFeedback?.length > 0 && (
+              <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
+                <h4 className="text-sm font-black text-red-400 mb-4 flex items-center gap-2 font-display uppercase tracking-wider">
+                  <FireIcon className="h-5 w-5" /> Brutal Feedback
+                </h4>
+                <ul className="space-y-3">
+                  {analysisData.recruiterScreening.brutalFeedback.map((feedback, i) => (
+                    <li key={i} className="text-zinc-300 text-sm font-medium flex items-start gap-3 leading-relaxed">
+                      <span className="text-red-500 font-bold mt-0.5">•</span> {feedback}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </Section>
+            )}
 
-            {/* Skills */}
-            <Section title="Extracted Skills" icon={SparklesIcon}>
-              {modalItem.skills?.technical?.length > 0 && (
-                <div className="mb-5">
-                  <p className="text-xs font-semibold text-zinc-500 mb-3 uppercase tracking-wider">Technical Skills</p>
-                  <div className="flex flex-wrap gap-2">
-                    {modalItem.skills.technical.map((s, i) => <Tag key={i} variant="primary">{s}</Tag>)}
+            {/* Two Column Layout for Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Technical Depth */}
+              {analysisData.technicalDepth && (
+                <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <h4 className="text-sm font-bold text-zinc-100 flex items-center gap-2 font-display uppercase tracking-wider">
+                      <CodeBracketIcon className="h-4 w-4 text-indigo-400" /> Technical Depth
+                    </h4>
+                    <span className="text-indigo-400 font-bold bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded text-sm shadow-inner">{analysisData.technicalDepth.score}/100</span>
                   </div>
+                  
+                  <div className="mb-5 bg-black/20 p-4 rounded-xl border border-white/5">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Stack Assessment</p>
+                    <p className="text-sm text-zinc-300 font-medium leading-relaxed">{analysisData.technicalDepth.stackRelevance}</p>
+                  </div>
+                  
+                  {analysisData.technicalDepth.skillGaps?.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Critical Gaps</p>
+                      <div className="flex flex-wrap gap-2">
+                        {analysisData.technicalDepth.skillGaps.map((gap, i) => (
+                          <span key={i} className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold rounded-md shadow-inner">
+                            {gap}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {analysisData.technicalDepth.overusedBuzzwords?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Buzzwords Dumped</p>
+                      <div className="flex flex-wrap gap-2">
+                        {analysisData.technicalDepth.overusedBuzzwords.map((bw, i) => (
+                          <span key={i} className="px-2.5 py-1 bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs font-semibold rounded-md line-through opacity-70">
+                            {bw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-              {modalItem.skills?.soft?.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-zinc-500 mb-3 uppercase tracking-wider">Soft Skills</p>
-                  <div className="flex flex-wrap gap-2">
-                    {modalItem.skills.soft.map((s, i) => <Tag key={i} variant="secondary">{s}</Tag>)}
+
+              {/* Impact & Ownership */}
+              {analysisData.impactAndOwnership && (
+                <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <h4 className="text-sm font-bold text-zinc-100 flex items-center gap-2 font-display uppercase tracking-wider">
+                      <CheckCircleIcon className="h-4 w-4 text-emerald-400" /> Impact & Ownership
+                    </h4>
+                    <span className="text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-sm shadow-inner">{analysisData.impactAndOwnership.score}/100</span>
                   </div>
+                  
+                  {analysisData.impactAndOwnership.missingMetrics?.length > 0 && (
+                    <div className="mb-5">
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Unquantified Claims</p>
+                      <ul className="space-y-2">
+                        {analysisData.impactAndOwnership.missingMetrics.map((missing, i) => (
+                          <li key={i} className="text-xs text-zinc-300 flex items-start gap-2 bg-black/20 p-2.5 rounded-lg border border-white/5">
+                            <span className="text-amber-500 mt-0.5 opacity-70">?</span> {missing}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {analysisData.impactAndOwnership.recommendedMetricInjections?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Metric Injections Required</p>
+                      <ul className="space-y-3">
+                        {analysisData.impactAndOwnership.recommendedMetricInjections.map((rec, i) => (
+                          <li key={i} className="text-xs font-mono bg-emerald-900/10 p-3 rounded-lg border border-emerald-500/20 text-emerald-300 leading-relaxed shadow-inner">
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
-              {(!modalItem.skills?.technical?.length && !modalItem.skills?.soft?.length) && (
-                <p className="text-sm text-zinc-500 italic bg-white/5 p-4 rounded-xl border border-white/5">No skills extracted from this resume.</p>
-              )}
-            </Section>
-            
-            {/* Missing Keywords Preview */}
-            {modalItem.analysis?.missingKeywords?.length > 0 && (
-              <Section title="Suggested Keywords to Add" icon={SparklesIcon}>
-                <div className="flex flex-wrap gap-2">
-                  {modalItem.analysis.missingKeywords.slice(0, 5).map((kw, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium rounded-md">
+            </div>
+
+            {/* Keyword Injection Box */}
+            {(analysisData.atsOptimization?.missingKeywords?.length > 0 || analysisData.analysis?.missingKeywords?.length > 0) && (
+              <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border border-blue-500/20 rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-50" />
+                <h4 className="text-sm font-bold text-blue-400 mb-4 flex items-center gap-2 font-display uppercase tracking-wider">
+                  <MagnifyingGlassIcon className="h-4 w-4" /> Keyword Injection Strategy
+                </h4>
+                <div className="flex flex-wrap gap-2.5">
+                  {(analysisData.atsOptimization?.missingKeywords || analysisData.analysis?.missingKeywords || []).map((kw, i) => (
+                    <span key={i} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-bold rounded-lg shadow-inner">
                       + {kw}
                     </span>
                   ))}
-                  {modalItem.analysis.missingKeywords.length > 5 && (
-                    <span className="px-3 py-1.5 bg-white/5 border border-white/5 text-zinc-400 text-xs font-medium rounded-md">
-                      +{modalItem.analysis.missingKeywords.length - 5} more
-                    </span>
-                  )}
                 </div>
-              </Section>
+              </div>
             )}
+            
+            {/* Legacy Skills Display (Fallback) */}
+            {isLegacy && analysisData.skills && (
+              <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
+                <h4 className="text-sm font-bold text-zinc-100 mb-4 font-display uppercase tracking-wider">Extracted Skills (Legacy)</h4>
+                <div className="flex flex-wrap gap-2">
+                  {analysisData.skills.technical?.map((s, i) => (
+                    <span key={i} className="px-2.5 py-1 bg-white/5 border border-white/10 text-zinc-300 text-xs rounded">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
         </motion.div>
       </div>
       )}
     </AnimatePresence>,
     document.body
-  );
-}
-
-function Section({ title, icon: Icon, children }) {
-  return (
-    <div>
-      <h4 className="text-sm font-bold text-zinc-200 mb-4 flex items-center gap-2 font-display uppercase tracking-wide">
-        <Icon className="h-4 w-4 text-violet-400" />
-        {title}
-      </h4>
-      {children}
-    </div>
-  );
-}
-
-function InfoCard({ label, value, className = "" }) {
-  return (
-    <div className={`bg-white/5 border border-white/10 rounded-xl p-4 ${className}`}>
-      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-sm font-semibold text-zinc-200 truncate">{value || <span className="text-zinc-600 italic">Not specified</span>}</p>
-    </div>
-  );
-}
-
-function Tag({ children, variant = 'primary' }) {
-  const styles = {
-    primary: "bg-violet-500/10 border-violet-500/20 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.1)]",
-    secondary: "bg-cyan-500/10 border-cyan-500/20 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.1)]"
-  };
-  
-  return (
-    <span className={`px-3 py-1.5 border rounded-lg text-xs font-semibold ${styles[variant]}`}>
-      {children}
-    </span>
   );
 }

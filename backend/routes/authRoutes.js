@@ -119,7 +119,8 @@ const handleAuthUser = async (firebaseUID, userData) => {
       
       // Initialize empty UserProfile for the new user
       await UserProfile.create({
-        userId: user._id
+        userId: user._id,
+        avatarUrl: userData.photoURL || ''
       });
       
       // Initialize empty UserLinks for the new user
@@ -184,8 +185,22 @@ const handleAuthUser = async (firebaseUID, userData) => {
       needsUpdate = true;
       
       if (needsUpdate) {
+        console.log('Updating existing user with new data');
         await user.save();
-        console.log('Updated existing user data for:', firebaseUID);
+      }
+      
+      // If we received a photoURL (e.g. from Google) and the user doesn't have an avatar yet, set it
+      if (userData.photoURL) {
+        try {
+          const profile = await UserProfile.findOne({ userId: user._id });
+          if (profile && !profile.avatarUrl) {
+            profile.avatarUrl = userData.photoURL;
+            await profile.save();
+            console.log('Updated existing user profile with Google photoURL');
+          }
+        } catch (profileErr) {
+          console.error('Error updating profile photoURL:', profileErr);
+        }
       }
     }
     
@@ -506,20 +521,25 @@ router.post('/google', async (req, res) => {
       // Use the real email and name from the decoded token if possible
       let email = 'dev.user@resumezen.com';
       let name = 'Development User';
+      let photoURL = null;
       try {
         const decodedToken = await admin.auth().verifyIdToken(idToken);
-        if (decodedToken && decodedToken.email) {
-          email = decodedToken.email;
-          name = decodedToken.name || decodedToken.displayName || 'Development User';
+        if (decodedToken) {
+          if (decodedToken.email) email = decodedToken.email;
+          if (decodedToken.name || decodedToken.displayName) {
+            name = decodedToken.name || decodedToken.displayName;
+          }
+          if (decodedToken.picture) photoURL = decodedToken.picture;
         }
       } catch (err) {
-        console.log('Could not extract email from emulator token, using default:', err.message);
+        console.log('Could not extract data from emulator token, using default:', err.message);
       }
       const userData = {
         name,
         email,
         authType: 'google',
-        primaryAuthMethod: 'google'
+        primaryAuthMethod: 'google',
+        photoURL
       };
       try {
         const { user, token } = await handleAuthUser(firebaseUID, userData);
@@ -600,6 +620,7 @@ router.post('/google', async (req, res) => {
       const firebaseUID = decodedToken.uid;
       const email = decodedToken.email || null;
       const name = decodedToken.name || decodedToken.displayName || email?.split('@')[0] || 'User';
+      const photoURL = decodedToken.picture || null;
       
       // Ensure email is present for Google auth
       if (!email) {
@@ -616,7 +637,8 @@ router.post('/google', async (req, res) => {
         name,
         email,
         authType: 'google',
-        primaryAuthMethod: 'google'
+        primaryAuthMethod: 'google',
+        photoURL
       };
       
       console.log('Creating/updating user with Google data:', { name, email });

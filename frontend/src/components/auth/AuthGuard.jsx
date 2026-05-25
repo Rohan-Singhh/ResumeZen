@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLoading } from '../../App';
 
@@ -12,6 +12,7 @@ export default function AuthGuard({ children }) {
   const { currentUser, loading, authStatusChecked } = useAuth();
   const { setLoading } = useLoading();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Reset global loading when component mounts/unmounts
   useEffect(() => {
@@ -40,21 +41,24 @@ export default function AuthGuard({ children }) {
     );
   }
 
-  if (authStatusChecked && !currentUser) {
-    const isLoggingOut = sessionStorage.getItem('logoutInProgress') === 'true';
-    const targetUrl = isLoggingOut ? '/' : '/login';
-    
-    // Prevent infinite redirect loops during AnimatePresence exit animations
-    // If the router has already navigated to the target URL, don't Navigate again.
-    if (location.pathname === targetUrl || location.pathname === '/' || location.pathname === '/login') {
-      return null;
+  useEffect(() => {
+    if (authStatusChecked && !currentUser) {
+      const isLoggingOut = sessionStorage.getItem('logoutInProgress') === 'true';
+      const targetUrl = isLoggingOut ? '/' : '/login';
+      
+      // Prevent infinite redirect loops during AnimatePresence exit animations
+      // Check window.location directly because useLocation() is stale in exiting trees
+      if (window.location.pathname !== targetUrl && window.location.pathname !== '/login' && window.location.pathname !== '/') {
+        console.log(`AuthGuard: Redirecting to ${targetUrl}`);
+        navigate(targetUrl, { replace: true, state: { from: location } });
+      }
     }
-    
-    console.log(`AuthGuard: Auth checked, no user found, redirecting to ${targetUrl}`);
-    return <Navigate to={targetUrl} state={{ from: location }} replace />;
+  }, [authStatusChecked, currentUser, location, navigate]);
+
+  if (authStatusChecked && !currentUser) {
+    return null; // Render nothing while redirecting
   }
 
   // If the user is authenticated, render the protected component
-  console.log('AuthGuard: User authenticated, rendering children');
   return children;
 } 

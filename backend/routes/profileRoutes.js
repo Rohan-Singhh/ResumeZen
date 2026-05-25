@@ -238,7 +238,11 @@ router.delete('/', authMiddleware, async (req, res) => {
         await admin.auth().deleteUser(firebaseUid);
         console.log(`Deleted Firebase user: ${firebaseUid}`);
       } catch (fbErr) {
-        console.error('Error deleting Firebase user:', fbErr);
+        if (fbErr.code === 'auth/user-not-found') {
+          console.log(`Firebase user ${firebaseUid} was already deleted (likely from client side). Skipping.`);
+        } else {
+          console.error(`Error deleting Firebase user ${firebaseUid}:`, fbErr.message);
+        }
         // We continue even if this fails, since DB is already cleaned
       }
     }

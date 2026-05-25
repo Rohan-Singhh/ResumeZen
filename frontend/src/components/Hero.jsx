@@ -64,60 +64,71 @@ export default function Hero({ onShowSuccessStories }) {
           </motion.div>
 
           <motion.h1 
-            className="text-6xl sm:text-7xl lg:text-[100px] font-extrabold tracking-tight font-display mb-8 leading-[1.1]"
+            className="text-5xl sm:text-7xl lg:text-[90px] font-extrabold tracking-tighter font-display mb-8 leading-[1.05]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            HACK YOUR <br className="hidden sm:block"/>
+            ENGINEER YOUR <br className="hidden sm:block"/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-secondary animate-shimmer bg-[length:200%_auto]">
-              DREAM CAREER
+              NEXT CAREER MOVE
             </span>
           </motion.h1>
 
           <motion.p 
-            className="text-xl sm:text-2xl leading-relaxed text-gray-400 max-w-3xl font-light mb-12"
+            className="text-xl sm:text-2xl leading-relaxed text-zinc-400 max-w-3xl font-light mb-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.5 }}
           >
-            The world's most advanced AI resume builder. Beat the ATS, highlight your impact, and get hired faster at top tech companies.
+            The world's most advanced AI resume engine. Bypass the ATS, highlight true impact, and get hired by elite tech companies.
           </motion.p>
           
           <motion.div 
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto z-20"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.5 }}
           >
-            <motion.button 
-              onClick={() => navigate('/login')}
-              className="w-full sm:w-auto rounded-lg bg-white text-dark-bg px-10 py-4 font-bold text-lg hover:shadow-glow-primary transition-all duration-300 flex items-center justify-center gap-2 group"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Get Started
-              <ArrowRightIcon className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
-            </motion.button>
+            <div className="relative group w-full sm:w-auto">
+              {/* Glowing gradient border effect */}
+              <div className="absolute -inset-[2px] bg-gradient-to-r from-primary via-accent to-secondary rounded-lg blur-sm opacity-70 group-hover:opacity-100 transition duration-500"></div>
+              <motion.button 
+                onClick={() => navigate('/login')}
+                className="relative w-full sm:w-auto rounded-lg bg-white text-zinc-950 px-10 py-4 font-bold text-lg hover:bg-zinc-100 transition-all duration-300 flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Start Auditing Now
+                <ArrowRightIcon className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+            </div>
             
             <motion.button 
-              className="w-full sm:w-auto rounded-lg border border-white/20 bg-white/5 backdrop-blur-md px-10 py-4 font-bold text-lg text-white hover:bg-white/10 hover:border-white/40 transition-all duration-300"
+              className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 backdrop-blur-md px-10 py-4 font-bold text-lg text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onShowSuccessStories}
             >
-              View Examples
+              View Analysis Examples
             </motion.button>
           </motion.div>
 
-          <motion.p
-            className="mt-6 text-sm text-gray-500 font-medium"
+          <motion.div
+            className="mt-16 border-t border-white/5 pt-8 w-full max-w-4xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9, duration: 0.5 }}
           >
-            No credit card required • Join 10,000+ professionals
-          </motion.p>
+            <p className="text-sm text-zinc-500 font-medium mb-6 uppercase tracking-widest text-center">Trusted by engineers landing offers at</p>
+            <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 opacity-40 grayscale">
+              <span className="text-2xl font-bold tracking-tighter">Google</span>
+              <span className="text-2xl font-bold tracking-tight lowercase">stripe</span>
+              <span className="text-2xl font-semibold tracking-wide">META</span>
+              <span className="text-2xl font-bold tracking-wider text-red-500">NETFLIX</span>
+              <span className="text-2xl font-black italic tracking-tighter">AMAZON</span>
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Bottom: Massive Edge-to-Edge Dashboard Mockup */}

@@ -31,18 +31,19 @@ const FREE_MODELS = [
  * @returns {string} - System prompt
  */
 const getSystemPrompt = (model) => {
-  // Default system prompt that works well with all models
+  // Brutal FAANG recruiter system prompt
   const defaultSystemPrompt =
-    `You are an elite-level ATS resume auditor, hiring manager, and technical recruiter with zero tolerance for weak resumes. Your job is to brutally and honestly evaluate the resume exactly like a competitive recruiter screening candidates for top-tier companies.
+    `You are an elite-level ATS resume auditor, hiring manager, and technical recruiter with zero tolerance for weak resumes. Your job is to brutally and honestly evaluate the resume exactly like a competitive recruiter screening candidates for top-tier companies (FAANG).
 
 Do NOT be polite, generic, motivational, or diplomatic. Be direct, harsh when necessary, and extremely specific. Point out weak wording, inflated claims, missing metrics, poor structure, irrelevant skills, weak projects, shallow experience, keyword gaps, and anything that would cause rejection in a real hiring pipeline.
 
 Analyze the resume from these perspectives:
-- ATS optimization
+- ATS optimization & formatting
 - Recruiter screening quality
-- Technical depth
-- Impact and ownership
-- Clarity and readability`;
+- Technical depth & relevance
+- Impact and ownership (metrics)
+- Clarity and readability
+- Hiring risk signals`;
 
   // Llama-specific system prompt
   if (model && model.includes('llama')) {
@@ -104,67 +105,48 @@ const getAnalysisPrompt = (resumeText, options = {}) => {
     return options.prompt.replace('${resumeText}', resumeText);
   }
 
-  return `Format the following resume text into a JSON object with these exact sections. 
+  return `Format the following resume text into a JSON object with this exact structure. Do not deviate.
 
 {
   "contactInformation": {
     "name": "Full Name",
-    "email": "email",
+    "email": "Email",
     "phone": "Phone",
     "location": "Location"
   },
-  "skills": {
-    "technical": [],
-    "soft": []
+  "overallScore": 0,
+  "hiringRiskLevel": "Low|Medium|High",
+  "recruiterScreening": {
+    "verdict": "Pass|Borderline|Reject",
+    "brutalFeedback": ["1-3 harsh, direct truths about why this resume would be rejected"],
+    "redFlags": ["1-3 major red flags or critical issues"]
   },
-  "workExperience": [
-    {
-      "company": "",
-      "position": "",
-      "duration": "",
-      "responsibilities": []
-    }
-  ],
-  "education": [
-    {
-      "institution": "",
-      "degree": "",
-      "field": "",
-      "graduationDate": ""
-    }
-  ],
-  "certifications": [],
-  "summary": "",
-  "analysis": {
-    "atsScore": 0,
-    "strengths": ["1-3 strong points"],
-    "areasForImprovement": ["2-5 brutal, specific areas for improvement"],
-    "missingKeywords": ["Missing technical keywords"]
+  "atsOptimization": {
+    "score": 0,
+    "missingKeywords": ["Crucial technical keywords missing based on the implied role"],
+    "formattingIssues": ["Formatting mistakes destroying ATS parseability"]
+  },
+  "technicalDepth": {
+    "score": 0,
+    "stackRelevance": "Brief harsh assessment of their tech stack",
+    "overusedBuzzwords": ["Buzzwords they dumped without proof"],
+    "skillGaps": ["Critical skills missing for their level"]
+  },
+  "impactAndOwnership": {
+    "score": 0,
+    "weakVerbs": ["Weak action verbs they used (e.g. 'Helped', 'Worked on')"],
+    "missingMetrics": ["Areas where they claimed impact but provided zero numbers"],
+    "recommendedMetricInjections": ["Exact examples of how they should rewrite a bullet to include metrics (e.g. 'Instead of X, say Y')"]
   }
 }
 
-Scoring rules:
-- 90-100 = elite/top-tier candidate
-- 75-89 = strong but improvable
-- 60-74 = average and risky
-- 40-59 = weak resume with major issues
-- below 40 = likely rejected immediately
-
-Evaluation rules:
-- Penalize vague statements without metrics
-- Penalize resumes overloaded with buzzwords
-- Penalize shallow MERN/full-stack claims without depth
-- Penalize lack of measurable impact
-- Penalize skill dumping without proof
-- Reward quantified achievements
-- Reward ownership, scalability, optimization, and production-level work
-
-Tone requirements for analysis section:
-- Brutally honest
-- Direct and recruiter-like
-- No sugarcoating
-- No motivational language
-- Every criticism must be actionable and specific
+Scoring and Evaluation Rules:
+- overallScore (0-100): 90-100 = Elite, 75-89 = Strong, 60-74 = Average/Risky, <60 = Instant Reject.
+- Penalize vague statements without metrics heavily.
+- Penalize resumes overloaded with buzzwords.
+- Penalize shallow full-stack claims without depth.
+- Reward quantified achievements and ownership of scale/production.
+- Tone MUST be brutally honest, direct, and recruiter-like. NO sugarcoating.
 
 Return ONLY valid JSON with no other text.
 
@@ -200,16 +182,29 @@ const generateFallbackAnalysis = (resumeText) => {
       phone: phoneMatch ? phoneMatch[0] : null,
       location: null
     },
-    skills: {
-      technical: [],
-      soft: []
+    overallScore: 50,
+    hiringRiskLevel: "High",
+    recruiterScreening: {
+      verdict: "Borderline",
+      brutalFeedback: ["Could not generate detailed AI analysis. Please try again later."],
+      redFlags: ["Analysis failed"]
     },
-    summary: "Could not generate detailed analysis. Please try again later.",
-    analysis: {
-      strengths: ["Resume was successfully parsed"],
-      areasForImprovement: ["Consider trying analysis again later"],
-      missingKeywords: [],
-      atsScore: 85
+    atsOptimization: {
+      score: 50,
+      missingKeywords: ["Could not determine"],
+      formattingIssues: ["None detected during fallback"]
+    },
+    technicalDepth: {
+      score: 50,
+      stackRelevance: "Unknown due to API failure",
+      overusedBuzzwords: [],
+      skillGaps: []
+    },
+    impactAndOwnership: {
+      score: 50,
+      weakVerbs: [],
+      missingMetrics: [],
+      recommendedMetricInjections: []
     }
   };
 };
