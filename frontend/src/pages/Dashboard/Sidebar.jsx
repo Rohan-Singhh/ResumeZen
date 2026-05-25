@@ -50,7 +50,7 @@ export default function Sidebar() {
     setIsLoggingOut(true);
     try {
       await logout();
-      navigate('/login', { replace: true });
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('Failed to log out', error);
       setIsLoggingOut(false);
