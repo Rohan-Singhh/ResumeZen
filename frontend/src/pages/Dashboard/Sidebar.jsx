@@ -60,10 +60,9 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: HomeIcon },
     { name: 'Jobs', path: '/dashboard/jobs', icon: BriefcaseIcon },
-    { name: 'Uploads', path: '/dashboard/recent-uploads', icon: DocumentTextIcon },
+    { name: 'Studio', path: '/dashboard/studio', icon: DocumentTextIcon },
     { name: 'Plans', path: '/dashboard/plans', icon: CreditCardIcon },
     { name: 'Profile', path: '/dashboard/profile', icon: Cog6ToothIcon },
-    { name: 'Help', path: '/dashboard/help', icon: QuestionMarkCircleIcon },
   ];
 
   const SidebarContent = () => (

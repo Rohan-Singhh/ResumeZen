@@ -7,14 +7,11 @@ import Login from './pages/Login';
 import AuthGuard from './components/auth/AuthGuard';
 import PageTransition from './components/PageTransition';
 
-// Dashboard components
 import DashboardLayout from './pages/Dashboard/DashboardLayout';
 import DashboardWelcome from './pages/Dashboard/DashboardWelcome';
 import DashboardProfileEdit from './pages/Dashboard/DashboardProfileEdit';
 import DashboardPlan from './pages/Dashboard/DashboardPlan';
-import DashboardHelp from './pages/Dashboard/DashboardHelp';
-import RecentUploads from './pages/Dashboard/RecentUploads';
-import ResumeAnalysis from './pages/Dashboard/ResumeAnalysis';
+import Studio from './pages/Dashboard/Studio';
 import DashboardJobs from './pages/Dashboard/DashboardJobs';
 
 // Create a global loading context
@@ -144,9 +141,7 @@ function AnimatedRoutes() {
             <Route index element={<DashboardWelcome />} />
             <Route path="profile" element={<DashboardProfileEdit />} />
             <Route path="plans" element={<DashboardPlan />} />
-            <Route path="help" element={<DashboardHelp />} />
-            <Route path="recent-uploads" element={<RecentUploads />} />
-            <Route path="resume-analysis" element={<ResumeAnalysis />} />
+            <Route path="studio" element={<Studio />} />
             <Route path="jobs" element={<DashboardJobs />} />
           </Route>
         </Routes>

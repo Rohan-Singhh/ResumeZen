@@ -14,6 +14,7 @@ import {
   XMarkIcon,
   BriefcaseIcon
 } from '@heroicons/react/24/outline';
+import SupportWidget from '../../components/SupportWidget';
 
 function TopNav() {
   const { logout, currentUser, userPlans } = useAuth();
@@ -38,11 +39,10 @@ function TopNav() {
 
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: HomeIcon },
-    { name: 'Uploads', path: '/dashboard/recent-uploads', icon: DocumentTextIcon },
+    { name: 'Studio', path: '/dashboard/studio', icon: DocumentTextIcon },
     { name: 'Jobs', path: '/dashboard/jobs', icon: BriefcaseIcon },
     { name: 'Plans', path: '/dashboard/plans', icon: CreditCardIcon },
     { name: 'Profile', path: '/dashboard/profile', icon: Cog6ToothIcon },
-    { name: 'Help', path: '/dashboard/help', icon: QuestionMarkCircleIcon },
   ];
 
   return (
@@ -209,6 +209,9 @@ export default function DashboardLayout() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Global Support Widget */}
+      <SupportWidget />
     </div>
   );
 }
