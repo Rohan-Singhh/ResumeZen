@@ -40,10 +40,15 @@ export default function AuthGuard({ children }) {
     );
   }
 
-  // If auth check is done but still no user after a reasonable time
   if (authStatusChecked && !currentUser) {
     const isLoggingOut = sessionStorage.getItem('logoutInProgress') === 'true';
     const targetUrl = isLoggingOut ? '/' : '/login';
+    
+    // Prevent infinite redirect loops during AnimatePresence exit animations
+    // If the router has already navigated to the target URL, don't Navigate again.
+    if (location.pathname === targetUrl || location.pathname === '/' || location.pathname === '/login') {
+      return null;
+    }
     
     console.log(`AuthGuard: Auth checked, no user found, redirecting to ${targetUrl}`);
     return <Navigate to={targetUrl} state={{ from: location }} replace />;
