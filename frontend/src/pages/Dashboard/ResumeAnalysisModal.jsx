@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { processResume } from '../../services/resumeService';
+import { analyzeUploadResume } from '../../services/resumeService';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircleIcon,
@@ -131,7 +131,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
 
       (async () => {
         try {
-          const res = await processResume(fileDetails.url, { model: 'meta-llama/llama-3.3-70b-instruct:free' });
+          const res = await analyzeUploadResume(fileDetails.rawFile, { model: 'meta-llama/llama-3.3-70b-instruct:free' });
           if (res?.success && res?.data?.analysis?.structured) {
             setProgress(100);
             setCurrentStep(4);

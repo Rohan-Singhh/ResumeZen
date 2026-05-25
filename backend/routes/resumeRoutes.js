@@ -8,7 +8,7 @@ const express = require('express');
 const router = express.Router();
 const fileUpload = require('express-fileupload');
 const { parseResume, extractResumeText, analyzeResumeWithAI, processResume } = require('../services/resumeParserService');
-const { uploadPdf } = require('../services/uploadService');
+const { uploadPdf, uploadPdfFromBuffer } = require('../services/uploadService');
 const axios = require('axios');
 const authMiddleware = require('../middleware/authMiddleware');
 const UserPlan = require('../models/UserPlan');
@@ -16,8 +16,7 @@ const ResumeAnalysis = require('../models/ResumeAnalysis');
 
 // Middleware for handling file uploads
 router.use(fileUpload({
-  useTempFiles: true,
-  tempFileDir: '/tmp/',
+  useTempFiles: false, // Avoid disk I/O, keep files in RAM
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   abortOnLimit: true
 }));
@@ -92,6 +91,108 @@ router.post('/parse', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error processing resume',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * ACID Optimized Endpoint: Upload + Process directly from RAM
+ * POST /api/resume/analyze-upload
+ */
+router.post('/analyze-upload', authMiddleware, async (req, res) => {
+  try {
+    if (!req.files || !req.files.resume) {
+      return res.status(400).json({ success: false, message: 'No resume file uploaded' });
+    }
+    
+    const file = req.files.resume;
+    const userId = req.user.userId;
+    
+    // 1. Verify and deduct credit BEFORE uploading to save Cloudinary storage and bandwidth
+    const userPlans = await UserPlan.find({ userId, isActive: true }).populate('planId').sort({ purchasedAt: -1 });
+    if (!userPlans || userPlans.length === 0) {
+      return res.status(403).json({ success: false, message: 'No active plan found' });
+    }
+    
+    const now = new Date();
+    const userPlan = userPlans.find(p => 
+      p.planId && (!p.expiresAt || new Date(p.expiresAt) > now) && (p.planId.isUnlimited || p.creditsLeft > 0)
+    );
+    
+    if (!userPlan) {
+      return res.status(403).json({ success: false, message: 'No credits remaining' });
+    }
+    
+    // Deduct credit
+    if (!userPlan.planId.isUnlimited) {
+      userPlan.creditsLeft -= 1;
+      await userPlan.save();
+      console.log(`[analyze-upload] Deducted 1 credit for user ${userId}.`);
+    }
+    
+    // 2. Upload to Cloudinary directly from RAM buffer
+    let uploadResult;
+    try {
+      uploadResult = await uploadPdfFromBuffer(file.data, file.name || 'resume.pdf');
+    } catch (uploadErr) {
+      // Rollback: Refund if upload fails
+      if (!userPlan.planId.isUnlimited) {
+        userPlan.creditsLeft += 1;
+        await userPlan.save();
+      }
+      throw new Error('Cloudinary upload failed: ' + uploadErr.message);
+    }
+    
+    // 3. Process Resume (OCR + AI)
+    const options = {
+      language: req.body.language || 'eng',
+      scale: req.body.scale !== 'false',
+      isTable: req.body.isTable !== 'false',
+      engine: req.body.engine ? parseInt(req.body.engine, 10) : 2,
+      model: req.body.model || 'meta-llama/llama-3.3-70b-instruct:free',
+      prompt: req.body.prompt,
+      systemPrompt: req.body.systemPrompt,
+      userId,
+      planId: userPlan._id,
+      resumeUrl: uploadResult.secure_url
+    };
+    
+    const processResult = await processResume(uploadResult.secure_url, options);
+    
+    if (!processResult.success) {
+      // 4. Rollback: refund credit if processing failed
+      if (!userPlan.planId.isUnlimited) {
+        userPlan.creditsLeft += 1;
+        await userPlan.save();
+        console.log(`[analyze-upload] Refunded 1 credit for user ${userId} due to analysis failure.`);
+      }
+      return res.status(422).json({
+        success: false,
+        message: 'Failed to process resume',
+        error: processResult.error
+      });
+    }
+    
+    const usedFallback = processResult.data.analysis?.usedFallback || false;
+    
+    return res.status(200).json({
+      success: true,
+      message: usedFallback ? 'Resume processed with fallback AI' : 'Resume processed successfully',
+      data: processResult.data,
+      fileInfo: {
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id
+      },
+      resumeAnalysisId: processResult.data.resumeAnalysisId || null,
+      usedFallback
+    });
+    
+  } catch (error) {
+    console.error('Analyze-Upload error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error during analyze and upload',
       error: error.message
     });
   }

@@ -6,6 +6,8 @@
 
 const { cloudinary } = require('../config/cloudinary');
 const fs = require('fs');
+const path = require('path');
+const { Readable } = require('stream');
 
 /**
  * Upload a PDF file to Cloudinary
@@ -261,8 +263,70 @@ const deleteFromCloudinary = async (fileUrl) => {
   }
 };
 
+/**
+ * Upload a PDF file from a memory buffer directly to Cloudinary
+ * @param {Buffer} buffer - The file buffer in RAM
+ * @param {string} originalName - Original filename
+ * @returns {Promise<Object>} Cloudinary upload result
+ */
+const uploadPdfFromBuffer = (buffer, originalName) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const uploadOptions = {
+        resource_type: 'auto',
+        folder: 'resumes',
+        format: 'pdf',
+        pages: true,
+        use_filename: true,
+        unique_filename: true,
+        filename_override: originalName,
+        access_mode: 'public',
+        flags: 'attachment',
+      };
+
+      const uploadStream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+        if (error) {
+          console.error('Cloudinary buffer upload error:', error);
+          reject(error);
+        } else {
+          const resourceType = result.resource_type || 'image';
+          const fullPublicId = result.public_id; 
+          
+          const cloudinaryUrl = cloudinary.url(`${fullPublicId}.pdf`, {
+            resource_type: resourceType,
+            type: 'upload',
+            flags: 'attachment',
+            secure: true
+          });
+          
+          const cloudName = process.env.CLOUDINARY_CLOUD_NAME || cloudinary.config().cloud_name;
+          const viewUrl = `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/${fullPublicId}.pdf`;
+
+          resolve({
+            url: result.secure_url,
+            secure_url: result.secure_url,
+            cloudinaryUrl,
+            viewUrl,
+            publicId: fullPublicId,
+            public_id: fullPublicId,
+            format: result.format || 'pdf',
+            resourceType,
+            size: result.bytes,
+            createdAt: result.created_at
+          });
+        }
+      });
+      
+      Readable.from(buffer).pipe(uploadStream);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 module.exports = {
   uploadPdf,
+  uploadPdfFromBuffer,
   uploadImage,
   deleteFromCloudinary
 }; 

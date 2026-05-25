@@ -115,59 +115,24 @@ export default function DashboardWelcome() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
-    if (selectedFile.type !== 'application/pdf') { setErrorMessage('Only PDF files are allowed'); return; }
-    if (selectedFile.size > 1024 * 1024) { setErrorMessage('File size exceeds 1MB limit'); return; }
+    // Deprecated: We now use the unified analyze-upload in the modal
+    handleProceed();
+  };
 
-    setIsUploading(true);
-    setUploadProgress(0);
-    setUploadStep(0);
-    setErrorMessage('');
-
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 8) + 3;
-      if (progress >= 85) progress = 85;
-      setUploadProgress(progress);
-    }, 200);
-
-    const stepTimers = [
-      setTimeout(() => setUploadStep(1), 600),
-      setTimeout(() => setUploadStep(2), 1500),
-    ];
-
-    try {
-      const formData = new FormData();
-      formData.append('resume', selectedFile);
-      const response = await axios.post('/api/upload/resume', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      clearInterval(interval);
-      stepTimers.forEach(clearTimeout);
-      setUploadProgress(100);
-      setUploadStep(3);
-
-      if (response.data?.success) {
-        const fileData = response.data.data;
-        const uploaded = { name: selectedFile.name, originalName: selectedFile.name, size: selectedFile.size, type: selectedFile.type, url: fileData.url, cloudinaryUrl: fileData.cloudinaryUrl, viewUrl: fileData.viewUrl, downloadUrl: fileData.downloadUrl, publicId: fileData.publicId, assetId: fileData.assetId, format: fileData.format || 'pdf', resourceType: fileData.resourceType || 'image', createdAt: new Date().toISOString() };
-        setUploadedFile(uploaded);
-        pdfUtils.storePdfDetails(fileData, selectedFile);
-        setUploadSuccess(true);
-      } else {
-        setErrorMessage(response.data.message || 'Upload failed');
-      }
-    } catch (err) {
-      clearInterval(interval);
-      stepTimers.forEach(clearTimeout);
-      setErrorMessage('Upload failed: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setIsUploading(false);
+  const confirmCreditUsage = () => { 
+    setShowCreditConfirmation(false); 
+    // Start the unified process immediately after confirmation
+    if (selectedFile) {
+      setAnalysisFileDetails({ rawFile: selectedFile, name: selectedFile.name });
+      setShowAnalysisModal(true);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const confirmCreditUsage = () => { setShowCreditConfirmation(false); };
-
   const handleProceed = () => {
-    if (!uploadedFile) { if (fileInputRef.current) fileInputRef.current.click(); return; }
-    setAnalysisFileDetails(uploadedFile);
+    if (!selectedFile) { if (fileInputRef.current) fileInputRef.current.click(); return; }
+    setAnalysisFileDetails({ rawFile: selectedFile, name: selectedFile.name });
     setShowAnalysisModal(true);
     setSelectedFile(null);
     setUploadedFile(null);

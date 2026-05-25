@@ -118,6 +118,36 @@ export const processResume = async (url, options = {}) => {
 };
 
 /**
+ * Unified Upload + Process endpoint (ACID Compliant)
+ * @param {File} file - The resume file
+ * @param {Object} options - AI/OCR options
+ * @returns {Promise<Object>} - The complete analysis response
+ */
+export const analyzeUploadResume = async (file, options = {}) => {
+  try {
+    const formData = new FormData();
+    formData.append('resume', file);
+    
+    if (options.language) formData.append('language', options.language);
+    if (options.scale !== undefined) formData.append('scale', options.scale);
+    if (options.isTable !== undefined) formData.append('isTable', options.isTable);
+    if (options.engine) formData.append('engine', options.engine);
+    if (options.model) formData.append('model', options.model);
+    
+    const response = await axios.post('/api/resume/analyze-upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error during analyze-upload:', error);
+    throw error;
+  }
+};
+
+/**
  * Analyze resume text with AI
  * @param {string} text - The extracted resume text
  * @param {Object} options - AI analysis options
