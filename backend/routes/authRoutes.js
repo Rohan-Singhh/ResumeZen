@@ -220,9 +220,12 @@ const handleAuthUser = async (firebaseUID, userData) => {
         email: user.email,
         phone: user.mobileNumber,
         lastLoginAt: user.lastLoginAt,
+        authType: user.authType,
+        primaryAuthMethod: user.primaryAuthMethod,
         ...(userProfile && {
           occupation: userProfile.occupation,
           graduationYear: userProfile.graduationYear,
+          avatarUrl: userProfile.avatarUrl,
           completedTasks: userProfile.completedTasks || []
         }),
         ...(userLinks && {
@@ -278,14 +281,7 @@ router.post('/verify-token', authLimiter, async (req, res) => {
       return res.json({ 
         success: true,
         token, 
-        user: { 
-          _id: user._id,
-          name: user.fullName,
-          email: user.email,
-          phone: user.mobileNumber,
-          authType: user.authType,
-          primaryAuthMethod: user.primaryAuthMethod
-        },
+        user,
         developmentMode: true
       });
     }
@@ -322,14 +318,7 @@ router.post('/verify-token', authLimiter, async (req, res) => {
     res.json({ 
       success: true,
       token, 
-      user: { 
-        _id: user._id,
-        name: user.fullName,
-        email: user.email,
-        phone: user.mobileNumber,
-        authType: user.authType,
-        primaryAuthMethod: user.primaryAuthMethod
-      } 
+      user
     });
   } catch (err) {
     console.error('Token verification error:', err);
@@ -639,14 +628,7 @@ router.post('/google', async (req, res) => {
       return res.json({ 
         success: true,
         token, 
-        user: { 
-          _id: user._id,
-          name: user.fullName,
-          email: user.email,
-          phone: user.mobileNumber,
-          authType: user.authType,
-          primaryAuthMethod: user.primaryAuthMethod
-        } 
+        user
       });
     } catch (verifyError) {
       // Detailed error for Firebase token verification
