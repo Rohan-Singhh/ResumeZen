@@ -127,7 +127,7 @@ function AnimatedRoutes() {
         )}
       </AnimatePresence>
       
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false}>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
           <Route path="/success-stories" element={<PageTransition><SuccessStoriesPage /></PageTransition>} />

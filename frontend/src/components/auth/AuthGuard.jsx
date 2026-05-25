@@ -12,7 +12,6 @@ export default function AuthGuard({ children }) {
   const { currentUser, loading, authStatusChecked } = useAuth();
   const { setLoading } = useLoading();
   const location = useLocation();
-  const hasRedirected = React.useRef(false);
 
   // Reset global loading when component mounts/unmounts
   useEffect(() => {
@@ -43,9 +42,6 @@ export default function AuthGuard({ children }) {
 
   // If auth check is done but still no user after a reasonable time
   if (authStatusChecked && !currentUser) {
-    if (hasRedirected.current) return null;
-    hasRedirected.current = true;
-    
     const isLoggingOut = sessionStorage.getItem('logoutInProgress') === 'true';
     const targetUrl = isLoggingOut ? '/' : '/login';
     

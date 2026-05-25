@@ -1,7 +1,16 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [modalData, setModalData] = useState({ isOpen: false, title: '' });
+
+  const handleDemoClick = (e, title) => {
+    e.preventDefault();
+    setModalData({ isOpen: true, title });
+  };
 
   return (
     <footer className="bg-dark-bg border-t border-white/5 pt-16 pb-8 relative overflow-hidden">
@@ -58,8 +67,8 @@ export default function Footer() {
             <ul className="space-y-4">
               <li><a href="#faq" className="text-gray-400 hover:text-primary transition-colors text-sm">FAQ</a></li>
               <li><a href="#support" className="text-gray-400 hover:text-primary transition-colors text-sm">Help Center</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-primary transition-colors text-sm">Resume Templates</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-primary transition-colors text-sm">Career Blog</a></li>
+              <li><button onClick={(e) => handleDemoClick(e, 'Resume Templates')} className="text-gray-400 hover:text-primary transition-colors text-sm cursor-pointer">Resume Templates</button></li>
+              <li><button onClick={(e) => handleDemoClick(e, 'Career Blog')} className="text-gray-400 hover:text-primary transition-colors text-sm cursor-pointer">Career Blog</button></li>
             </ul>
           </div>
           
@@ -67,10 +76,10 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-6">Legal</h3>
             <ul className="space-y-4">
-              <li><a href="#" className="text-gray-400 hover:text-primary transition-colors text-sm">Privacy Policy</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-primary transition-colors text-sm">Terms of Service</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-primary transition-colors text-sm">Cookie Policy</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-primary transition-colors text-sm">Data Security</a></li>
+              <li><button onClick={(e) => handleDemoClick(e, 'Privacy Policy')} className="text-gray-400 hover:text-primary transition-colors text-sm cursor-pointer">Privacy Policy</button></li>
+              <li><button onClick={(e) => handleDemoClick(e, 'Terms of Service')} className="text-gray-400 hover:text-primary transition-colors text-sm cursor-pointer">Terms of Service</button></li>
+              <li><button onClick={(e) => handleDemoClick(e, 'Cookie Policy')} className="text-gray-400 hover:text-primary transition-colors text-sm cursor-pointer">Cookie Policy</button></li>
+              <li><button onClick={(e) => handleDemoClick(e, 'Data Security')} className="text-gray-400 hover:text-primary transition-colors text-sm cursor-pointer">Data Security</button></li>
             </ul>
           </div>
 
@@ -89,6 +98,58 @@ export default function Footer() {
           </div>
         </div>
       </div>
+
+      {/* Demo Modal */}
+      <AnimatePresence>
+        {modalData.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setModalData({ isOpen: false, title: '' })}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+              className="relative w-full max-w-md bg-[#0d0d12] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent" />
+              
+              <button 
+                onClick={() => setModalData({ isOpen: false, title: '' })}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                  <svg className="w-8 h-8 text-primary animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-white mb-2">{modalData.title}</h3>
+                <p className="text-gray-400 mb-8 text-sm leading-relaxed">
+                  We're currently finalizing the content for this section. Check back soon for updates to our {modalData.title.toLowerCase()}.
+                </p>
+                
+                <button 
+                  onClick={() => setModalData({ isOpen: false, title: '' })}
+                  className="w-full bg-white/5 hover:bg-white/10 text-white font-semibold py-3 px-4 rounded-xl transition-colors border border-white/10"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </footer>
   );
 }

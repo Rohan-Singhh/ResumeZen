@@ -182,7 +182,7 @@ export const AuthProvider = ({ children }) => {
     });
     
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser]); // Note: keeping currentUser in deps for now, but we handle the logout race condition in the logout function.
 
   // Check if the user is already logged in on mount
   useEffect(() => {
@@ -277,14 +277,18 @@ export const AuthProvider = ({ children }) => {
     // Set a flag in sessionStorage to detect logout in progress
     sessionStorage.setItem('logoutInProgress', 'true');
     
+    // Sign out from Firebase FIRST before doing anything else
+    if (auth.currentUser) {
+      try {
+        await auth.signOut();
+        console.log("Signed out from Firebase");
+      } catch (err) {
+        console.error("Error signing out from Firebase:", err);
+      }
+    }
+    
     // Clear all auth-related data
     localStorage.removeItem('token');
-    
-    // Force hide any loading/overlay elements
-    const loadingElements = document.querySelectorAll('.loading-element, .overlay, #loading-overlay');
-    loadingElements.forEach(el => {
-      if (el) el.style.display = 'none';
-    });
     
     // Clear auth headers
     delete axios.defaults.headers.common['x-auth-token'];
@@ -296,16 +300,6 @@ export const AuthProvider = ({ children }) => {
     // Clear cache
     apiCache.userData = null;
     apiCache.lastFetch.userData = 0;
-    
-    // Sign out from Firebase if signed in
-    if (auth.currentUser) {
-      try {
-        await auth.signOut();
-        console.log("Signed out from Firebase");
-      } catch (err) {
-        console.error("Error signing out from Firebase:", err);
-      }
-    }
     
     // Clear the logout flag after a longer delay to ensure cleanup is complete
     setTimeout(() => {
