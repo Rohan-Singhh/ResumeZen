@@ -14,30 +14,30 @@ import {
 import sadRobotError from '../../assets/sad_robot_error.png';
 
 const STEPS = [
-  { label: 'Reading document', icon: DocumentMagnifyingGlassIcon, color: 'violet' },
-  { label: 'Extracting text via OCR', icon: DocumentTextIcon, color: 'cyan' },
-  { label: 'AI analyzing skills & experience', icon: CpuChipIcon, color: 'fuchsia' },
-  { label: 'Calculating ATS score', icon: ChartBarIcon, color: 'amber' },
-  { label: 'Generating your report', icon: SparklesIcon, color: 'emerald' },
+  { label: 'Initializing Document Context', icon: DocumentMagnifyingGlassIcon, color: 'blue' },
+  { label: 'Executing Text Extraction (OCR)', icon: DocumentTextIcon, color: 'indigo' },
+  { label: 'Running AI Semantic Analysis', icon: CpuChipIcon, color: 'violet' },
+  { label: 'Calculating ATS Compatibility', icon: ChartBarIcon, color: 'teal' },
+  { label: 'Generating Executive Report', icon: SparklesIcon, color: 'emerald' },
 ];
 
 const COLOR_MAP = {
+  blue: { ring: 'border-blue-500', bg: 'bg-blue-500', text: 'text-blue-400', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.4)]' },
+  indigo: { ring: 'border-indigo-500', bg: 'bg-indigo-500', text: 'text-indigo-400', glow: 'shadow-[0_0_20px_rgba(99,102,241,0.4)]' },
   violet: { ring: 'border-violet-500', bg: 'bg-violet-500', text: 'text-violet-400', glow: 'shadow-[0_0_20px_rgba(139,92,246,0.4)]' },
-  cyan: { ring: 'border-cyan-500', bg: 'bg-cyan-500', text: 'text-cyan-400', glow: 'shadow-[0_0_20px_rgba(6,182,212,0.4)]' },
-  fuchsia: { ring: 'border-fuchsia-500', bg: 'bg-fuchsia-500', text: 'text-fuchsia-400', glow: 'shadow-[0_0_20px_rgba(217,70,239,0.4)]' },
-  amber: { ring: 'border-amber-500', bg: 'bg-amber-500', text: 'text-amber-400', glow: 'shadow-[0_0_20px_rgba(245,158,11,0.4)]' },
+  teal: { ring: 'border-teal-500', bg: 'bg-teal-500', text: 'text-teal-400', glow: 'shadow-[0_0_20px_rgba(20,184,166,0.4)]' },
   emerald: { ring: 'border-emerald-500', bg: 'bg-emerald-500', text: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(16,185,129,0.4)]' },
 };
 
-// Fun Gen Z loading phrases that rotate
-const LOADING_VIBES = [
-  "Doing the heavy lifting so you don't have to ✨",
-  "Our AI is speed-reading your resume rn 🤓",
-  "Crunching numbers like a pro 📊",
-  "Almost there, hang tight fr fr 🔥",
-  "Cooking up something good 🍳",
-  "Manifesting the best ATS score for you 🪄",
-  "Lowkey analyzing every detail 🔍",
+// Professional SAAS loading phrases that rotate
+const LOADING_PHRASES = [
+  "Initializing parsing engine...",
+  "Extracting text via optical character recognition...",
+  "Applying natural language processing models...",
+  "Evaluating skills and competencies...",
+  "Calculating compatibility matrix...",
+  "Structuring assessment report...",
+  "Finalizing analysis results...",
 ];
 
 export default function ResumeAnalysisModal({ fileDetails, open, onClose, onViewReport }) {
@@ -55,7 +55,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
   useEffect(() => {
     if (!loading) return;
     const interval = setInterval(() => {
-      setVibeIndex(prev => (prev + 1) % LOADING_VIBES.length);
+      setVibeIndex(prev => (prev + 1) % LOADING_PHRASES.length);
     }, 3000);
     return () => clearInterval(interval);
   }, [loading]);
@@ -95,7 +95,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
         if (p.y < 0 || p.y > canvas.offsetHeight) p.dy *= -1;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(139, 92, 246, ${p.opacity})`;
+        ctx.fillStyle = `rgba(99, 102, 241, ${p.opacity})`;
         ctx.fill();
       }
       animFrameRef.current = requestAnimationFrame(draw);
@@ -171,7 +171,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
 
   if (typeof document === 'undefined') return null;
 
-  const activeColor = COLOR_MAP[STEPS[currentStep]?.color || 'violet'];
+  const activeColor = COLOR_MAP[STEPS[currentStep]?.color || 'blue'];
 
   return createPortal(
     <AnimatePresence>
@@ -192,7 +192,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top gradient border */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-teal-500" />
 
           {loading ? (
             <div className="relative p-6 sm:p-8 overflow-hidden">
@@ -230,9 +230,9 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
                       />
                       <defs>
                         <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#8b5cf6" />
-                          <stop offset="50%" stopColor="#d946ef" />
-                          <stop offset="100%" stopColor="#06b6d4" />
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="50%" stopColor="#6366f1" />
+                          <stop offset="100%" stopColor="#14b8a6" />
                         </linearGradient>
                       </defs>
                     </svg>
@@ -264,9 +264,9 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3 }}
-                    className="text-xs text-zinc-500 text-center mb-6 min-h-[18px] font-medium px-2 truncate max-w-full"
+                    className="text-xs text-zinc-400 text-center mb-6 min-h-[18px] font-medium px-2 truncate max-w-full"
                   >
-                    {LOADING_VIBES[vibeIndex]}
+                    {LOADING_PHRASES[vibeIndex]}
                   </motion.p>
                 </AnimatePresence>
 
@@ -346,7 +346,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
                 {/* Bottom progress bar */}
                 <div className="mt-5 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500"
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-teal-500"
                     style={{ width: `${progress}%` }}
                     transition={{ duration: 0.5, ease: 'easeOut' }}
                   />
@@ -364,14 +364,14 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
                   className="w-24 h-24 mx-auto rounded-2xl object-cover shadow-[0_0_30px_rgba(239,68,68,0.25)] border border-red-500/30 mb-5"
                 />
                 <h3 className="text-xl font-extrabold text-white mb-2 font-display">
-                  Oof, that didn't work 💔
+                  Analysis Failed
                 </h3>
                 <p className="text-sm text-zinc-400 mb-6 leading-relaxed max-w-xs mx-auto">{error}</p>
                 <button
                   onClick={onClose}
                   className="w-full bg-white/10 hover:bg-white/15 text-zinc-200 text-sm font-bold px-5 py-3 rounded-xl transition-all duration-200 border border-white/10 hover:border-white/20"
                 >
-                  Got it, I'll try again later
+                  Dismiss
                 </button>
               </div>
             </div>
@@ -394,10 +394,10 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
                   <CheckCircleIcon className="h-10 w-10 text-emerald-400" />
                 </motion.div>
                 <h3 className="text-xl font-extrabold text-white mb-2 font-display">
-                  Analysis Complete! 🎉
+                  Analysis Complete
                 </h3>
                 <p className="text-sm text-zinc-400 mb-6 font-medium">
-                  Your resume report is ready to view.
+                  Your resume report has been generated successfully.
                 </p>
                 <button
                   onClick={() => {
@@ -407,7 +407,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
                       onClose();
                     }
                   }}
-                  className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-bold px-5 py-3 rounded-xl transition-all duration-200 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold px-5 py-3 rounded-xl transition-all duration-200 shadow-[0_0_20px_rgba(79,70,229,0.3)]"
                 >
                   View Report →
                 </button>
