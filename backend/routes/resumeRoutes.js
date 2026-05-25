@@ -150,7 +150,7 @@ router.post('/analyze-upload', authMiddleware, async (req, res) => {
       scale: req.body.scale !== 'false',
       isTable: req.body.isTable !== 'false',
       engine: req.body.engine ? parseInt(req.body.engine, 10) : 2,
-      model: req.body.model || 'meta-llama/llama-3.3-70b-instruct:free',
+      model: req.body.model || 'poolside/laguna-xs.2:free',
       prompt: req.body.prompt,
       systemPrompt: req.body.systemPrompt,
       userId,
@@ -403,7 +403,7 @@ router.post('/process', authMiddleware, async (req, res) => {
       scale: req.body.scale !== 'false',
       isTable: req.body.isTable === 'true',
       engine: req.body.engine ? parseInt(req.body.engine, 10) : 2,
-      model: req.body.model || 'meta-llama/llama-3.3-70b-instruct:free',
+      model: req.body.model || 'poolside/laguna-xs.2:free',
       prompt: req.body.prompt,
       systemPrompt: req.body.systemPrompt,
       userId,
@@ -470,7 +470,7 @@ router.post('/ai-analysis', async (req, res) => {
     
     // Options for AI analysis
     const options = {
-      model: model || 'meta-llama/llama-3.3-70b-instruct:free',
+      model: model || 'poolside/laguna-xs.2:free',
       prompt: prompt,
       systemPrompt: systemPrompt
     };

@@ -135,7 +135,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
 
       (async () => {
         try {
-          const res = await analyzeUploadResume(fileDetails.rawFile, { model: 'meta-llama/llama-3.3-70b-instruct:free' });
+          const res = await analyzeUploadResume(fileDetails.rawFile, { model: 'poolside/laguna-xs.2:free' });
           if (res?.success && res?.data?.analysis?.structured) {
             setProgress(100);
             setCurrentStep(4);

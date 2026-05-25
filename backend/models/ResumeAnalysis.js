@@ -54,7 +54,7 @@ const ResumeAnalysisSchema = new mongoose.Schema({
   analysis: {
     strengths: { type: [String], default: [] },
     areasForImprovement: { type: [String], default: [] },
-    keywords: { type: [String], default: [] },
+    missingKeywords: { type: [String], default: [] },
     atsScore: { type: Number, default: 0 }
   },
   raw: { type: mongoose.Schema.Types.Mixed }, // Store the raw AI response for debugging

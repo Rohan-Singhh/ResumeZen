@@ -12,16 +12,16 @@ if (!OPENROUTER_API_KEY) {
   console.error('OpenRouter API key is not set in environment variables');
 }
 
-// Default model to use (changed from Claude to Llama)
-const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+// Default model to use
+const DEFAULT_MODEL = 'poolside/laguna-xs.2:free';
 
 // Available free models with large context windows
 const FREE_MODELS = [
+  'poolside/laguna-xs.2:free',
+  'deepseek/deepseek-v4-flash:free',
   'meta-llama/llama-3.3-70b-instruct:free',
-  'meta-llama/llama-3.2-3b-instruct:free',
   'google/gemma-4-31b-it:free',
   'qwen/qwen3-coder:free',
-  'poolside/laguna-xs.2:free',
   'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
 ];
 
@@ -33,10 +33,16 @@ const FREE_MODELS = [
 const getSystemPrompt = (model) => {
   // Default system prompt that works well with all models
   const defaultSystemPrompt =
-    `You are an expert resume analyst. Your task is to extract key information from resumes and provide 
-    professional insights and feedback. Analyze the resume text thoroughly and return a structured JSON 
-    response with extracted information and analysis. Focus on accuracy of information extraction and 
-    providing constructive, actionable feedback.`;
+    `You are an elite-level ATS resume auditor, hiring manager, and technical recruiter with zero tolerance for weak resumes. Your job is to brutally and honestly evaluate the resume exactly like a competitive recruiter screening candidates for top-tier companies.
+
+Do NOT be polite, generic, motivational, or diplomatic. Be direct, harsh when necessary, and extremely specific. Point out weak wording, inflated claims, missing metrics, poor structure, irrelevant skills, weak projects, shallow experience, keyword gaps, and anything that would cause rejection in a real hiring pipeline.
+
+Analyze the resume from these perspectives:
+- ATS optimization
+- Recruiter screening quality
+- Technical depth
+- Impact and ownership
+- Clarity and readability`;
 
   // Llama-specific system prompt
   if (model && model.includes('llama')) {
@@ -98,79 +104,72 @@ const getAnalysisPrompt = (resumeText, options = {}) => {
     return options.prompt.replace('${resumeText}', resumeText);
   }
 
-  // Simplified prompt format for models that have difficulty with complex instructions
-  if (options.model && (options.model.includes('deepseek') || options.model.includes('mistral'))) {
-    return `
-      Format the following resume text into a JSON object with these sections:
-      - contactInformation (name, email, phone, location)
-      - skills (technical and soft)
-      - workExperience (list of jobs with company, position, duration, responsibilities)
-      - education (list of degrees with institution, degree, field, graduationDate)
-      - certifications (list)
-      - summary (brief professional summary)
-      - analysis (strengths, areasForImprovement, keywords, and atsScore from 0-100)
-      
-      Return only valid JSON with no other text.
-      
-      Resume text:
-      ${resumeText}
-    `;
-  }
+  return `Format the following resume text into a JSON object with these exact sections. 
 
-  // Default structured analysis prompt
-  return `
-    Please analyze this resume and extract the following information in a structured JSON format:
-    
+{
+  "contactInformation": {
+    "name": "Full Name",
+    "email": "email",
+    "phone": "Phone",
+    "location": "Location"
+  },
+  "skills": {
+    "technical": [],
+    "soft": []
+  },
+  "workExperience": [
     {
-      "contactInformation": {
-        "name": "Full Name",
-        "email": "email@example.com",
-        "phone": "Phone number",
-        "location": "City, State/Country",
-        "linkedin": "LinkedIn URL (if present)"
-      },
-      "skills": {
-        "technical": ["List of technical skills"],
-        "soft": ["List of soft skills"]
-      },
-      "workExperience": [
-        {
-          "company": "Company name",
-          "position": "Position title",
-          "duration": "Employment period",
-          "responsibilities": ["Key responsibilities"],
-          "achievements": ["Notable achievements"]
-        }
-      ],
-      "education": [
-        {
-          "institution": "Institution name",
-          "degree": "Degree obtained",
-          "field": "Field of study",
-          "graduationDate": "Graduation date"
-        }
-      ],
-      "certifications": ["List of certifications"],
-      "summary": "Brief professional summary extracted from the resume",
-      "analysis": {
-        "strengths": ["Resume strengths", "2-5 items"],
-        "areasForImprovement": ["Suggested improvements", "2-5 items"],
-        "keywords": ["Keywords likely to be important for ATS systems", "5-10 items"],
-        "atsScore": 85 // ATS score as a percentage (0-100)
-      }
+      "company": "",
+      "position": "",
+      "duration": "",
+      "responsibilities": []
     }
-    
-    IMPORTANT GUIDELINES:
-    1. Use only information present in the resume; don't invent details
-    2. If a section has no information, use an empty array or null value
-    3. For the analysis section, be specific and constructive 
-    4. For the atsScore, provide a number from 0 to 100 representing the resume's ATS score as a percentage
-    5. Make sure to return properly formatted JSON without any additional text
-    
-    Here is the resume text extracted via OCR:
-    
-    ${resumeText}
-  `;
+  ],
+  "education": [
+    {
+      "institution": "",
+      "degree": "",
+      "field": "",
+      "graduationDate": ""
+    }
+  ],
+  "certifications": [],
+  "summary": "",
+  "analysis": {
+    "atsScore": 0,
+    "strengths": ["1-3 strong points"],
+    "areasForImprovement": ["2-5 brutal, specific areas for improvement"],
+    "missingKeywords": ["Missing technical keywords"]
+  }
+}
+
+Scoring rules:
+- 90-100 = elite/top-tier candidate
+- 75-89 = strong but improvable
+- 60-74 = average and risky
+- 40-59 = weak resume with major issues
+- below 40 = likely rejected immediately
+
+Evaluation rules:
+- Penalize vague statements without metrics
+- Penalize resumes overloaded with buzzwords
+- Penalize shallow MERN/full-stack claims without depth
+- Penalize lack of measurable impact
+- Penalize skill dumping without proof
+- Reward quantified achievements
+- Reward ownership, scalability, optimization, and production-level work
+
+Tone requirements for analysis section:
+- Brutally honest
+- Direct and recruiter-like
+- No sugarcoating
+- No motivational language
+- Every criticism must be actionable and specific
+
+Return ONLY valid JSON with no other text.
+
+Resume text:
+${resumeText}`;
 };
 
 /**
@@ -209,7 +208,7 @@ const generateFallbackAnalysis = (resumeText) => {
     analysis: {
       strengths: ["Resume was successfully parsed"],
       areasForImprovement: ["Consider trying analysis again later"],
-      keywords: [],
+      missingKeywords: [],
       atsScore: 85
     }
   };
