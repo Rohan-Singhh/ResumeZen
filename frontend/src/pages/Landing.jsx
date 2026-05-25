@@ -6,6 +6,8 @@ import Pricing from '../components/Pricing';
 import Reviews from '../components/Reviews';
 import FAQ from '../components/FAQ';
 import Support from '../components/Support';
+import CTA from '../components/CTA';
+import Footer from '../components/Footer';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { ReactLenis } from '@studio-freight/react-lenis';
@@ -59,6 +61,8 @@ export default function Landing() {
         <Reviews />
         <FAQ />
         <Support />
+        <CTA />
+        <Footer />
       </main>
     </ReactLenis>
   );

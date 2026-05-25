@@ -1,9 +1,41 @@
-import { motion } from 'framer-motion';
+import { motion, useInView, useAnimation } from 'framer-motion';
 import { ArrowRightIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 
 export default function Hero({ onShowSuccessStories }) {
   const navigate = useNavigate();
+  
+  // Ref for the mockup container to trigger animations when in view
+  const mockupRef = useRef(null);
+  const isInView = useInView(mockupRef, { once: true, margin: "-100px" });
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    if (isInView) {
+      let currentScore = 0;
+      const targetScore = 98;
+      const duration = 2000; // 2 seconds
+      const interval = 20;
+      const steps = duration / interval;
+      const increment = targetScore / steps;
+
+      // Start the counter after a slight delay so the laser can scan first
+      const timer = setTimeout(() => {
+        const counter = setInterval(() => {
+          currentScore += increment;
+          if (currentScore >= targetScore) {
+            setScore(targetScore);
+            clearInterval(counter);
+          } else {
+            setScore(Math.floor(currentScore));
+          }
+        }, interval);
+      }, 800);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isInView]);
 
   return (
     <div id="home" className="relative min-h-screen overflow-hidden bg-dark-bg text-white pt-28 sm:pt-36">
@@ -117,8 +149,8 @@ export default function Hero({ onShowSuccessStories }) {
               />
               
               {/* Overlay Mockup UI Elements to make it look like an app */}
-              <div className="absolute inset-0 flex items-center justify-center p-8">
-                <div className="w-full max-w-4xl h-full max-h-[500px] bg-dark-bg/80 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl flex overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center p-8" ref={mockupRef}>
+                <div className="w-full max-w-4xl h-full max-h-[500px] bg-dark-bg/90 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl flex overflow-hidden relative">
                   {/* Sidebar mockup */}
                   <div className="w-64 border-r border-white/10 p-6 hidden md:block">
                     <div className="w-32 h-6 bg-white/10 rounded-md mb-10"></div>
@@ -136,18 +168,82 @@ export default function Hero({ onShowSuccessStories }) {
                     </div>
                     {/* Resume lines */}
                     <div className="space-y-6">
-                      <div className="w-full h-32 bg-white/5 rounded-lg border border-white/10 p-4">
-                        <div className="w-1/3 h-4 bg-white/20 rounded mb-4"></div>
-                        <div className="w-full h-3 bg-white/10 rounded mb-2"></div>
-                        <div className="w-5/6 h-3 bg-white/10 rounded mb-2"></div>
-                        <div className="w-4/6 h-3 bg-white/10 rounded"></div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex-1 h-32 bg-primary/10 rounded-lg border border-primary/20 p-4 flex flex-col justify-center items-center">
-                           <div className="text-4xl font-bold text-primary mb-2">98%</div>
-                           <div className="text-sm text-primary-light">ATS Match</div>
+                      <div className="w-full h-40 bg-white/5 rounded-lg border border-white/10 p-6 relative overflow-hidden">
+                        {/* Animated Scanning Laser */}
+                        <motion.div
+                          initial={{ top: "-10%" }}
+                          animate={isInView ? { top: "110%" } : { top: "-10%" }}
+                          transition={{ 
+                            duration: 2, 
+                            ease: "easeInOut", 
+                            repeat: Infinity,
+                            repeatType: "reverse"
+                          }}
+                          className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_rgba(139,92,246,0.8)] z-10"
+                        />
+                        {/* Glowing scan line backdrop */}
+                        <motion.div
+                          initial={{ top: "-10%", opacity: 0 }}
+                          animate={isInView ? { top: "110%", opacity: [0, 0.2, 0] } : { top: "-10%", opacity: 0 }}
+                          transition={{ 
+                            duration: 2, 
+                            ease: "easeInOut", 
+                            repeat: Infinity,
+                            repeatType: "reverse"
+                          }}
+                          className="absolute left-0 right-0 h-20 -mt-10 bg-primary/20 blur-xl z-0"
+                        />
+                        
+                        <div className="w-1/3 h-5 bg-white/20 rounded-md mb-6"></div>
+                        <div className="space-y-3">
+                          <div className="w-full h-3 bg-white/10 rounded-full"></div>
+                          <div className="w-full h-3 bg-white/10 rounded-full"></div>
+                          <div className="w-5/6 h-3 bg-white/10 rounded-full"></div>
+                          <div className="w-4/6 h-3 bg-white/10 rounded-full"></div>
                         </div>
-                        <div className="flex-1 h-32 bg-white/5 rounded-lg border border-white/10"></div>
+                      </div>
+                      
+                      <div className="flex gap-4">
+                        <motion.div 
+                          className="flex-1 h-32 bg-primary/10 rounded-xl border border-primary/30 p-4 flex flex-col justify-center items-center relative overflow-hidden"
+                          animate={isInView ? { 
+                            boxShadow: ["0px 0px 0px rgba(139,92,246,0)", "0px 0px 30px rgba(139,92,246,0.4)", "0px 0px 10px rgba(139,92,246,0.2)"],
+                            borderColor: ["rgba(139,92,246,0.3)", "rgba(139,92,246,0.8)", "rgba(139,92,246,0.5)"]
+                          } : {}}
+                          transition={{ delay: 1, duration: 1.5 }}
+                        >
+                           <div className="text-5xl font-extrabold text-white mb-2 tracking-tight drop-shadow-md">
+                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
+                               {score}%
+                             </span>
+                           </div>
+                           <div className="text-sm font-bold tracking-wider text-primary-light uppercase">ATS Match</div>
+                           
+                           {/* Success particles */}
+                           {score === 98 && (
+                             <motion.div 
+                               initial={{ opacity: 0, scale: 0.5 }}
+                               animate={{ opacity: 1, scale: 1 }}
+                               className="absolute top-2 right-3"
+                             >
+                               <SparklesIcon className="w-5 h-5 text-accent animate-pulse" />
+                             </motion.div>
+                           )}
+                        </motion.div>
+                        
+                        <div className="flex-1 h-32 bg-white/5 rounded-xl border border-white/10 p-4 flex flex-col justify-center relative overflow-hidden">
+                          <div className="text-xs text-gray-400 font-bold uppercase mb-3">AI Suggestions</div>
+                          <div className="space-y-2">
+                            <div className="w-full h-6 bg-green-500/10 border border-green-500/20 rounded flex items-center px-2">
+                               <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                               <div className="h-2 w-16 bg-white/20 rounded"></div>
+                            </div>
+                            <div className="w-5/6 h-6 bg-amber-500/10 border border-amber-500/20 rounded flex items-center px-2">
+                               <div className="w-2 h-2 rounded-full bg-amber-500 mr-2"></div>
+                               <div className="h-2 w-12 bg-white/20 rounded"></div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
