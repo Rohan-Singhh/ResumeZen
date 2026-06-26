@@ -1,6 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+/* eslint-disable react-refresh/only-export-components, react/prop-types */
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, createContext, useContext, useEffect, useCallback, useRef } from 'react';
+import { ChatProvider } from './contexts/ChatContext';
+import ChatBubble from './components/chatbot/ChatBubble';
 import Landing from './pages/Landing';
 import SuccessStoriesPage from './pages/SuccessStoriesPage';
 import Login from './pages/Login';
@@ -69,7 +72,7 @@ export function useLoading() {
 
 // Animation wrapper component
 function AnimatedRoutes() {
-  const { isLoading, loadingMessage, skipTransitions, setLoading } = useLoading();
+  const { isLoading, loadingMessage, setLoading } = useLoading();
   const location = useLocation();
   const loadingTimeoutRef = useRef(null);
   
@@ -146,6 +149,7 @@ function AnimatedRoutes() {
           </Route>
         </Routes>
       </AnimatePresence>
+      <ChatBubble />
     </>
   );
 }
@@ -154,7 +158,9 @@ export default function App() {
   return (
     <Router>
       <LoadingProvider>
-        <AnimatedRoutes />
+        <ChatProvider>
+          <AnimatedRoutes />
+        </ChatProvider>
       </LoadingProvider>
     </Router>
   );

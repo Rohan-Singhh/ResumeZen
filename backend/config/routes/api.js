@@ -6,6 +6,7 @@ const resumeRouter = require('../../routes/resumeRoutes');
 const ocrRouter = require('../../routes/ocrRoutes');
 const jobRouter = require('../../routes/jobRoutes');
 const supportRouter = require('../../routes/supportRoutes');
+const chatRouter = require('../../routes/chatRoutes');
 
 /**
  * Configure API routes
@@ -38,6 +39,9 @@ const configureApiRoutes = (app) => {
   
   // Mount support routes
   app.use(`${apiPrefix}/support`, supportRouter);
+
+  // Mount AI chatbot routes
+  app.use(`${apiPrefix}/chat`, chatRouter);
   
   // Add more API routes here as they are developed
 };
