@@ -10,6 +10,9 @@ import {
 export default function ResumeDetailModal({ modalItem, onClose }) {
   if (typeof document === 'undefined') return null;
   
+  // Early return if no modal item
+  if (!modalItem) return null;
+  
   // Backwards compatibility check
   const isLegacy = !!modalItem?.analysis?.atsScore;
   const analysisData = isLegacy ? modalItem : (modalItem?.analysis?.structured || modalItem);
@@ -23,7 +26,7 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
     }
   };
   
-  const overallScore = analysisData.overallScore || analysisData.analysis?.atsScore || 0;
+  const overallScore = analysisData?.overallScore || analysisData?.analysis?.atsScore || 0;
 
   return createPortal(
     <AnimatePresence>

@@ -28,19 +28,7 @@ export default function AuthGuard({ children }) {
     };
   }, [setLoading]);
 
-  // If authentication status is still being determined, show loading spinner
-  if (loading && !authStatusChecked) {
-    console.log('AuthGuard: Loading state, waiting for auth check');
-    return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="h-10 w-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-sm font-medium text-zinc-400">Authenticating...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Handle redirection when user is not authenticated
   useEffect(() => {
     if (authStatusChecked && !currentUser) {
       const isLoggingOut = sessionStorage.getItem('logoutInProgress') === 'true';
@@ -54,6 +42,19 @@ export default function AuthGuard({ children }) {
       }
     }
   }, [authStatusChecked, currentUser, location, navigate]);
+
+  // If authentication status is still being determined, show loading spinner
+  if (loading && !authStatusChecked) {
+    console.log('AuthGuard: Loading state, waiting for auth check');
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="h-10 w-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-sm font-medium text-zinc-400">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (authStatusChecked && !currentUser) {
     return null; // Render nothing while redirecting
