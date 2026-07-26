@@ -155,12 +155,19 @@ export default function DashboardWelcome() {
       _id: analysisResponse?.resumeAnalysisId || 'temp',
       createdAt: new Date().toISOString(),
       contactInformation: structured.contactInformation || {},
+      overallScore: structured.overallScore || 0,
+      hiringRiskLevel: structured.hiringRiskLevel || 'Unknown',
+      recruiterScreening: structured.recruiterScreening || {},
+      atsOptimization: structured.atsOptimization || {},
+      technicalDepth: structured.technicalDepth || {},
+      impactAndOwnership: structured.impactAndOwnership || {},
+      // Keep legacy support
       skills: structured.skills || {},
       workExperience: structured.workExperience || [],
       education: structured.education || [],
       certifications: structured.certifications || [],
       summary: structured.summary || '',
-      analysis: structured.analysis || {},
+      analysis: structured,  // Pass the full structured data
     };
     setSelectedResume(resumeDetail);
     // React Query automatically handles refetching the history

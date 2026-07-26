@@ -21,7 +21,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 // Configure default timeout
-axios.defaults.timeout = 30000; // 30 seconds
+axios.defaults.timeout = 90000; // 90 seconds (AI analysis can be slow)
 
 // Add request interceptor for development debugging
 if (import.meta.env.MODE === 'development') {

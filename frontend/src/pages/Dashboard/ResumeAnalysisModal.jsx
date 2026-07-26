@@ -16,11 +16,11 @@ import {
 import sadRobotError from '../../assets/sad_robot_error.png';
 
 const STEPS = [
-  { label: 'Initializing Document Context', icon: DocumentMagnifyingGlassIcon, color: 'blue' },
-  { label: 'Executing Text Extraction (OCR)', icon: DocumentTextIcon, color: 'indigo' },
-  { label: 'Running AI Semantic Analysis', icon: CpuChipIcon, color: 'violet' },
-  { label: 'Calculating ATS Compatibility', icon: ChartBarIcon, color: 'teal' },
-  { label: 'Generating Executive Report', icon: SparklesIcon, color: 'emerald' },
+  { label: 'Upload Resume', icon: DocumentMagnifyingGlassIcon, color: 'blue' },
+  { label: 'Extract Text (OCR)', icon: DocumentTextIcon, color: 'indigo' },
+  { label: 'AI Analysis', icon: CpuChipIcon, color: 'violet' },
+  { label: 'Calculate ATS Score', icon: ChartBarIcon, color: 'teal' },
+  { label: 'Generate Report', icon: SparklesIcon, color: 'emerald' },
 ];
 
 const COLOR_MAP = {
@@ -31,15 +31,15 @@ const COLOR_MAP = {
   emerald: { ring: 'border-emerald-500', bg: 'bg-emerald-500', text: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(16,185,129,0.4)]' },
 };
 
-// Professional SAAS loading phrases that rotate
+// Simple, clean loading phrases
 const LOADING_PHRASES = [
-  "Initializing parsing engine...",
-  "Extracting text via optical character recognition...",
-  "Applying natural language processing models...",
-  "Evaluating skills and competencies...",
-  "Calculating compatibility matrix...",
-  "Structuring assessment report...",
-  "Finalizing analysis results...",
+  "Uploading your resume...",
+  "Extracting text from PDF...",
+  "Analyzing with AI...",
+  "Calculating ATS score...",
+  "Checking for improvements...",
+  "Almost done...",
+  "Finalizing report...",
 ];
 
 export default function ResumeAnalysisModal({ fileDetails, open, onClose, onViewReport }) {
