@@ -23,6 +23,7 @@ export default function DashboardJobs() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [hasResume, setHasResume] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const [jobSources, setJobSources] = useState({ remotive: 0, arbeitnow: 0, themuse: 0 });
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -33,6 +34,7 @@ export default function DashboardJobs() {
         const response = await axios.get('/api/jobs');
         if (response.data.success) {
           setJobs(response.data.jobs);
+          setJobSources(response.data.sources || {});
         } else {
           setError('Failed to load jobs');
         }
@@ -99,7 +101,12 @@ export default function DashboardJobs() {
             </div>
             Job Board
           </h1>
-          <p className="text-sm text-zinc-400 mt-2 font-light">Recent tech and remote opportunities from around the web.</p>
+          <p className="text-sm text-zinc-400 mt-2 font-light">
+            {jobs.length} tech jobs from {' '}
+            <span className="text-emerald-400 font-semibold">Remotive</span>, {' '}
+            <span className="text-blue-400 font-semibold">Arbeitnow</span>, and {' '}
+            <span className="text-violet-400 font-semibold">The Muse</span>
+          </p>
         </motion.div>
 
         <div className="flex bg-[#131318] p-1.5 rounded-xl border border-white/5 shadow-inner self-start">
