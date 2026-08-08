@@ -13,9 +13,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
   // Early return if no modal item
   if (!modalItem) return null;
   
-  // Backwards compatibility check
-  const isLegacy = !!modalItem?.analysis?.atsScore;
-  const analysisData = isLegacy ? modalItem : (modalItem?.analysis?.structured || modalItem);
+  // `modalItem` is already canonical — see utils/analysisSchema.js
+  const analysisData = modalItem;
 
   const getRiskColor = (level) => {
     switch (level?.toLowerCase()) {
@@ -26,7 +25,7 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
     }
   };
   
-  const overallScore = analysisData?.overallScore || analysisData?.analysis?.atsScore || 0;
+  const overallScore = analysisData.overallScore ?? 0;
 
   return createPortal(
     <AnimatePresence>
@@ -55,7 +54,7 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                 <DocumentTextIcon className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white font-display tracking-tight">{analysisData.contactInformation?.name || 'Unnamed Resume'}</h3>
+                <h3 className="text-lg font-bold text-white font-display tracking-tight">{analysisData.contactInformation.name || 'Unnamed Resume'}</h3>
                 <p className="text-xs text-zinc-500 font-medium">ATS Auditor Report</p>
               </div>
             </div>
@@ -93,7 +92,7 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                   <div>
                      <div className="flex items-center justify-between mb-4">
                        <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Recruiter Verdict</p>
-                       {analysisData.hiringRiskLevel && (
+                       {analysisData.hiringRiskLevel !== 'Unknown' && (
                          <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-full border ${getRiskColor(analysisData.hiringRiskLevel)}`}>
                            {analysisData.hiringRiskLevel} Risk
                          </span>
@@ -223,14 +222,14 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
             </div>
 
             {/* Keyword Injection Box */}
-            {(analysisData.atsOptimization?.missingKeywords?.length > 0 || analysisData.analysis?.missingKeywords?.length > 0) && (
+            {analysisData.missingKeywords.length > 0 && (
               <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border border-blue-500/20 rounded-2xl p-6 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-50" />
                 <h4 className="text-sm font-bold text-blue-400 mb-4 flex items-center gap-2 font-display uppercase tracking-wider">
                   <MagnifyingGlassIcon className="h-4 w-4" /> Keyword Injection Strategy
                 </h4>
                 <div className="flex flex-wrap gap-2.5">
-                  {(analysisData.atsOptimization?.missingKeywords || analysisData.analysis?.missingKeywords || []).map((kw, i) => (
+                  {analysisData.missingKeywords.map((kw, i) => (
                     <span key={i} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-bold rounded-lg shadow-inner">
                       + {kw}
                     </span>
@@ -239,15 +238,34 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
               </div>
             )}
             
-            {/* Legacy Skills Display (Fallback) */}
-            {isLegacy && analysisData.skills && (
+            {/* Extracted Skills */}
+            {(analysisData.skills.technical.length > 0 || analysisData.skills.soft.length > 0) && (
               <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
-                <h4 className="text-sm font-bold text-zinc-100 mb-4 font-display uppercase tracking-wider">Extracted Skills (Legacy)</h4>
+                <h4 className="text-sm font-bold text-zinc-100 mb-4 font-display uppercase tracking-wider">Extracted Skills</h4>
                 <div className="flex flex-wrap gap-2">
-                  {analysisData.skills.technical?.map((s, i) => (
-                    <span key={i} className="px-2.5 py-1 bg-white/5 border border-white/10 text-zinc-300 text-xs rounded">{s}</span>
+                  {analysisData.skills.technical.map((s, i) => (
+                    <span key={`t-${i}`} className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs rounded">{s}</span>
+                  ))}
+                  {analysisData.skills.soft.map((s, i) => (
+                    <span key={`s-${i}`} className="px-2.5 py-1 bg-white/5 border border-white/10 text-zinc-300 text-xs rounded">{s}</span>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Strengths */}
+            {analysisData.strengths.length > 0 && (
+              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6">
+                <h4 className="text-sm font-black text-emerald-400 mb-4 flex items-center gap-2 font-display uppercase tracking-wider">
+                  <CheckCircleIcon className="h-5 w-5" /> Strengths
+                </h4>
+                <ul className="space-y-3">
+                  {analysisData.strengths.map((s, i) => (
+                    <li key={i} className="text-zinc-300 text-sm font-medium flex items-start gap-3 leading-relaxed">
+                      <span className="text-emerald-500 font-bold mt-0.5">•</span> {s}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

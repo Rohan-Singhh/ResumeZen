@@ -10,8 +10,8 @@ import {
   ShieldCheckIcon,
   ServerIcon,
   ChartBarIcon,
+  FaceFrownIcon,
 } from '@heroicons/react/24/outline';
-import sadRobotError from '../../../assets/sad_robot_error.png';
 
 export default function UploadZone({
   selectedFile,
@@ -47,7 +47,9 @@ export default function UploadZone({
 
       {errorMessage && (
         <div className="mb-5 px-4 py-3 bg-red-950/40 border border-red-500/20 rounded-xl text-red-400 backdrop-blur-sm relative z-10 flex items-start gap-3 shadow-xl">
-          <img src={sadRobotError} alt="Error" className="w-12 h-12 rounded-lg object-cover shadow-[0_0_15px_rgba(239,68,68,0.2)] border border-red-500/30 flex-shrink-0" />
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-red-500/10 border border-red-500/30 flex-shrink-0">
+            <FaceFrownIcon className="h-6 w-6 text-red-400" />
+          </div>
           <div className="flex-1">
             <h4 className="text-sm font-bold text-red-300 mb-0.5 font-display">Yikes! Something broke 💔</h4>
             <p className="text-xs font-medium">{errorMessage}</p>
@@ -71,7 +73,7 @@ export default function UploadZone({
             <ArrowUpTrayIcon className="h-8 w-8" />
           </div>
           <p className="text-base font-semibold text-zinc-200 mb-1 font-display">Click to upload or drag & drop</p>
-          <p className="text-sm text-zinc-500 font-medium">PDF only (Max 1MB)</p>
+          <p className="text-sm text-zinc-500 font-medium">PDF only (Max 5MB)</p>
           <input ref={fileInputRef} type="file" className="hidden" accept=".pdf" onChange={onFileChange} />
         </div>
       )}

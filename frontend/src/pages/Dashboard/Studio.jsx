@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { getResumeHistory } from '../../services/resumeService';
+import React, { useState, useEffect, useMemo } from 'react';
+import { normalizeAnalysis } from '../../utils/analysisSchema';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChartBarIcon, 
@@ -33,7 +33,10 @@ export default function Studio() {
   const [activeResume, setActiveResume] = useState(null);
   const navigate = useNavigate();
   
-  const { data: history = [], isLoading: loading } = useResumeHistory();
+  const { data: rawHistory = [], isLoading: loading } = useResumeHistory();
+
+  // Normalize once so this page reads the same canonical shape as the overview
+  const history = useMemo(() => rawHistory.map(normalizeAnalysis), [rawHistory]);
 
   // Automatically select the latest resume if none is active
   useEffect(() => {
@@ -89,12 +92,12 @@ export default function Studio() {
             </div>
           ) : (
             history.map((item) => {
-              const isActive = activeResume?._id === item._id;
-              const score = typeof item.analysis?.atsScore === 'number' ? item.analysis.atsScore : null;
-              
+              const isActive = activeResume?.id === item.id;
+              const score = item.overallScore;
+
               return (
                 <button
-                  key={item._id}
+                  key={item.id}
                   onClick={() => setActiveResume(item)}
                   className={`w-full text-left p-3 rounded-xl transition-all border ${
                     isActive 
@@ -104,7 +107,7 @@ export default function Studio() {
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <p className={`text-sm font-bold truncate font-display ${isActive ? 'text-white' : 'text-zinc-300'}`}>
-                      {item.contactInformation?.name || 'Unnamed Resume'}
+                      {item.contactInformation.name || 'Unnamed Resume'}
                     </p>
                     {score !== null && (
                       <span className={`text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded flex-shrink-0 ${
@@ -174,24 +177,24 @@ export default function Studio() {
                   <ChartBarIcon className="h-4 w-4" /> Overall ATS Match
                 </p>
                 <p className={`text-[80px] leading-none font-extrabold tabular-nums tracking-tighter font-display ${
-                  (activeResume.analysis?.atsScore ?? 0) >= 70 ? 'text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-teal-600' : 
-                  (activeResume.analysis?.atsScore ?? 0) >= 40 ? 'text-transparent bg-clip-text bg-gradient-to-br from-amber-400 to-orange-600' : 
+                  (activeResume.atsScore ?? 0) >= 70 ? 'text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-teal-600' :
+                  (activeResume.atsScore ?? 0) >= 40 ? 'text-transparent bg-clip-text bg-gradient-to-br from-amber-400 to-orange-600' :
                   'text-transparent bg-clip-text bg-gradient-to-br from-red-400 to-rose-600'
                 }`}>
-                  {typeof activeResume.analysis?.atsScore === 'number' ? `${activeResume.analysis.atsScore}%` : 'N/A'}
+                  {activeResume.atsScore != null ? `${activeResume.atsScore}%` : 'N/A'}
                 </p>
-                {typeof activeResume.analysis?.atsScore === 'number' && (
+                {activeResume.atsScore != null && (
                   <div className="mt-8 h-3 w-full max-w-sm bg-black/40 rounded-full mx-auto overflow-hidden border border-white/5 shadow-inner">
-                    <motion.div 
-                      key={activeResume._id}
+                    <motion.div
+                      key={activeResume.id}
                       initial={{ width: 0 }}
-                      animate={{ width: `${activeResume.analysis?.atsScore}%` }}
+                      animate={{ width: `${activeResume.atsScore}%` }}
                       transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
                       className={`h-full rounded-full ${
-                        activeResume.analysis.atsScore >= 70 ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 
-                        activeResume.analysis.atsScore >= 40 ? 'bg-gradient-to-r from-amber-500 to-orange-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 
+                        activeResume.atsScore >= 70 ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]' :
+                        activeResume.atsScore >= 40 ? 'bg-gradient-to-r from-amber-500 to-orange-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]' :
                         'bg-gradient-to-r from-red-500 to-rose-400 shadow-[0_0_10px_rgba(239,68,68,0.5)]'
-                      }`} 
+                      }`}
                     />
                   </div>
                 )}
@@ -200,14 +203,14 @@ export default function Studio() {
 
             {/* Strengths & Improvements */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {activeResume.analysis?.strengths?.length > 0 && (
+              {activeResume.strengths.length > 0 && (
                 <div className="bg-[#131318]/80 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
                   <h4 className="text-sm font-bold text-emerald-400 font-display uppercase tracking-wide flex items-center gap-2 mb-4">
                     <CheckCircleIcon className="h-4 w-4" /> Strengths
                   </h4>
                   <ul className="space-y-3">
-                    {activeResume.analysis.strengths.map((s, i) => (
+                    {activeResume.strengths.map((s, i) => (
                       <li key={i} className="text-sm text-zinc-300 flex items-start gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
                         <CheckCircleIcon className="h-5 w-5 text-emerald-500 flex-shrink-0" />
                         <span className="leading-relaxed font-medium">{s}</span>
@@ -217,14 +220,14 @@ export default function Studio() {
                 </div>
               )}
 
-              {activeResume.analysis?.areasForImprovement?.length > 0 && (
+              {activeResume.issues.length > 0 && (
                 <div className="bg-[#131318]/80 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
                   <h4 className="text-sm font-bold text-amber-400 font-display uppercase tracking-wide flex items-center gap-2 mb-4">
                     <LightBulbIcon className="h-4 w-4" /> Areas to Improve
                   </h4>
                   <ul className="space-y-3">
-                    {activeResume.analysis.areasForImprovement.map((s, i) => (
+                    {activeResume.issues.map((s, i) => (
                       <li key={i} className="text-sm text-zinc-300 flex items-start gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
                         <div className="h-5 w-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5 border border-amber-500/30">
                           <span className="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
@@ -243,7 +246,7 @@ export default function Studio() {
                 <SparklesIcon className="h-4 w-4 text-violet-400" /> Extracted Skills & Keywords
               </h4>
               
-              {activeResume.skills?.technical?.length > 0 && (
+              {activeResume.skills.technical.length > 0 && (
                 <div className="mb-5">
                   <p className="text-xs font-semibold text-zinc-500 mb-3 uppercase tracking-wider">Technical Skills</p>
                   <div className="flex flex-wrap gap-2">
@@ -251,7 +254,7 @@ export default function Studio() {
                   </div>
                 </div>
               )}
-              {activeResume.skills?.soft?.length > 0 && (
+              {activeResume.skills.soft.length > 0 && (
                 <div className="mb-5">
                   <p className="text-xs font-semibold text-zinc-500 mb-3 uppercase tracking-wider">Soft Skills</p>
                   <div className="flex flex-wrap gap-2">
@@ -260,13 +263,13 @@ export default function Studio() {
                 </div>
               )}
               
-              {activeResume.analysis?.missingKeywords?.length > 0 && (
+              {activeResume.missingKeywords.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-white/5">
                   <p className="text-xs font-semibold text-amber-500 mb-3 uppercase tracking-wider flex items-center gap-2">
                     <LightBulbIcon className="h-4 w-4" /> Suggested Keywords to Add
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {activeResume.analysis.missingKeywords.map((kw, i) => (
+                    {activeResume.missingKeywords.map((kw, i) => (
                       <span key={i} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold rounded-lg shadow-[0_0_10px_rgba(245,158,11,0.1)]">
                         + {kw}
                       </span>

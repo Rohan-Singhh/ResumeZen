@@ -5,7 +5,7 @@
 
 const { ocrSpace } = require('ocr-space-api-wrapper');
 const axios = require('axios');
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 const os = require('os');
 
@@ -20,11 +20,8 @@ const formatOcrResults = (ocrResult) => {
       text: '',
       metadata: {
         exitCode: ocrResult?.OCRExitCode || -1,
-        processingTimeInMs: ocrResult?.ProcessingTimeInMilliseconds || 0,
-        searchablePdfUrl: ocrResult?.SearchablePDFURL || null
-      },
-      overlay: [],
-      rawResult: ocrResult
+        processingTimeInMs: ocrResult?.ProcessingTimeInMilliseconds || 0
+      }
     };
   }
 
@@ -33,180 +30,159 @@ const formatOcrResults = (ocrResult) => {
     .map(result => result.ParsedText)
     .join('\n');
 
-  // Extract metadata
   const metadata = {
     exitCode: ocrResult.OCRExitCode,
     processingTimeInMs: ocrResult.ProcessingTimeInMilliseconds,
     ocrEngine: ocrResult.OCREngine || 2,
-    isPdf: ocrResult.IsErroredOnProcessing === false,
-    searchablePdfUrl: ocrResult.SearchablePDFURL || null
+    isPdf: ocrResult.IsErroredOnProcessing === false
   };
 
-  // Extract text overlay information (word positions, etc.)
-  const overlay = [];
-  if (ocrResult.ParsedResults[0]?.TextOverlay?.Lines) {
-    ocrResult.ParsedResults[0].TextOverlay.Lines.forEach(line => {
-      overlay.push({
-        text: line.LineText,
-        words: line.Words.map(word => ({
-          text: word.WordText,
-          position: {
-            left: word.Left,
-            top: word.Top,
-            width: word.Width,
-            height: word.Height
-          }
-        }))
-      });
-    });
-  }
-
-  return {
-    text,
-    metadata,
-    overlay,
-    rawResult: ocrResult
-  };
+  return { text, metadata };
 };
 
 /**
- * Download file from URL to temp location
+ * Download a remote file to a temp path.
+ *
+ * Only used for the URL code path. The hot path (analyze-upload) passes the
+ * buffer it already holds in memory, which avoids this round trip entirely.
+ *
  * @param {string} url - File URL
  * @returns {Promise<string>} - Path to downloaded file
  */
 const downloadFile = async (url) => {
-  try {
-    console.log('Downloading file from URL:', url);
-    
-    // Download the file
-    const response = await axios.get(url, { 
-      responseType: 'arraybuffer',
-      timeout: 30000, // 30 second timeout
-      headers: {
-        'User-Agent': 'ResumeZen OCR Service/1.0'
-      }
-    });
-    
-    // Create a temporary file to save the downloaded content
-    const tempDir = os.tmpdir();
-    const fileExt = url.toLowerCase().includes('pdf') ? 'pdf' : 'jpg';
-    const tempFilePath = path.join(tempDir, `ocr-temp-${Date.now()}.${fileExt}`);
-    
-    console.log('Saving file to temporary location:', tempFilePath);
-    fs.writeFileSync(tempFilePath, response.data);
-    
-    return tempFilePath;
-  } catch (error) {
-    console.error('Error downloading file:', error);
-    throw new Error(`Failed to download file from URL: ${error.message}`);
-  }
+  const response = await axios.get(url, {
+    responseType: 'arraybuffer',
+    timeout: 30000,
+    headers: { 'User-Agent': 'ResumeZen OCR Service/1.0' }
+  });
+
+  const fileExt = url.toLowerCase().includes('pdf') ? 'pdf' : 'jpg';
+  const tempFilePath = path.join(os.tmpdir(), `ocr-temp-${Date.now()}.${fileExt}`);
+  await fs.writeFile(tempFilePath, response.data);
+
+  return tempFilePath;
 };
 
 /**
- * Extract text from image or PDF
+ * Build the OCR Space request options.
+ *
+ * `isOverlayRequired` and `isCreateSearchablePdf` are deliberately off: the
+ * overlay (per-word bounding boxes) and the generated searchable PDF were
+ * never read downstream, but both inflate OCR processing time and response
+ * size on every single analysis.
+ *
+ * @param {Object} options - Caller options
+ * @returns {Object} - OCR Space options
+ */
+const buildOcrOptions = (options = {}) => {
+  const apiKey = process.env.OCR_SPACE_API_KEY;
+  if (!apiKey) {
+    throw new Error('OCR API key is not configured. Please set OCR_SPACE_API_KEY in environment variables.');
+  }
+
+  return {
+    apiKey,
+    language: options.language || 'eng',
+    OCREngine: options.OCREngine || options.ocrEngine || options.engine || 2,
+    isTable: options.isTable === true,
+    scale: options.scale !== false,
+    isOverlayRequired: false,
+    isCreateSearchablePdf: false
+  };
+};
+
+/**
+ * Extract text directly from an in-memory file buffer.
+ *
+ * This is the fast path. Previously every analysis went
+ * RAM -> Cloudinary -> download to temp disk -> upload to OCR; the buffer is
+ * already here, so hand it straight to the OCR API as a data URI.
+ *
+ * @param {Buffer} buffer - File contents
+ * @param {string} mimeType - File MIME type, e.g. 'application/pdf'
+ * @param {Object} options - Additional OCR options
+ * @returns {Promise<Object>} - OCR results
+ */
+const extractTextFromBuffer = async (buffer, mimeType = 'application/pdf', options = {}) => {
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+    throw new Error('extractTextFromBuffer requires a non-empty Buffer');
+  }
+
+  const ocrOptions = buildOcrOptions(options);
+  const dataUri = `data:${mimeType};base64,${buffer.toString('base64')}`;
+
+  const result = await ocrSpace(dataUri, ocrOptions);
+  const formatted = formatOcrResults(result);
+  formatted.metadata.sourceType = 'buffer';
+
+  if (!formatted.text) {
+    throw new Error(
+      result?.ErrorMessage
+        ? `OCR failed: ${[].concat(result.ErrorMessage).join('; ')}`
+        : 'OCR returned no text'
+    );
+  }
+
+  return formatted;
+};
+
+/**
+ * Extract text from an image or PDF given a URL, file path, or base64 string.
  * @param {string} source - URL, file path, or base64 string of the document
  * @param {Object} options - Additional OCR options
  * @returns {Promise<Object>} - OCR results
  */
 const extractText = async (source, options = {}) => {
+  const ocrOptions = buildOcrOptions(options);
+
+  let tempFilePath = null;
+  let sourceType = 'unknown';
+  let target = source;
+
   try {
-    // Set API key from environment variable, no fallback to prevent exposure
-    const apiKey = process.env.OCR_SPACE_API_KEY;
-    
-    if (!apiKey) {
-      console.error('OCR_SPACE_API_KEY environment variable is not set');
-      throw new Error('OCR API key is not configured. Please set OCR_SPACE_API_KEY in environment variables.');
-    }
-    
-    let tempFilePath = null;
-    let sourceType = 'unknown';
-    
-    // Default options for OCR Space
-    const defaultOptions = {
-      apiKey,
-      isCreateSearchablePdf: true,
-      isSearchablePdfHideTextLayer: false,
-      isTable: true,
-      language: options.language || 'eng',
-      OCREngine: options.OCREngine || 2, // More accurate engine
-      isOverlayRequired: true,
-      scale: options.scale !== false,
-      ...options
-    };
-    
-    console.log('Extracting text with options:', {
-      language: defaultOptions.language,
-      engine: defaultOptions.OCREngine,
-      scale: defaultOptions.scale,
-      isTable: defaultOptions.isTable
-    });
-    
-    // Handle different source types
-    if (source && typeof source === 'string') {
-      // Handle HTTP/HTTPS URLs (including relative URLs converted to absolute)
+    if (typeof source === 'string') {
       if (source.startsWith('http://') || source.startsWith('https://')) {
-        console.log('Processing source type: URL');
         sourceType = 'url';
         tempFilePath = await downloadFile(source);
-        source = tempFilePath;
-      } 
-      // Handle relative URLs (example: '/api/uploads/file.pdf')
-      else if (source.startsWith('/api') || source.startsWith('/uploads')) {
-        console.log('Processing source type: Relative URL');
+        target = tempFilePath;
+      } else if (source.startsWith('/api') || source.startsWith('/uploads')) {
         sourceType = 'relative_url';
-        // Get the base URL from environment or use localhost
         const baseUrl = process.env.API_BASE_URL || 'http://localhost:5000';
-        const absoluteUrl = `${baseUrl}${source}`;
-        
-        tempFilePath = await downloadFile(absoluteUrl);
-        source = tempFilePath;
-      }
-      // Handle base64 data
-      else if (source.startsWith('data:')) {
-        console.log('Processing source type: Base64');
+        tempFilePath = await downloadFile(`${baseUrl}${source}`);
+        target = tempFilePath;
+      } else if (source.startsWith('data:')) {
         sourceType = 'base64';
-        // OCR Space can handle base64 directly, no need to save to a file
-      }
-      // Handle local file path
-      else if (fs.existsSync(source)) {
-        console.log('Processing source type: File path');
+      } else {
         sourceType = 'file_path';
-        // No need to do anything, OCR Space can handle file paths
-      }
-      else {
-        console.log('Processing source type: Unknown string');
-        sourceType = 'unknown_string';
-        // Treat as plain text or file path
       }
     }
-    
-    // Process the source with OCR
-    console.log('Processing source with OCR Space');
-    const result = await ocrSpace(source, defaultOptions);
-    
-    // Clean up temporary file if created
-    if (tempFilePath && fs.existsSync(tempFilePath)) {
-      fs.unlinkSync(tempFilePath);
-      console.log('Cleaned up temporary file:', tempFilePath);
+
+    const result = await ocrSpace(target, ocrOptions);
+    const formatted = formatOcrResults(result);
+    formatted.metadata.sourceType = sourceType;
+
+    if (!formatted.text) {
+      throw new Error(
+        result?.ErrorMessage
+          ? `OCR failed: ${[].concat(result.ErrorMessage).join('; ')}`
+          : 'OCR returned no text'
+      );
     }
-    
-    // Format and return the OCR results
-    const formattedResults = formatOcrResults(result);
-    
-    // Add source type to metadata
-    formattedResults.metadata = {
-      ...formattedResults.metadata,
-      sourceType
-    };
-    
-    return formattedResults;
+
+    return formatted;
   } catch (error) {
-    console.error('OCR extraction failed:', error);
+    console.error('OCR extraction failed:', error.message);
     throw new Error(`Failed to extract text from document: ${error.message}`);
+  } finally {
+    if (tempFilePath) {
+      // Best effort — a leftover temp file must not fail the request
+      await fs.unlink(tempFilePath).catch(() => {});
+    }
   }
 };
 
 module.exports = {
   extractText,
+  extractTextFromBuffer,
   formatOcrResults
-}; 
+};

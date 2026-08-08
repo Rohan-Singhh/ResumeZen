@@ -49,6 +49,9 @@ const UserAuthSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// Every login looks the user up by email before falling back to firebaseUid
+UserAuthSchema.index({ email: 1 }, { sparse: true });
+
 // Pre-save middleware to ensure at least one of email or mobileNumber is provided
 UserAuthSchema.pre('save', function(next) {
   if (!this.email && !this.mobileNumber) {

@@ -55,12 +55,12 @@ export default function ActivityTimeline({ history, onSelectResume }) {
 
             <div className="space-y-1">
               {items.map((item, i) => {
-                const score = typeof item.analysis?.atsScore === 'number' ? item.analysis.atsScore : null;
+                const score = item.overallScore;
                 const isLatest = i === 0;
 
                 return (
                   <motion.div
-                    key={item._id}
+                    key={item.id}
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.05 * i }}
@@ -87,7 +87,7 @@ export default function ActivityTimeline({ history, onSelectResume }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <p className="text-sm font-semibold text-zinc-200 truncate">
-                          {item.contactInformation?.name || 'Resume analyzed'}
+                          {item.contactInformation.name || 'Resume analyzed'}
                         </p>
                         {score !== null && (
                           <span className={`text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded ${

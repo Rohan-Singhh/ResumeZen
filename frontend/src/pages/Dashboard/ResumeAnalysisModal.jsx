@@ -12,8 +12,8 @@ import {
   CpuChipIcon,
   ChartBarIcon,
   SparklesIcon,
+  FaceFrownIcon,
 } from '@heroicons/react/24/outline';
-import sadRobotError from '../../assets/sad_robot_error.png';
 
 const STEPS = [
   { label: 'Upload Resume', icon: DocumentMagnifyingGlassIcon, color: 'blue' },
@@ -135,7 +135,9 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
 
       (async () => {
         try {
-          const res = await analyzeUploadResume(fileDetails.rawFile, { model: 'poolside/laguna-xs.2:free' });
+          // No model override — the backend's DEFAULT_MODEL (aiAnalysisService.js)
+          // is the single source of truth for which model to use.
+          const res = await analyzeUploadResume(fileDetails.rawFile);
           if (res?.success && res?.data?.analysis?.structured) {
             setProgress(100);
             setCurrentStep(4);
@@ -143,7 +145,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
             setSavedAnalysisData(res);
             
             // Invalidate React Query cache so the history updates instantly
-            queryClient.invalidateQueries({ queryKey: ['resumeHistory', currentUser?.uid] });
+            queryClient.invalidateQueries({ queryKey: ['resumeHistory', currentUser?._id] });
 
             setTimeout(() => {
               setResult(res.data.analysis.structured);
@@ -366,11 +368,9 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
             <div className="p-8 sm:p-10 text-center relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-red-500/10 rounded-full blur-[80px] pointer-events-none" />
               <div className="relative z-10">
-                <img
-                  src={sadRobotError}
-                  alt="Error"
-                  className="w-24 h-24 mx-auto rounded-2xl object-cover shadow-[0_0_30px_rgba(239,68,68,0.25)] border border-red-500/30 mb-5"
-                />
+                <div className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.25)] border border-red-500/30 bg-red-500/10 mb-5">
+                  <FaceFrownIcon className="h-12 w-12 text-red-400" />
+                </div>
                 <h3 className="text-xl font-extrabold text-white mb-2 font-display">
                   Analysis Failed
                 </h3>

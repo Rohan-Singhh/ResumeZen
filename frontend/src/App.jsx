@@ -1,18 +1,29 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState, createContext, useContext, useEffect, useCallback, useRef } from 'react';
+import { useState, createContext, useContext, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import Landing from './pages/Landing';
-import SuccessStoriesPage from './pages/SuccessStoriesPage';
-import Login from './pages/Login';
 import AuthGuard from './components/auth/AuthGuard';
 import PageTransition from './components/PageTransition';
 
-import DashboardLayout from './pages/Dashboard/DashboardLayout';
-import DashboardWelcome from './pages/Dashboard/DashboardWelcome';
-import DashboardProfileEdit from './pages/Dashboard/DashboardProfileEdit';
-import DashboardPlan from './pages/Dashboard/DashboardPlan';
-import Studio from './pages/Dashboard/Studio';
-import DashboardJobs from './pages/Dashboard/DashboardJobs';
+// Landing is the entry point for logged-out visitors and stays eager. Everything
+// else is split out so a first-time visitor does not download the whole
+// dashboard, its charts, and the auth flow before seeing the marketing page.
+const SuccessStoriesPage = lazy(() => import('./pages/SuccessStoriesPage'));
+const Login = lazy(() => import('./pages/Login'));
+const DashboardLayout = lazy(() => import('./pages/Dashboard/DashboardLayout'));
+const DashboardWelcome = lazy(() => import('./pages/Dashboard/DashboardWelcome'));
+const DashboardProfileEdit = lazy(() => import('./pages/Dashboard/DashboardProfileEdit'));
+const DashboardPlan = lazy(() => import('./pages/Dashboard/DashboardPlan'));
+const Studio = lazy(() => import('./pages/Dashboard/Studio'));
+const DashboardJobs = lazy(() => import('./pages/Dashboard/DashboardJobs'));
+
+function RouteFallback() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-zinc-950">
+      <div className="h-10 w-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 // Create a global loading context
 export const LoadingContext = createContext({
@@ -125,26 +136,28 @@ function AnimatedRoutes() {
       </AnimatePresence>
       
       <AnimatePresence initial={false}>
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
-          <Route path="/success-stories" element={<PageTransition><SuccessStoriesPage /></PageTransition>} />
-          <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
-          
-          {/* Dashboard routes with auth protection */}
-          <Route path="/dashboard" element={
-            <AuthGuard>
-              <PageTransition>
-                <DashboardLayout />
-              </PageTransition>
-            </AuthGuard>
-          }>
-            <Route index element={<DashboardWelcome />} />
-            <Route path="profile" element={<DashboardProfileEdit />} />
-            <Route path="plans" element={<DashboardPlan />} />
-            <Route path="studio" element={<Studio />} />
-            <Route path="jobs" element={<DashboardJobs />} />
-          </Route>
-        </Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+            <Route path="/success-stories" element={<PageTransition><SuccessStoriesPage /></PageTransition>} />
+            <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+
+            {/* Dashboard routes with auth protection */}
+            <Route path="/dashboard" element={
+              <AuthGuard>
+                <PageTransition>
+                  <DashboardLayout />
+                </PageTransition>
+              </AuthGuard>
+            }>
+              <Route index element={<DashboardWelcome />} />
+              <Route path="profile" element={<DashboardProfileEdit />} />
+              <Route path="plans" element={<DashboardPlan />} />
+              <Route path="studio" element={<Studio />} />
+              <Route path="jobs" element={<DashboardJobs />} />
+            </Route>
+          </Routes>
+        </Suspense>
       </AnimatePresence>
     </>
   );

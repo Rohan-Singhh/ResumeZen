@@ -49,8 +49,8 @@ const severityConfig = {
 };
 
 export default function AiInsightsPanel({ latestAnalysis, onViewReport }) {
-  const issues = latestAnalysis?.analysis?.areasForImprovement || [];
-  const strengths = latestAnalysis?.analysis?.strengths || [];
+  const issues = latestAnalysis?.issues || [];
+  const strengths = latestAnalysis?.strengths || [];
 
   if (!latestAnalysis) {
     return (

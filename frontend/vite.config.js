@@ -14,4 +14,19 @@ export default defineConfig({
       }
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the big, rarely-changing dependencies into their own chunks so
+        // they stay cached across deploys instead of being invalidated every
+        // time application code changes.
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-query': ['@tanstack/react-query'],
+        },
+      },
+    },
+  },
 })

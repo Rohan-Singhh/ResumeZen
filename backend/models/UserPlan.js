@@ -29,4 +29,7 @@ const UserPlanSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// Credit checks always look up active plans for a user, newest purchase first
+UserPlanSchema.index({ userId: 1, isActive: 1, purchasedAt: -1 });
+
 module.exports = mongoose.model('UserPlan', UserPlanSchema); 

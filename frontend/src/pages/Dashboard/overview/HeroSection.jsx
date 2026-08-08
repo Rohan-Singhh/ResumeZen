@@ -10,11 +10,11 @@ import {
 
 export default function HeroSection({ currentUser, latestAnalysis, previousAnalysis }) {
   const firstName = currentUser?.name?.split(' ')[0] || 'there';
-  const latestScore = latestAnalysis?.analysis?.atsScore ?? null;
-  const prevScore = previousAnalysis?.analysis?.atsScore ?? null;
+  const latestScore = latestAnalysis?.overallScore ?? null;
+  const prevScore = previousAnalysis?.overallScore ?? null;
   const scoreDiff = latestScore !== null && prevScore !== null ? latestScore - prevScore : null;
-  const issueCount = latestAnalysis?.analysis?.areasForImprovement?.length || 0;
-  const strengthCount = latestAnalysis?.analysis?.strengths?.length || 0;
+  const issueCount = latestAnalysis?.issues.length || 0;
+  const strengthCount = latestAnalysis?.strengths.length || 0;
 
   // Animated count-up for the score ring
   const [displayScore, setDisplayScore] = useState(0);
