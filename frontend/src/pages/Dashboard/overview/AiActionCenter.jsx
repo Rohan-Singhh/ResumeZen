@@ -188,7 +188,7 @@ export default function AiActionCenter({ latestAnalysis }) {
               className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
                 isDone
                   ? 'bg-white/[0.02] opacity-50'
-                  : 'hover:bg-white/[0.03] border border-transparent hover:border-white/[0.06]'
+                  : 'hover:bg-white/[0.03] border border-transparent hover:border-white/[0.06] hover:shadow-lg'
               }`}
             >
               {/* Checkbox */}

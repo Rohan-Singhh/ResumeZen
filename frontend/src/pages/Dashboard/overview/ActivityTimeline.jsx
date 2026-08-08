@@ -65,7 +65,7 @@ export default function ActivityTimeline({ history, onSelectResume }) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.05 * i }}
                     onClick={() => onSelectResume?.(item)}
-                    className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/[0.03] cursor-pointer transition-all relative"
+                    className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/[0.03] cursor-pointer transition-all relative hover:scale-[1.02]"
                   >
                     {/* Dot */}
                     <div className="relative flex-shrink-0 mt-1">
