@@ -39,7 +39,7 @@ export default function UploadZone({
       {/* Dynamic glow that changes color based on state */}
       <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 transition-all duration-500 ${
         isDragging ? 'bg-violet-500/[0.08]' : uploadSuccess ? 'bg-emerald-500/[0.05]' : 'bg-violet-500/[0.03]'
-      } blur-[60px] pointer-events-none`} />
+      } blur-[60px] pointer-events-none" />
 
       <div className="flex items-center justify-center gap-3 mb-6 relative z-10">
         <div className={`p-2 rounded-xl border transition-all duration-300 ${
@@ -56,6 +56,9 @@ export default function UploadZone({
         <h3 className="text-xl font-bold text-zinc-100 font-display">
           {uploadSuccess ? 'Upload Complete!' : isUploading ? 'Uploading...' : 'Upload Resume'}
         </h3>
+        {isUploading && (
+          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Processing...</span>
+        )}
       </div>
 
       {errorMessage && (
