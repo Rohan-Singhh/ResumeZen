@@ -70,20 +70,23 @@ export default function ResumeHealthRadar({ latestAnalysis }) {
 
   const overallColor = overallScore >= 70 ? 'emerald' : overallScore >= 40 ? 'amber' : 'red';
 
+  const scoreColorClass = overallColor === 'emerald' ? 'text-emerald-400' : overallColor === 'amber' ? 'text-amber-400' : 'text-red-400';
+  const scoreBgClass = overallColor === 'emerald' ? 'bg-emerald-500/10 border-emerald-500/20' : overallColor === 'amber' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20';
+
   return (
-    <div className="bg-[#0d0d12]/80 backdrop-blur-md border border-white/[0.06] rounded-xl p-6 relative overflow-hidden">
-      <div className="absolute bottom-0 right-0 w-48 h-48 bg-emerald-500/[0.03] blur-[60px] rounded-full pointer-events-none" />
+    <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 relative overflow-hidden hover:border-white/[0.15] transition-all duration-300">
+      <div className="absolute bottom-0 right-0 w-48 h-48 bg-emerald-500/[0.03] blur-[60px rounded-full pointer-events-none group-hover:bg-emerald-500/[0.05] transition-colors" />
 
       {/* Header with overall score */}
       <div className="flex items-center justify-between mb-6 relative z-10">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+          <div className="p-1.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
             <HeartIcon className="h-4 w-4 text-emerald-400" />
           </div>
-          <h3 className="text-base font-bold text-zinc-100 font-display">Resume Health</h3>
+          <h3 className="text-lg font-bold text-zinc-100 font-display">Resume Health</h3>
         </div>
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-${overallColor}-500/10 border border-${overallColor}-500/20`}>
-          <span className={`text-xl font-extrabold text-${overallColor}-400 font-display tabular-nums`}>{overallScore}%</span>
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-${overallColor}-500/10 border border-${overallColor}-500/20 shadow-sm`}>
+          <span className={`text-2xl font-extrabold text-${overallColor}-400 font-display tabular-nums`}>{overallScore}%</span>
           <span className={`text-[9px] font-bold text-${overallColor}-400/70 uppercase tracking-wider`}>Overall</span>
         </div>
       </div>
