@@ -1,103 +1,42 @@
 /**
  * Resume Routes
- * 
- * Handles resume uploads to Cloudinary
+ *
+ * Two endpoints, both authenticated:
+ *   POST /api/resume/analyze-upload — upload + OCR + AI analysis in one call
+ *   GET  /api/resume/history        — the user's past analyses
+ *
+ * The previous unauthenticated helpers (/parse, /parse-url, /extract-text,
+ * /analyze, /ai-analysis, /process) were removed: nothing in the app called
+ * them, and they let anyone spend the project's OCR and OpenRouter quota.
  */
 
 const express = require('express');
 const router = express.Router();
 const fileUpload = require('express-fileupload');
-const { parseResume, extractResumeText, analyzeResumeWithAI, processResume } = require('../services/resumeParserService');
-const { uploadPdf, uploadPdfFromBuffer } = require('../services/uploadService');
-const axios = require('axios');
+const { extractResumeTextFromBuffer, analyzeExtraction } = require('../services/resumeParserService');
+const { uploadPdfFromBuffer } = require('../services/uploadService');
 const authMiddleware = require('../middleware/authMiddleware');
 const UserPlan = require('../models/UserPlan');
 const ResumeAnalysis = require('../models/ResumeAnalysis');
 
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB
+
+const VALID_MIME_TYPES = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/jpg'
+];
+
 // Middleware for handling file uploads
 router.use(fileUpload({
   useTempFiles: false, // Avoid disk I/O, keep files in RAM
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: MAX_UPLOAD_BYTES },
   abortOnLimit: true
 }));
 
 /**
- * Parse Resume endpoint
- * POST /api/resume/parse
- * Uploads the file to Cloudinary and returns the URL
- */
-router.post('/parse', async (req, res) => {
-  try {
-    // Check for file in the request
-    if (!req.files || !req.files.resume) {
-      return res.status(400).json({
-        success: false,
-        message: 'No file uploaded'
-      });
-    }
-
-    const file = req.files.resume;
-    
-    // Validate file type (PDF, images)
-    const validMimeTypes = [
-      'application/pdf', 
-      'image/png', 
-      'image/jpeg', 
-      'image/jpg'
-    ];
-    
-    if (!validMimeTypes.includes(file.mimetype)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Only PDF and image files (PNG, JPG) are allowed'
-      });
-    }
-
-    // Upload the file to Cloudinary
-    const uploadResult = await uploadPdf(file);
-    
-    // Basic validation of the file
-    const parseResult = await parseResume(file);
-
-    if (!parseResult.success) {
-      return res.status(422).json({
-        success: false,
-        message: 'Unable to process resume file',
-        error: parseResult.error,
-        uploadInfo: uploadResult // Still return upload info so the file is not lost
-      });
-    }
-
-    // Return Cloudinary info
-    const responseData = {
-      fileInfo: {
-        url: uploadResult.secure_url,
-        publicId: uploadResult.public_id,
-        format: uploadResult.format,
-        resourceType: uploadResult.resource_type,
-        size: uploadResult.bytes,
-        originalName: file.name,
-        createdAt: uploadResult.created_at
-      }
-    };
-
-    return res.status(200).json({
-      success: true,
-      message: 'Resume uploaded successfully',
-      data: responseData
-    });
-  } catch (error) {
-    console.error('Resume upload error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error processing resume',
-      error: error.message
-    });
-  }
-});
-
-/**
- * ACID Optimized Endpoint: Upload + Process directly from RAM
+ * Upload + Process directly from RAM
  * POST /api/resume/analyze-upload
  */
 router.post('/analyze-upload', authMiddleware, async (req, res) => {
@@ -105,411 +44,114 @@ router.post('/analyze-upload', authMiddleware, async (req, res) => {
     if (!req.files || !req.files.resume) {
       return res.status(400).json({ success: false, message: 'No resume file uploaded' });
     }
-    
+
     const file = req.files.resume;
     const userId = req.user.userId;
-    
+
+    if (!VALID_MIME_TYPES.includes(file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Only PDF and image files (PNG, JPG) are allowed'
+      });
+    }
+
     // 1. Verify and deduct credit BEFORE uploading to save Cloudinary storage and bandwidth
     const userPlans = await UserPlan.find({ userId, isActive: true }).populate('planId').sort({ purchasedAt: -1 });
     if (!userPlans || userPlans.length === 0) {
       return res.status(403).json({ success: false, message: 'No active plan found' });
     }
-    
+
     const now = new Date();
-    const userPlan = userPlans.find(p => 
+    const userPlan = userPlans.find(p =>
       p.planId && (!p.expiresAt || new Date(p.expiresAt) > now) && (p.planId.isUnlimited || p.creditsLeft > 0)
     );
-    
+
     if (!userPlan) {
       return res.status(403).json({ success: false, message: 'No credits remaining' });
     }
-    
+
     // Deduct credit
     if (!userPlan.planId.isUnlimited) {
       userPlan.creditsLeft -= 1;
       await userPlan.save();
       console.log(`[analyze-upload] Deducted 1 credit for user ${userId}.`);
     }
-    
-    // 2. Upload to Cloudinary directly from RAM buffer
-    let uploadResult;
-    try {
-      uploadResult = await uploadPdfFromBuffer(file.data, file.name || 'resume.pdf');
-    } catch (uploadErr) {
-      // Rollback: Refund if upload fails
-      if (!userPlan.planId.isUnlimited) {
-        userPlan.creditsLeft += 1;
-        await userPlan.save();
-      }
-      throw new Error('Cloudinary upload failed: ' + uploadErr.message);
-    }
-    
-    // 3. Process Resume (OCR + AI)
+
+    // Refund helper — every failure path below must go through this
+    const refund = async (reason) => {
+      if (userPlan.planId.isUnlimited) return;
+      userPlan.creditsLeft += 1;
+      await userPlan.save();
+      console.log(`[analyze-upload] Refunded 1 credit for user ${userId}: ${reason}`);
+    };
+
     const options = {
       language: req.body.language || 'eng',
       scale: req.body.scale !== 'false',
-      isTable: req.body.isTable !== 'false',
+      isTable: req.body.isTable === 'true',
       engine: req.body.engine ? parseInt(req.body.engine, 10) : 2,
-      model: req.body.model || 'poolside/laguna-xs.2:free',
-      prompt: req.body.prompt,
-      systemPrompt: req.body.systemPrompt,
+      model: req.body.model,
       userId,
-      planId: userPlan._id,
-      resumeUrl: uploadResult.secure_url
+      planId: userPlan._id
     };
-    
-    const processResult = await processResume(uploadResult.secure_url, options);
-    
+
+    // 2. Upload to Cloudinary and OCR the buffer concurrently.
+    // OCR no longer needs the Cloudinary URL — it reads the bytes we already
+    // hold — so the upload is off the critical path.
+    const [uploadSettled, extractionSettled] = await Promise.allSettled([
+      uploadPdfFromBuffer(file.data, file.name || 'resume.pdf'),
+      extractResumeTextFromBuffer(file.data, file.mimetype, options)
+    ]);
+
+    if (uploadSettled.status === 'rejected') {
+      await refund('Cloudinary upload failed');
+      throw new Error('Cloudinary upload failed: ' + uploadSettled.reason?.message);
+    }
+    const uploadResult = uploadSettled.value;
+
+    if (extractionSettled.status === 'rejected' || !extractionSettled.value.success) {
+      const reason = extractionSettled.status === 'rejected'
+        ? extractionSettled.reason?.message
+        : extractionSettled.value.error;
+      await refund('OCR failed');
+      return res.status(422).json({
+        success: false,
+        message: 'Failed to read text from your resume',
+        error: reason
+      });
+    }
+
+    // 3. Analyze the extracted text
+    const processResult = await analyzeExtraction(extractionSettled.value, {
+      ...options,
+      resumeUrl: uploadResult.secure_url
+    });
+
     if (!processResult.success) {
-      // 4. Rollback: refund credit if processing failed
-      if (!userPlan.planId.isUnlimited) {
-        userPlan.creditsLeft += 1;
-        await userPlan.save();
-        console.log(`[analyze-upload] Refunded 1 credit for user ${userId} due to analysis failure.`);
-      }
+      await refund('analysis failed');
       return res.status(422).json({
         success: false,
         message: 'Failed to process resume',
         error: processResult.error
       });
     }
-    
-    const usedFallback = processResult.data.analysis?.usedFallback || false;
-    
+
     return res.status(200).json({
       success: true,
-      message: usedFallback ? 'Resume processed with fallback AI' : 'Resume processed successfully',
+      message: 'Resume processed successfully',
       data: processResult.data,
       fileInfo: {
         url: uploadResult.secure_url,
         publicId: uploadResult.public_id
       },
-      resumeAnalysisId: processResult.data.resumeAnalysisId || null,
-      usedFallback
+      resumeAnalysisId: processResult.data.resumeAnalysisId || null
     });
-    
+
   } catch (error) {
     console.error('Analyze-Upload error:', error);
     return res.status(500).json({
       success: false,
       message: 'Error during analyze and upload',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Parse from URL endpoint
- * POST /api/resume/parse-url
- * Simply returns the URL (for existing Cloudinary uploads)
- */
-router.post('/parse-url', async (req, res) => {
-  try {
-    const { resumeUrl, publicId } = req.body;
-    
-    if (!resumeUrl) {
-      return res.status(400).json({
-        success: false,
-        message: 'Resume URL is required'
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Resume URL processed successfully',
-      data: {
-        fileInfo: {
-          url: resumeUrl,
-          publicId: publicId
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Resume URL processing error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error processing resume URL',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Extract text from resume endpoint
- * POST /api/resume/extract-text
- * Uses OCR to extract text from a resume URL
- */
-router.post('/extract-text', async (req, res) => {
-  try {
-    const { url } = req.body;
-    
-    if (!url) {
-      return res.status(400).json({
-        success: false,
-        message: 'Resume URL is required'
-      });
-    }
-    
-    console.log('Extracting text from resume URL:', url);
-    
-    // Get OCR options from request
-    const options = {
-      language: req.body.language || 'eng',
-      scale: req.body.scale !== 'false',
-      isTable: req.body.isTable === 'true',
-      ocrEngine: req.body.engine ? parseInt(req.body.engine, 10) : 2
-    };
-    
-    // Use OCR service to extract text
-    const extractionResult = await extractResumeText(url, options);
-    
-    if (!extractionResult.success) {
-      return res.status(422).json({
-        success: false,
-        message: 'Failed to extract text from resume',
-        error: extractionResult.error
-      });
-    }
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Text extracted successfully from resume',
-      data: extractionResult.data
-    });
-  } catch (error) {
-    console.error('Text extraction error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error extracting text from resume',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Analyze resume endpoint
- * POST /api/resume/analyze
- * Analyzes a resume URL using OCR and provides basic stats
- */
-router.post('/analyze', async (req, res) => {
-  try {
-    const { url } = req.body;
-    
-    if (!url) {
-      return res.status(400).json({
-        success: false,
-        message: 'Resume URL is required'
-      });
-    }
-    
-    // Get OCR options from request
-    const options = {
-      language: req.body.language || 'eng',
-      scale: req.body.scale !== 'false',
-      isTable: req.body.isTable === 'true',
-      ocrEngine: req.body.engine ? parseInt(req.body.engine, 10) : 2
-    };
-    
-    // Extract text with OCR
-    const extractionResult = await extractResumeText(url, options);
-    
-    if (!extractionResult.success) {
-      return res.status(422).json({
-        success: false,
-        message: 'Failed to extract text from resume',
-        error: extractionResult.error
-      });
-    }
-    
-    // Return the extracted text with basic statistics
-    return res.status(200).json({
-      success: true,
-      message: 'Resume analyzed successfully',
-      data: {
-        extractedText: extractionResult.data.extractedText,
-        statistics: extractionResult.data.statistics,
-        metadata: extractionResult.data.metadata
-      }
-    });
-  } catch (error) {
-    console.error('Resume analysis error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error analyzing resume',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Process resume endpoint (OCR + AI)
- * POST /api/resume/process
- * Extracts text with OCR and analyzes it with AI
- */
-router.post('/process', authMiddleware, async (req, res) => {
-  try {
-    const { url } = req.body;
-    if (!url) {
-      return res.status(400).json({
-        success: false,
-        message: 'Resume URL is required'
-      });
-    }
-    const userId = req.user.userId;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required',
-        error: 'No userId in request context'
-      });
-    }
-    // Find all active user plans and pick the first valid one
-    const userPlans = await UserPlan.find({
-      userId,
-      isActive: true
-    }).populate('planId').sort({ purchasedAt: -1 });
-    
-    if (!userPlans || userPlans.length === 0) {
-      return res.status(403).json({
-        success: false,
-        message: 'No active plan found. Please purchase a plan.'
-      });
-    }
-    
-    const now = new Date();
-    const userPlan = userPlans.find(p => 
-      p.planId && 
-      (!p.expiresAt || new Date(p.expiresAt) > now) && 
-      (p.planId.isUnlimited || p.creditsLeft > 0)
-    );
-    
-    if (!userPlan) {
-      return res.status(403).json({
-        success: false,
-        message: 'No credits remaining or plan expired. Please buy more checks.'
-      });
-    }
-    // Deduct credit if not unlimited
-    if (!userPlan.planId.isUnlimited) {
-      userPlan.creditsLeft -= 1;
-      await userPlan.save();
-      console.log(`[process] Deducted 1 credit for user ${userId}, plan ${userPlan._id}. Credits left: ${userPlan.creditsLeft}`);
-    } else {
-      console.log(`[process] Unlimited plan for user ${userId}, no credit deduction.`);
-    }
-    // Build processing options from request
-    const options = {
-      language: req.body.language || 'eng',
-      scale: req.body.scale !== 'false',
-      isTable: req.body.isTable === 'true',
-      engine: req.body.engine ? parseInt(req.body.engine, 10) : 2,
-      model: req.body.model || 'poolside/laguna-xs.2:free',
-      prompt: req.body.prompt,
-      systemPrompt: req.body.systemPrompt,
-      userId,
-      planId: userPlan._id,
-      resumeUrl: url
-    };
-    // Use the resume parser service to process the resume
-    const processResult = await processResume(url, options);
-    if (!processResult.success) {
-      // If analysis fails, refund credit if not unlimited
-      if (!userPlan.planId.isUnlimited) {
-        userPlan.creditsLeft += 1;
-        await userPlan.save();
-        console.log(`[process] Refunded 1 credit for user ${userId} due to analysis failure.`);
-      }
-      return res.status(422).json({
-        success: false,
-        message: 'Failed to process resume',
-        error: processResult.error
-      });
-    }
-    // Check if we're using fallback analysis
-    const usedFallback = processResult.data.analysis?.usedFallback || false;
-    // Return appropriate response
-    return res.status(200).json({
-      success: true,
-      message: usedFallback ? 'Resume processed with fallback AI analysis' : 'Resume processed successfully',
-      data: processResult.data,
-      options: {
-        language: options.language,
-        engine: options.engine,
-        model: options.model
-      },
-      usedFallback,
-      resumeAnalysisId: processResult.data.resumeAnalysisId || null
-    });
-  } catch (error) {
-    console.error('Resume processing error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error processing resume',
-      error: error.message
-    });
-  }
-});
-
-/**
- * AI Analysis endpoint
- * POST /api/resume/ai-analysis
- * Analyzes resume text using AI
- */
-router.post('/ai-analysis', async (req, res) => {
-  try {
-    const { text, model, prompt, systemPrompt } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({
-        success: false,
-        message: 'Resume text is required'
-      });
-    }
-    
-    console.log('Analyzing resume text with AI, model:', model || 'default');
-    
-    // Options for AI analysis
-    const options = {
-      model: model || 'poolside/laguna-xs.2:free',
-      prompt: prompt,
-      systemPrompt: systemPrompt
-    };
-    
-    // Use AI service to analyze text
-    const analysisResult = await analyzeResumeWithAI(text, options);
-    
-    // If the analysis used fallback data but still succeeded
-    if (analysisResult.success && analysisResult.usedFallback) {
-      return res.status(200).json({
-        success: true,
-        message: 'Resume text analyzed with fallback system',
-        data: analysisResult.data,
-        model: options.model,
-        usedFallback: true
-      });
-    }
-    
-    // If the analysis completely failed with no fallback
-    if (!analysisResult.success) {
-      return res.status(422).json({
-        success: false,
-        message: 'Failed to analyze resume with AI',
-        error: analysisResult.error
-      });
-    }
-    
-    // Success without fallback
-    return res.status(200).json({
-      success: true,
-      message: 'Resume text analyzed successfully',
-      data: analysisResult.data,
-      model: options.model
-    });
-  } catch (error) {
-    console.error('AI analysis error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error analyzing resume with AI',
       error: error.message
     });
   }
@@ -523,10 +165,12 @@ router.post('/ai-analysis', async (req, res) => {
 router.get('/history', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
-    }
-    const history = await ResumeAnalysis.find({ userId }).sort({ createdAt: -1 });
+    // Exclude `raw` (the full AI response blob) — it is debug-only and dominates
+    // the payload. `.lean()` skips Mongoose document hydration for a read-only list.
+    const history = await ResumeAnalysis.find({ userId })
+      .select('-raw')
+      .sort({ createdAt: -1 })
+      .lean();
     return res.status(200).json({ success: true, data: history });
   } catch (error) {
     console.error('Error fetching resume analysis history:', error);
@@ -534,4 +178,4 @@ router.get('/history', authMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
