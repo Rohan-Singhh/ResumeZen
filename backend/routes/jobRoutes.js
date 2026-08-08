@@ -13,15 +13,53 @@ const JOB_SOURCES = {
   THE_MUSE: 'https://www.themuse.com/api/public/jobs'
 };
 
+const JOB_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+/**
+ * Process-local cache for upstream job responses.
+ *
+ * Job boards change on the order of hours, but every dashboard visit was
+ * re-fetching all three providers with a 10s timeout each. Keyed by source +
+ * query so a search does not poison the default listing.
+ *
+ * NOTE: this lives in process memory. It is correct for the current
+ * single-instance Render deployment; moving to multiple instances or a
+ * serverless host means each instance keeps its own copy (still correct, just
+ * a lower hit rate). Swap for Redis if that becomes a problem.
+ */
+const jobCache = new Map();
+
+/**
+ * Read through the cache to a fetcher.
+ * @param {string} key - Cache key
+ * @param {Function} fetcher - Async function producing the value
+ * @returns {Promise<Array>} - Cached or freshly fetched jobs
+ */
+const cached = async (key, fetcher) => {
+  const hit = jobCache.get(key);
+  if (hit && (Date.now() - hit.at) < JOB_CACHE_TTL_MS) {
+    return hit.value;
+  }
+
+  const value = await fetcher();
+
+  // Don't cache empty results — those usually mean the upstream call failed,
+  // and caching them would extend a transient outage to a full TTL.
+  if (value.length > 0) {
+    jobCache.set(key, { at: Date.now(), value });
+  }
+  return value;
+};
+
 /**
  * Fetch jobs from Remotive (remote-only jobs)
  */
-const fetchRemotiveJobs = async (searchQuery = '') => {
+const fetchRemotiveJobs = (searchQuery = '') => cached(`remotive:${searchQuery}`, async () => {
   try {
-    const url = searchQuery 
+    const url = searchQuery
       ? `${JOB_SOURCES.REMOTIVE}?search=${encodeURIComponent(searchQuery)}`
       : JOB_SOURCES.REMOTIVE;
-    
+
     const response = await axios.get(url, { timeout: 10000 });
     
     if (response.data && response.data.jobs) {
@@ -45,12 +83,12 @@ const fetchRemotiveJobs = async (searchQuery = '') => {
     console.error('Remotive fetch error:', error.message);
     return [];
   }
-};
+});
 
 /**
  * Fetch jobs from Arbeitnow (EU + worldwide remote tech jobs)
  */
-const fetchArbeitnowJobs = async () => {
+const fetchArbeitnowJobs = () => cached('arbeitnow', async () => {
   try {
     const response = await axios.get(JOB_SOURCES.ARBEITNOW, { timeout: 10000 });
     
@@ -74,14 +112,14 @@ const fetchArbeitnowJobs = async () => {
     console.error('Arbeitnow fetch error:', error.message);
     return [];
   }
-};
+});
 
 /**
  * Fetch jobs from The Muse (500 req/hour, free)
  */
-const fetchTheMuseJobs = async (category = 'Engineering') => {
+const fetchTheMuseJobs = (category = 'Engineering') => cached(`themuse:${category}`, async () => {
   try {
-    const response = await axios.get(`${JOB_SOURCES.THE_MUSE}?category=${category}&page=0`, { timeout: 10000 });
+    const response = await axios.get(`${JOB_SOURCES.THE_MUSE}?category=${encodeURIComponent(category)}&page=0`, { timeout: 10000 });
     
     if (response.data && response.data.results) {
       return response.data.results.slice(0, 30).map(job => ({
@@ -103,7 +141,7 @@ const fetchTheMuseJobs = async (category = 'Engineering') => {
     console.error('The Muse fetch error:', error.message);
     return [];
   }
-};
+});
 
 /**
  * @route   GET /api/jobs
@@ -165,6 +203,21 @@ router.post('/match', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'User profile is required' });
     }
 
+    // The client sends a whole analysis record. Only the career-relevant parts
+    // are useful for ranking, and the rest is pure prompt cost.
+    const profileForAI = {
+      summary: userProfile.summary,
+      skills: userProfile.skills,
+      workExperience: (userProfile.workExperience || []).map(w => ({
+        company: w.company,
+        position: w.position,
+        duration: w.duration
+      })),
+      education: userProfile.education,
+      certifications: userProfile.certifications,
+      location: userProfile.contactInformation?.location
+    };
+
     // Fetch from all sources in parallel
     const [remotiveJobs, arbeitnowJobs, museJobs] = await Promise.all([
       fetchRemotiveJobs('developer'),
@@ -172,26 +225,27 @@ router.post('/match', authMiddleware, async (req, res) => {
       fetchTheMuseJobs('Engineering')
     ]);
 
-    // Combine jobs (limit to 60 for AI processing)
-    const allJobs = [...remotiveJobs, ...arbeitnowJobs, ...museJobs].slice(0, 60);
+    // Combine jobs (limit to 40 for AI processing)
+    const allJobs = [...remotiveJobs, ...arbeitnowJobs, ...museJobs].slice(0, 40);
 
     if (allJobs.length === 0) {
       return res.status(404).json({ success: false, message: 'No jobs found from providers' });
     }
 
-    // Prepare jobs for AI (simpler format to save tokens)
+    // Trim aggressively before sending to the model — the full snippet and tag
+    // list across 40+ jobs dominated the prompt without improving ranking.
     const jobsList = allJobs.map(job => ({
       title: job.title,
       company: job.company,
       location: job.location,
       remote: job.remote,
       url: job.url,
-      tags: job.tags,
-      snippet: job.snippet
+      tags: (job.tags || []).slice(0, 5),
+      snippet: (job.snippet || '').slice(0, 200)
     }));
 
     // Call AI to match jobs
-    const aiMatchResult = await matchJobsWithAI(userProfile, jobsList);
+    const aiMatchResult = await matchJobsWithAI(profileForAI, jobsList);
 
     if (aiMatchResult.success) {
       return res.status(200).json({
