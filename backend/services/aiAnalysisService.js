@@ -18,7 +18,7 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
  * hardcode their own defaults — they previously disagreed three ways, which
  * meant most requests burned a failed call before falling back.
  */
-const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct';
+const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
 
 /**
  * Fallback chain, tried in order after the requested model.
@@ -28,7 +28,7 @@ const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct';
  */
 const FALLBACK_MODELS = [
   'google/gemini-2.0-flash-exp:free',
-  'mistralai/mistral-7b-instruct'
+  'mistralai/mistral-7b-instruct:free'
 ];
 
 /** Per-request budget for the whole model chain, in ms. */

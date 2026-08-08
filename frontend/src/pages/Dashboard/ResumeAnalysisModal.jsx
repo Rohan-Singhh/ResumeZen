@@ -135,7 +135,9 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
 
       (async () => {
         try {
-          const res = await analyzeUploadResume(fileDetails.rawFile, { model: 'poolside/laguna-xs.2:free' });
+          // No model override — the backend's DEFAULT_MODEL (aiAnalysisService.js)
+          // is the single source of truth for which model to use.
+          const res = await analyzeUploadResume(fileDetails.rawFile);
           if (res?.success && res?.data?.analysis?.structured) {
             setProgress(100);
             setCurrentStep(4);
