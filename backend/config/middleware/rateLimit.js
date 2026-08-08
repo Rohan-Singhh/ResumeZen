@@ -14,10 +14,8 @@ const configureRateLimit = (app) => {
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Add key generator to track by IP
-    keyGenerator: (req) => {
-      return req.ip || req.connection.remoteAddress;
-    },
+    // `req.ip` is now proxy-aware (see config/middleware/security.js), so the
+    // library default keys correctly. A custom keyGenerator is not needed.
     // Skip rate limiting for some low-risk endpoints
     skip: (req) => {
       // Allow unlimited access to static and public endpoints

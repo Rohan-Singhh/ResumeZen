@@ -6,6 +6,16 @@ const cors = require('cors');
  * @param {Express} app - Express application instance
  */
 const configureSecurity = (app) => {
+  // Render terminates TLS at a single proxy hop, so req.ip must come from the
+  // last X-Forwarded-For entry. Without this every request looks like it comes
+  // from the proxy and the whole userbase shares one rate-limit bucket.
+  // Keep this a hop count, never `true` — trusting the full chain lets a client
+  // spoof X-Forwarded-For and bypass the limiter entirely.
+  const trustProxy = process.env.TRUST_PROXY_HOPS
+    ? parseInt(process.env.TRUST_PROXY_HOPS, 10)
+    : 1;
+  app.set('trust proxy', trustProxy);
+
   // Apply helmet security headers
   app.use(helmet());
   
