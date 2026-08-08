@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import * as pdfUtils from '../../utils/pdfUtils';
-import { getResumeHistory } from '../../services/resumeService';
+import { normalizeAnalysis } from '../../utils/analysisSchema';
 import PlanModal from '../../components/PlanModal';
 import DashboardCreditConfirmationPopup from './dashboardwelcome/DashboardCreditConfirmationPopup';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
@@ -49,12 +47,11 @@ export default function DashboardWelcome() {
   const [activePlan, setActivePlan] = useState(null);
   const { data: history = [], isLoading: historyLoading } = useResumeHistory();
 
-  // Fetch plans
-  useEffect(() => { fetchUserPlans(true); }, [currentUser]);
-
+  // Plans are fetched by React Query in AuthContext; only cross-tab purchases
+  // need an explicit refetch here.
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'planPurchased') fetchUserPlans(true);
+      if (e.key === 'planPurchased') fetchUserPlans();
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -79,13 +76,19 @@ export default function DashboardWelcome() {
 
   const hasCredits = activePlan && (activePlan.planId.isUnlimited || activePlan.creditsLeft > 0);
 
-  // Derived analysis data
-  const latestAnalysis = history.length > 0 ? history[0] : null;
-  const previousAnalysis = history.length > 1 ? history[1] : null;
+  // Derived analysis data. Normalize once here so every child receives the
+  // canonical shape and none of them needs schema-version fallbacks.
+  const analyses = useMemo(() => history.map(normalizeAnalysis), [history]);
+  const latestAnalysis = analyses[0] || null;
+  const previousAnalysis = analyses[1] || null;
 
   // File handlers
+  // Must match MAX_UPLOAD_BYTES in backend/routes/resumeRoutes.js — the two
+  // previously disagreed (1MB here, 10MB there).
+  const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
   const validateFile = (file) => {
-    if (file.size > 1024 * 1024) { setFileSizeError(true); return false; }
+    if (file.size > MAX_UPLOAD_BYTES) { setFileSizeError(true); return false; }
     return true;
   };
 
@@ -137,8 +140,8 @@ export default function DashboardWelcome() {
     setUploadedFile(null);
     setUploadSuccess(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    // The query cache invalidation happens automatically inside the modal's useProcessResume hook,
-    // so we don't need to manually refetch history here!
+    // ResumeAnalysisModal invalidates the resumeHistory query on success, so
+    // there is no need to refetch history here.
   };
 
   const handleViewReport = (analysisResponse) => {
@@ -148,28 +151,18 @@ export default function DashboardWelcome() {
     setUploadedFile(null);
     setUploadSuccess(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    fetchUserPlans(true);
+    fetchUserPlans();
 
-    const structured = analysisResponse?.data?.analysis?.structured || {};
-    const resumeDetail = {
-      _id: analysisResponse?.resumeAnalysisId || 'temp',
-      createdAt: new Date().toISOString(),
-      contactInformation: structured.contactInformation || {},
-      overallScore: structured.overallScore || 0,
-      hiringRiskLevel: structured.hiringRiskLevel || 'Unknown',
-      recruiterScreening: structured.recruiterScreening || {},
-      atsOptimization: structured.atsOptimization || {},
-      technicalDepth: structured.technicalDepth || {},
-      impactAndOwnership: structured.impactAndOwnership || {},
-      // Keep legacy support
-      skills: structured.skills || {},
-      workExperience: structured.workExperience || [],
-      education: structured.education || [],
-      certifications: structured.certifications || [],
-      summary: structured.summary || '',
-      analysis: structured,  // Pass the full structured data
-    };
-    setSelectedResume(resumeDetail);
+    // The freshly analyzed result is not in the history cache yet, so normalize
+    // the raw structured payload and show it directly.
+    const structured = analysisResponse?.data?.analysis?.structured;
+    if (structured) {
+      setSelectedResume({
+        ...normalizeAnalysis(structured),
+        id: analysisResponse?.resumeAnalysisId || 'temp',
+        createdAt: new Date().toISOString()
+      });
+    }
     // React Query automatically handles refetching the history
   };
 
@@ -232,7 +225,7 @@ export default function DashboardWelcome() {
         </div>
         <div>
           <ActivityTimeline
-            history={history}
+            history={analyses}
             onSelectResume={setSelectedResume}
           />
         </div>

@@ -14,12 +14,12 @@ import {
 function generateTasks(analysis) {
   if (!analysis) return [];
   const tasks = [];
-  const atsScore = analysis.analysis?.atsScore ?? 0;
-  const improvements = analysis.analysis?.areasForImprovement || [];
-  const techSkills = analysis.skills?.technical?.length ?? 0;
-  const workExp = analysis.workExperience || [];
-  const summary = analysis.summary || '';
-  const keywords = analysis.analysis?.keywords || [];
+  const atsScore = analysis.atsScore ?? 0;
+  const improvements = analysis.issues;
+  const techSkills = analysis.skills.technical.length;
+  const workExp = analysis.workExperience;
+  const summary = analysis.summary;
+  const missingKeywords = analysis.missingKeywords;
 
   if (atsScore < 70) {
     tasks.push({
@@ -39,7 +39,7 @@ function generateTasks(analysis) {
     });
   }
 
-  if (!summary || summary === 'NA' || summary.length < 30) {
+  if (!summary || summary.length < 30) {
     tasks.push({
       id: 'add-summary',
       label: 'Write a compelling professional summary',
@@ -58,10 +58,10 @@ function generateTasks(analysis) {
     });
   }
 
-  if (keywords.length < 5) {
+  if (missingKeywords.length > 0) {
     tasks.push({
       id: 'add-keywords',
-      label: 'Add more ATS-optimized keywords',
+      label: `Add ${missingKeywords.length} missing ATS keyword${missingKeywords.length > 1 ? 's' : ''}: ${missingKeywords.slice(0, 3).join(', ')}`,
       priority: 'medium',
       icon: TagIcon,
     });

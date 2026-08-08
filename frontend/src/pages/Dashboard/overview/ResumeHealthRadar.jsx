@@ -1,28 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { HeartIcon } from '@heroicons/react/24/outline';
+import { skillCount } from '../../../utils/analysisSchema';
 
 function deriveCategories(analysis) {
   if (!analysis) return [];
 
-  const contact = analysis.contactInformation || {};
-  const skills = analysis.skills || {};
-  const work = analysis.workExperience || [];
-  const edu = analysis.education || [];
-  const ats = analysis.analysis?.atsScore ?? 0;
-  const strengths = analysis.analysis?.strengths?.length ?? 0;
-  const issues = analysis.analysis?.areasForImprovement?.length ?? 0;
+  const { contactInformation: contact, workExperience: work, education: edu } = analysis;
 
-  // Contact Completeness
+  // Contact Completeness — normalizeAnalysis already blanks 'NA' placeholders
   const contactFields = [contact.email, contact.phone, contact.location, contact.linkedin]
-    .filter(v => v && v !== 'NA' && v !== 'null' && v.trim().length > 0);
+    .filter(Boolean);
   const contactScore = Math.min(100, Math.round((contactFields.length / 4) * 100));
 
   // Skills Depth
-  const techCount = skills.technical?.length ?? 0;
-  const softCount = skills.soft?.length ?? 0;
-  const totalSkills = techCount + softCount;
-  const skillsScore = Math.min(100, Math.round((totalSkills / 15) * 100));
+  const skillsScore = Math.min(100, Math.round((skillCount(analysis) / 15) * 100));
 
   // Experience Quality
   const hasAchievements = work.some(w => w.achievements?.length > 0);
@@ -32,20 +24,14 @@ function deriveCategories(analysis) {
   // Education
   const eduScore = Math.min(100, edu.length * 50);
 
-  // ATS Compatibility (direct)
-  const atsCompat = ats;
-
-  // Content Quality
-  const qualityRatio = strengths > 0 ? strengths / Math.max(1, strengths + issues) : 0;
-  const contentScore = Math.round(qualityRatio * 100);
-
   return [
-    { label: 'ATS Compatibility', score: atsCompat, color: 'violet' },
+    { label: 'ATS Compatibility', score: analysis.atsScore ?? 0, color: 'violet' },
     { label: 'Contact Completeness', score: contactScore, color: 'cyan' },
     { label: 'Skills Depth', score: skillsScore, color: 'fuchsia' },
     { label: 'Experience Quality', score: expScore, color: 'amber' },
     { label: 'Education', score: eduScore, color: 'teal' },
-    { label: 'Content Quality', score: contentScore, color: 'emerald' },
+    { label: 'Technical Depth', score: analysis.technicalDepth?.score ?? 0, color: 'emerald' },
+    { label: 'Impact & Ownership', score: analysis.impactAndOwnership?.score ?? 0, color: 'rose' },
   ];
 }
 
@@ -56,6 +42,7 @@ const colorMap = {
   amber: { bar: 'from-amber-500 to-orange-500', bg: 'bg-amber-500/10', text: 'text-amber-400' },
   teal: { bar: 'from-teal-500 to-emerald-500', bg: 'bg-teal-500/10', text: 'text-teal-400' },
   emerald: { bar: 'from-emerald-500 to-green-500', bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+  rose: { bar: 'from-rose-500 to-pink-500', bg: 'bg-rose-500/10', text: 'text-rose-400' },
 };
 
 export default function ResumeHealthRadar({ latestAnalysis }) {

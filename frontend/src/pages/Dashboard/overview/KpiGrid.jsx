@@ -10,6 +10,7 @@ import {
   CreditCardIcon,
   BoltIcon,
 } from '@heroicons/react/24/outline';
+import { skillCount } from '../../../utils/analysisSchema';
 
 const kpiConfigs = [
   {
@@ -18,10 +19,10 @@ const kpiConfigs = [
     icon: ChartBarIcon,
     accent: 'violet',
     gradient: 'from-violet-500 to-fuchsia-500',
-    getValue: (d) => d.latestAnalysis?.analysis?.atsScore != null ? `${d.latestAnalysis.analysis.atsScore}%` : '—',
+    getValue: (d) => d.latestAnalysis?.atsScore != null ? `${d.latestAnalysis.atsScore}%` : '—',
     getTrend: (d) => {
-      const curr = d.latestAnalysis?.analysis?.atsScore;
-      const prev = d.previousAnalysis?.analysis?.atsScore;
+      const curr = d.latestAnalysis?.atsScore;
+      const prev = d.previousAnalysis?.atsScore;
       if (curr == null || prev == null) return null;
       return curr - prev;
     },
@@ -33,9 +34,8 @@ const kpiConfigs = [
     accent: 'cyan',
     gradient: 'from-cyan-500 to-blue-500',
     getValue: (d) => {
-      const t = d.latestAnalysis?.skills?.technical?.length || 0;
-      const s = d.latestAnalysis?.skills?.soft?.length || 0;
-      return t + s > 0 ? String(t + s) : '—';
+      const n = skillCount(d.latestAnalysis);
+      return n > 0 ? String(n) : '—';
     },
     getTrend: () => null,
   },
@@ -46,7 +46,7 @@ const kpiConfigs = [
     accent: 'emerald',
     gradient: 'from-emerald-500 to-teal-500',
     getValue: (d) => {
-      const c = d.latestAnalysis?.analysis?.strengths?.length;
+      const c = d.latestAnalysis?.strengths.length;
       return c ? String(c) : '—';
     },
     getTrend: () => null,
@@ -58,19 +58,20 @@ const kpiConfigs = [
     accent: 'amber',
     gradient: 'from-amber-500 to-orange-500',
     getValue: (d) => {
-      const c = d.latestAnalysis?.analysis?.areasForImprovement?.length;
+      const c = d.latestAnalysis?.issues.length;
       return c ? String(c) : '—';
     },
     getTrend: () => null,
   },
   {
+    // The audit reports keywords the resume is *missing*, not ones it matched.
     key: 'keywords',
-    label: 'Keywords Matched',
+    label: 'Keywords Missing',
     icon: TagIcon,
     accent: 'pink',
     gradient: 'from-pink-500 to-rose-500',
     getValue: (d) => {
-      const c = d.latestAnalysis?.analysis?.keywords?.length;
+      const c = d.latestAnalysis?.missingKeywords.length;
       return c ? String(c) : '—';
     },
     getTrend: () => null,
@@ -100,14 +101,15 @@ const kpiConfigs = [
     accent: 'fuchsia',
     gradient: 'from-fuchsia-500 to-violet-500',
     getValue: (d) => {
-      const ats = d.latestAnalysis?.analysis?.atsScore ?? 0;
-      const str = d.latestAnalysis?.analysis?.strengths?.length ?? 0;
-      const sk = (d.latestAnalysis?.skills?.technical?.length ?? 0) + (d.latestAnalysis?.skills?.soft?.length ?? 0);
       if (!d.latestAnalysis) return '—';
-      const composite = Math.min(100, Math.round(ats * 0.5 + str * 8 + sk * 1.5));
-      return `${composite}%`;
+      return d.latestAnalysis.overallScore != null ? `${d.latestAnalysis.overallScore}%` : '—';
     },
-    getTrend: () => null,
+    getTrend: (d) => {
+      const curr = d.latestAnalysis?.overallScore;
+      const prev = d.previousAnalysis?.overallScore;
+      if (curr == null || prev == null) return null;
+      return curr - prev;
+    },
   },
 ];
 
