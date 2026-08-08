@@ -67,16 +67,16 @@ export default function AiInsightsPanel({ latestAnalysis, onViewReport }) {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200 }}
-            className="relative mb-6"
+            className="relative mb-6 flex flex-col items-center"
           >
             <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 p-[2px] shadow-[0_0_20px_rgba(139,92,246,0.2)]">
               <div className="w-full h-full rounded-xl bg-[#0d0d12] flex items-center justify-center">
                 <SparklesIcon className="h-8 w-8 text-white" />
               </div>
-            </motion.div>
-            <h3 className="text-lg font-bold text-white mb-2">No Analysis Yet</h3>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 mt-4">No Analysis Yet</h3>
             <p className="text-sm text-zinc-400">Upload your resume to get AI-powered insights and improvement suggestions</p>
-          </div>
+          </motion.div>
         </div>
       </div>
     );
