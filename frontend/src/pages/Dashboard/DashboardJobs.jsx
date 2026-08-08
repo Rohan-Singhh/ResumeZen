@@ -80,11 +80,22 @@ export default function DashboardJobs() {
     }
   };
 
-  const timeAgo = (timestamp) => {
-    const now = new Date();
-    const date = new Date(timestamp * 1000); // Arbeitnow uses seconds
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    
+  /**
+   * Providers disagree on date format: Arbeitnow sends a Unix timestamp in
+   * seconds, Remotive and The Muse send ISO date strings. Multiplying an ISO
+   * string by 1000 produced NaN, so every card read "NaN days ago".
+   */
+  const timeAgo = (value) => {
+    if (!value) return 'Recently';
+
+    const date = typeof value === 'number'
+      ? new Date(value * 1000)
+      : new Date(value);
+
+    if (Number.isNaN(date.getTime())) return 'Recently';
+
+    const diffDays = Math.floor((Date.now() - date.getTime()) / 86400000);
+    if (diffDays < 0) return 'Today';
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     return `${diffDays} days ago`;
