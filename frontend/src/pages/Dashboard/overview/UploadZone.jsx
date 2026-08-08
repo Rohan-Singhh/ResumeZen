@@ -35,15 +35,27 @@ export default function UploadZone({
   onFileChange,
 }) {
   return (
-    <div className="bg-[#0d0d12]/80 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-8 relative overflow-hidden h-full flex flex-col justify-center shadow-xl">
-      {/* Subtle glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-violet-500/[0.05] blur-[60px] pointer-events-none" />
+    <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-8 relative overflow-hidden h-full flex flex-col justify-center shadow-xl">
+      {/* Dynamic glow that changes color based on state */}
+      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 transition-all duration-500 ${
+        isDragging ? 'bg-violet-500/[0.08]' : uploadSuccess ? 'bg-emerald-500/[0.05]' : 'bg-violet-500/[0.03]'
+      } blur-[60px] pointer-events-none`} />
 
       <div className="flex items-center justify-center gap-3 mb-6 relative z-10">
-        <div className="p-2 bg-violet-500/10 rounded-xl border border-violet-500/20">
-          <ArrowUpTrayIcon className="h-5 w-5 text-violet-400" />
+        <div className={`p-2 rounded-xl border transition-all duration-300 ${
+          isDragging ? 'bg-violet-500/20 border-violet-500/30 scale-110' : uploadSuccess ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-violet-500/10 border-violet-500/20'
+        }`}>
+          {uploadSuccess ? (
+            <CheckCircleIcon className="h-5 w-5 text-emerald-400" />
+          ) : isUploading ? (
+            <CloudIcon className="h-5 w-5 text-violet-400 animate-bounce" />
+          ) : (
+            <ArrowUpTrayIcon className="h-5 w-5 text-violet-400" />
+          )}
         </div>
-        <h3 className="text-xl font-bold text-zinc-100 font-display">Upload Resume</h3>
+        <h3 className="text-xl font-bold text-zinc-100 font-display">
+          {uploadSuccess ? 'Upload Complete!' : isUploading ? 'Uploading...' : 'Upload Resume'}
+        </h3>
       </div>
 
       {errorMessage && (
@@ -74,6 +86,18 @@ export default function UploadZone({
           <div className={`absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 ${isDragging ? 'opacity-100' : 'group-hover:opacity-50'}`}>
             <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-cyan-500/5 animate-gradient-xy" />
           </div>
+
+          {/* Idle pulse animation */}
+          <AnimatePresence>
+            {!isDragging && !uploadSuccess && !isUploading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/3 to-cyan-500/3 opacity-20"
+              />
+            )}
+          </AnimatePresence>
 
           {/* Floating particles */}
           <AnimatePresence>
