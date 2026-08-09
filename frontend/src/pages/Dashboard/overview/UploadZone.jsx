@@ -107,13 +107,14 @@ export default function UploadZone({
           <AnimatePresence>
             {isDragging && (
               <>
-                {new Array(6).fill(null).map((_, i) => (
+                {Array.from({ length: 6 }).map((_, i) => (
                   <motion.div
                     key={`particle-${i}`}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: [0.3, 0], scale: [0, 1, 0], y: [0, -50, -100] }}
                     transition={{ duration: 1.5, delay: i * 0.1 }}
                     className="absolute w-2 h-2 rounded-full bg-violet-400/50"
+                    // Intentional pseudorandom positioning for visual effect (not security-sensitive)
                     style={{
                       left: `${Math.random() * 80 + 10}%`,
                       top: `${Math.random() * 80 + 10}%`,
@@ -169,7 +170,7 @@ export default function UploadZone({
           
           {/* Animated background during upload */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl">
-            {new Array(8).fill(null).map((_, i) => (
+            {Array.from({ length: 8 }).map((_, i) => (
               <motion.div
                 key={`upload-particle-${i}`}
                 initial={{ opacity: 0, scale: 0 }}
@@ -180,6 +181,7 @@ export default function UploadZone({
                 }}
                 transition={{ duration: 3, repeat: Infinity, delay: i * 0.3 }}
                 className="absolute w-1 h-1 rounded-full bg-violet-400/30"
+                // Intentional pseudorandom positioning for visual effect (not security-sensitive)
                 style={{
                   left: `${Math.random() * 90 + 5}%`,
                   top: `${Math.random() * 90 + 5}%`,
