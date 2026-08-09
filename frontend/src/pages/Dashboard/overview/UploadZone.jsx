@@ -106,7 +106,7 @@ export default function UploadZone({
           <AnimatePresence>
             {isDragging && (
               <>
-                {[...new Array(6)].map((_, i) => (
+                {new Array(6).fill(null).map((_, i) => (
                   <motion.div
                     key={`particle-${i}`}
                     initial={{ opacity: 0, scale: 0 }}
@@ -168,7 +168,7 @@ export default function UploadZone({
           
           {/* Animated background during upload */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl">
-            {[...new Array(8)].map((_, i) => (
+            {new Array(8).fill(null).map((_, i) => (
               <motion.div
                 key={`upload-particle-${i}`}
                 initial={{ opacity: 0, scale: 0 }}
