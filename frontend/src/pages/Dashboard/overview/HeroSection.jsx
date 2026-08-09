@@ -98,7 +98,7 @@ export default function HeroSection({ currentUser, latestAnalysis, previousAnaly
             <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">AI Active</span>
           </motion.div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-display mb-3 text-white leading-[1.1]">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-display mb-3 text-white leading-[1.1]">
             Welcome back,{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 animate-shimmer bg-[length:200%_auto]">
               {firstName}

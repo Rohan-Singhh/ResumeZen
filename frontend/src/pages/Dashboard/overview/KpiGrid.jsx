@@ -128,13 +128,13 @@ export default function KpiGrid({ latestAnalysis, previousAnalysis, historyCount
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 * i, duration: 0.4 }}
-            className="group relative bg-[#0d0d12]/80 backdrop-blur-md border border-white/[0.06] rounded-xl p-4 overflow-hidden hover:border-white/[0.12] transition-all duration-300 hover:-translate-y-0.5"
+            className="group relative bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-5 overflow-hidden hover:border-white/[0.15] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(139,92,246,0.1)]"
           >
-            {/* Accent line */}
-            <div className={`absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r ${kpi.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+            {/* Animated gradient border */}
+            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${kpi.gradient} opacity-0 group-hover:opacity-[0.05] transition-opacity duration-300`} />
 
             {/* Background glow on hover */}
-            <div className={`absolute -top-8 -right-8 w-24 h-24 bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-[0.06] blur-2xl rounded-full transition-opacity duration-500`} />
+            <div className={`absolute -top-8 -right-8 w-24 h-24 bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-[0.08] blur-2xl rounded-full transition-opacity duration-500`} />
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
@@ -145,7 +145,7 @@ export default function KpiGrid({ latestAnalysis, previousAnalysis, historyCount
                 </div>
 
                 {trend !== null && trend !== 0 && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                  <span className={`text-[10px font-bold px-1.5 py-0.5 rounded-md ${
                     trend > 0
                       ? 'bg-emerald-500/15 text-emerald-400'
                       : 'bg-red-500/15 text-red-400'
@@ -158,7 +158,20 @@ export default function KpiGrid({ latestAnalysis, previousAnalysis, historyCount
               <p className="text-2xl font-extrabold text-white font-display tabular-nums tracking-tight leading-none mb-1">
                 {value}
               </p>
-              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+
+              {/* Progress bar for percentage-based metrics */}
+              {(kpi.key === 'atsScore' || kpi.key === 'strength') && value !== '—' && (
+                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: value }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    className={`h-full rounded-full bg-gradient-to-r ${kpi.gradient}`}
+                  />
+                </div>
+              )}
+
+              <p className="text-[11px font-semibold text-zinc-500 uppercase tracking-wider">
                 {kpi.label}
               </p>
             </div>

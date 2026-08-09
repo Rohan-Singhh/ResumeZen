@@ -144,16 +144,16 @@ export default function AiActionCenter({ latestAnalysis }) {
   }
 
   return (
-    <div className="bg-[#0d0d12]/80 backdrop-blur-md border border-white/[0.06] rounded-xl p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-40 h-40 bg-violet-500/[0.03] blur-[60px] rounded-full pointer-events-none" />
+    <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 relative overflow-hidden hover:border-white/[0.15] transition-all duration-300">
+      <div className="absolute top-0 left-0 w-40 h-40 bg-violet-500/[0.03] blur-[60px rounded-full pointer-events-none group-hover:bg-violet-500/[0.05] transition-colors" />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4 relative z-10">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-violet-500/10 rounded-lg border border-violet-500/20">
+          <div className="p-1.5 bg-violet-500/10 rounded-xl border border-violet-500/20">
             <QueueListIcon className="h-4 w-4 text-violet-400" />
           </div>
-          <h3 className="text-base font-bold text-zinc-100 font-display">Action Center</h3>
+          <h3 className="text-lg font-bold text-zinc-100 font-display">Action Center</h3>
         </div>
         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
           {completedCount}/{tasks.length} done
@@ -188,7 +188,7 @@ export default function AiActionCenter({ latestAnalysis }) {
               className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
                 isDone
                   ? 'bg-white/[0.02] opacity-50'
-                  : 'hover:bg-white/[0.03] border border-transparent hover:border-white/[0.06]'
+                  : 'hover:bg-white/[0.03] border border-transparent hover:border-white/[0.06] hover:shadow-lg'
               }`}
             >
               {/* Checkbox */}

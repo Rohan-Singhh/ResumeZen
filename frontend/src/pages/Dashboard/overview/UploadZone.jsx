@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUpTrayIcon,
   DocumentTextIcon,
@@ -11,7 +11,14 @@ import {
   ServerIcon,
   ChartBarIcon,
   FaceFrownIcon,
+  CloudIcon,
 } from '@heroicons/react/24/outline';
+
+// Seeded random for visual effects (not security-sensitive)
+const seededRandom = (seed) => {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+};
 
 export default function UploadZone({
   selectedFile,
@@ -33,16 +40,35 @@ export default function UploadZone({
   fileInputRef,
   onFileChange,
 }) {
+  const glowColor = isDragging ? 'bg-violet-500/[0.08]' : uploadSuccess ? 'bg-emerald-500/[0.05]' : 'bg-violet-500/[0.03]';
+  const iconBgClass = isDragging ? 'bg-violet-500/20 border-violet-500/30 scale-110' : uploadSuccess ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-violet-500/10 border-violet-500/20';
+  const headerText = uploadSuccess ? 'Upload Complete!' : isUploading ? 'Uploading...' : 'Upload Resume';
+  const dropZoneClass = isDragging
+    ? 'border-violet-500 bg-violet-500/10 scale-[1.02] shadow-[0_0_30px_rgba(139,92,246,0.15)]'
+    : 'border-white/[0.08] bg-white/[0.02] hover:border-violet-500/40 hover:bg-white/[0.04]';
+  const iconContainerClass = isDragging ? 'bg-violet-500/20 text-violet-400 scale-110' : 'bg-white/[0.04] text-zinc-500 group-hover:bg-violet-500/10 group-hover:text-violet-400 group-hover:scale-105';
+
   return (
-    <div className="bg-[#0d0d12]/80 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-8 relative overflow-hidden h-full flex flex-col justify-center shadow-xl">
-      {/* Subtle glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-violet-500/[0.05] blur-[60px] pointer-events-none" />
+    <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-8 relative overflow-hidden h-full flex flex-col justify-center shadow-xl">
+      {/* Dynamic glow that changes color based on state */}
+      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 transition-all duration-500 ${glowColor} blur-[60px] pointer-events-none`} />
 
       <div className="flex items-center justify-center gap-3 mb-6 relative z-10">
-        <div className="p-2 bg-violet-500/10 rounded-xl border border-violet-500/20">
-          <ArrowUpTrayIcon className="h-5 w-5 text-violet-400" />
+        <div className={`p-2 rounded-xl border transition-all duration-300 ${iconBgClass}`}>
+          {uploadSuccess ? (
+            <CheckCircleIcon className="h-5 w-5 text-emerald-400" />
+          ) : isUploading ? (
+            <CloudIcon className="h-5 w-5 text-violet-400 animate-bounce" />
+          ) : (
+            <ArrowUpTrayIcon className="h-5 w-5 text-violet-400" />
+          )}
         </div>
-        <h3 className="text-xl font-bold text-zinc-100 font-display">Upload Resume</h3>
+        <h3 className="text-xl font-bold text-zinc-100 font-display">
+          {headerText}
+        </h3>
+        {isUploading && (
+          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Processing...</span>
+        )}
       </div>
 
       {errorMessage && (
@@ -63,13 +89,49 @@ export default function UploadZone({
           onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files?.[0]) onFileSelect(e.dataTransfer.files[0]); }}
-          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 relative z-10 group flex-1 flex flex-col items-center justify-center min-h-[220px] ${isDragging
-            ? 'border-violet-500 bg-violet-500/10 scale-[1.02] shadow-[0_0_30px_rgba(139,92,246,0.15)]'
-            : 'border-white/[0.08] bg-white/[0.02] hover:border-violet-500/40 hover:bg-white/[0.04]'
-          }`}
+          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 relative z-10 group flex-1 flex flex-col items-center justify-center min-h-[220px] ${dropZoneClass}`}
           onClick={() => fileInputRef.current?.click()}
         >
-          <div className={`h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4 transition-colors ${isDragging ? 'bg-violet-500/20 text-violet-400' : 'bg-white/[0.04] text-zinc-500 group-hover:bg-violet-500/10 group-hover:text-violet-400'}`}>
+          {/* Animated background pattern */}
+          <div className={`absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 ${isDragging ? 'opacity-100' : 'group-hover:opacity-50'}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-cyan-500/5 animate-gradient-xy" />
+          </div>
+
+          {/* Idle pulse animation */}
+          <AnimatePresence>
+            {!isDragging && !uploadSuccess && !isUploading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/3 to-cyan-500/3 opacity-20"
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Floating particles */}
+          <AnimatePresence>
+            {isDragging && (
+              <>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <motion.div
+                    key={`particle-${i}`}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: [0.3, 0], scale: [0, 1, 0], y: [0, -50, -100] }}
+                    transition={{ duration: 1.5, delay: i * 0.1 }}
+                    className="absolute w-2 h-2 rounded-full bg-violet-400/50"
+                    // Intentional pseudorandom positioning for visual effect (not security-sensitive)
+                    style={{
+                      left: `${seededRandom(i) * 80 + 10}%`,
+                      top: `${seededRandom(i + 6) * 80 + 10}%`,
+                    }}
+                  />
+                ))}
+              </>
+            )}
+          </AnimatePresence>
+
+          <div className={`h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4 transition-all duration-300 ${iconContainerClass}`}>
             <ArrowUpTrayIcon className="h-8 w-8" />
           </div>
           <p className="text-base font-semibold text-zinc-200 mb-1 font-display">Click to upload or drag & drop</p>
@@ -95,9 +157,14 @@ export default function UploadZone({
           <button
             onClick={onUpload}
             disabled={!hasCredits}
-            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 text-white font-bold py-3 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.25)] disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2 text-sm"
+            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 text-white font-bold py-3 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.25)] disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2 text-sm group-hover:scale-[1.02] group-hover:shadow-[0_0_25px_rgba(139,92,246,0.3)]"
           >
-            <SparklesIcon className="h-4 w-4" />
+            <motion.div
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+              <SparklesIcon className="h-4 w-4" />
+            </motion.div>
             Analyze this resume
           </button>
         </div>
@@ -106,8 +173,31 @@ export default function UploadZone({
       {isUploading && (
         <div className="py-4 relative z-10 overflow-hidden">
           <div className="absolute top-4 left-1/2 -translate-x-1/2 w-32 h-32 bg-violet-500/10 rounded-full blur-[50px] pointer-events-none" />
+          
+          {/* Animated background during upload */}
+          <div className="absolute inset-0 overflow-hidden rounded-2xl">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <motion.div
+                key={`upload-particle-${i}`}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ 
+                  opacity: [0, 0.4, 0.2, 0.6, 0.3, 0],
+                  scale: [0, 1, 0.8, 0.6, 0.4, 0],
+                  rotate: [0, 180, 360, 540, 720, 900]
+                }}
+                transition={{ duration: 3, repeat: Infinity, delay: i * 0.3 }}
+                className="absolute w-1 h-1 rounded-full bg-violet-400/30"
+                // Intentional pseudorandom positioning for visual effect (not security-sensitive)
+                style={{
+                  left: `${seededRandom(i + 12) * 90 + 5}%`,
+                  top: `${seededRandom(i + 20) * 90 + 5}%`,
+                }}
+              />
+            ))}
+          </div>
+
           <div className="relative z-10 flex flex-col items-center">
-            {/* Progress Ring */}
+            {/* Enhanced Progress Ring */}
             <div className="relative h-16 w-16 mb-4 flex-shrink-0">
               <div className="absolute inset-0 rounded-full border-[3px] border-white/[0.04]" />
               <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
@@ -154,15 +244,36 @@ export default function UploadZone({
 
       {uploadSuccess && (
         <div className="space-y-4 py-3 relative z-10 text-center">
-          <div className="h-16 w-16 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative">
-            <div className="absolute inset-0 bg-emerald-500/15 rounded-full animate-ping opacity-20" />
-            <CheckCircleIcon className="h-8 w-8 text-emerald-400" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-zinc-100 mb-1">Upload Successful!</h3>
-            <p className="text-xs text-zinc-400">"{uploadedFile?.originalName || 'Resume'}" is ready.</p>
-          </div>
-          <button
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="relative"
+          >
+            <div className="h-20 w-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 p-[2px] shadow-[0_0_30px_rgba(16,185,129,0.3)] relative">
+              <div className="absolute inset-0 bg-emerald-500/15 rounded-full animate-ping opacity-20" />
+              <motion.div
+                initial={{ rotate: -90 }}
+                animate={{ rotate: 0 }}
+                transition={{ duration: 0.6, ease: "backOut" }}
+                className="w-full h-full rounded-xl bg-[#0d0d12] flex items-center justify-center"
+              >
+                <CheckCircleIcon className="h-8 w-8 text-emerald-400" />
+              </motion.div>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h3 className="text-lg font-bold text-zinc-100 mb-1">Upload Successful!</h3>
+            <p className="text-sm text-zinc-400">"{uploadedFile?.originalName || 'Resume'}" is ready for analysis.</p>
+          </motion.div>
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
             onClick={onProceed}
             disabled={isProcessing || !hasCredits}
             className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-3 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.25)] disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2 text-sm"
@@ -170,7 +281,7 @@ export default function UploadZone({
             <ChartBarIcon className="h-4 w-4" />
             Generate ATS Report
             <ArrowRightIcon className="h-3.5 w-3.5" />
-          </button>
+          </motion.button>
         </div>
       )}
     </div>

@@ -54,16 +54,29 @@ export default function AiInsightsPanel({ latestAnalysis, onViewReport }) {
 
   if (!latestAnalysis) {
     return (
-      <div className="bg-[#0d0d12]/80 backdrop-blur-md border border-white/[0.06] rounded-xl p-6">
-        <div className="flex items-center gap-2.5 mb-4">
-          <SparklesIcon className="h-5 w-5 text-violet-400" />
-          <h3 className="text-base font-bold text-zinc-100 font-display">AI Insights</h3>
-        </div>
-        <div className="flex flex-col items-center justify-center py-10 text-center">
-          <div className="h-14 w-14 bg-white/[0.03] rounded-full flex items-center justify-center mb-3 border border-white/[0.06]">
-            <SparklesIcon className="h-7 w-7 text-zinc-600" />
+      <div className="bg-[#0d0d12]/80 backdrop-blur-md border border-white/[0.06] rounded-2xl p-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-violet-500/[0.04] blur-[60px] rounded-full pointer-events-none" />
+        <div className="flex items-center gap-2.5 mb-6 relative z-10">
+          <div className="p-2 bg-violet-500/10 rounded-xl border border-violet-500/20">
+            <SparklesIcon className="h-5 w-5 text-violet-400" />
           </div>
-          <p className="text-sm font-medium text-zinc-500">Upload a resume to get AI-powered insights</p>
+          <h3 className="text-lg font-bold text-zinc-100 font-display">AI Insights</h3>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            className="relative mb-6 flex flex-col items-center"
+          >
+            <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 p-[2px] shadow-[0_0_20px_rgba(139,92,246,0.2)]">
+              <div className="w-full h-full rounded-xl bg-[#0d0d12] flex items-center justify-center">
+                <SparklesIcon className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 mt-4">No Analysis Yet</h3>
+            <p className="text-sm text-zinc-400">Upload your resume to get AI-powered insights and improvement suggestions</p>
+          </motion.div>
         </div>
       </div>
     );
