@@ -70,9 +70,6 @@ export default function ResumeHealthRadar({ latestAnalysis }) {
 
   const overallColor = overallScore >= 70 ? 'emerald' : overallScore >= 40 ? 'amber' : 'red';
 
-  const scoreColorClass = overallColor === 'emerald' ? 'text-emerald-400' : overallColor === 'amber' ? 'text-amber-400' : 'text-red-400';
-  const scoreBgClass = overallColor === 'emerald' ? 'bg-emerald-500/10 border-emerald-500/20' : overallColor === 'amber' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20';
-
   return (
     <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 relative overflow-hidden hover:border-white/[0.15] transition-all duration-300">
       <div className="absolute bottom-0 right-0 w-48 h-48 bg-emerald-500/[0.03] blur-[60px rounded-full pointer-events-none group-hover:bg-emerald-500/[0.05] transition-colors" />

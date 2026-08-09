@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUpTrayIcon,
@@ -106,9 +106,9 @@ export default function UploadZone({
           <AnimatePresence>
             {isDragging && (
               <>
-                {[...Array(6)].map((_, i) => (
+                {[...new Array(6)].map((_, i) => (
                   <motion.div
-                    key={i}
+                    key={`particle-${i}`}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: [0.3, 0], scale: [0, 1, 0], y: [0, -50, -100] }}
                     transition={{ duration: 1.5, delay: i * 0.1 }}
@@ -168,9 +168,9 @@ export default function UploadZone({
           
           {/* Animated background during upload */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl">
-            {[...Array(8)].map((_, i) => (
+            {[...new Array(8)].map((_, i) => (
               <motion.div
-                key={i}
+                key={`upload-particle-${i}`}
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ 
                   opacity: [0, 0.4, 0.2, 0.6, 0.3, 0],

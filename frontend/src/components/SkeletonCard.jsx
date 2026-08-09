@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 export default function SkeletonCard({ className = '', height = 'h-64', lines = 3 }) {
   return (
@@ -7,7 +6,7 @@ export default function SkeletonCard({ className = '', height = 'h-64', lines = 
       <div className="animate-pulse space-y-4">
         <div className="h-6 w-3/4 bg-white/5 rounded-md" />
         {Array.from({ length: lines }).map((_, i) => (
-          <div key={i} className="h-4 bg-white/5 rounded-md" style={{ width: i === lines - 1 ? '60%' : '100%' }} />
+          <div key={`skeleton-line-${i}`} className="h-4 bg-white/5 rounded-md" style={{ width: i === lines - 1 ? '60%' : '100%' }} />
         ))}
       </div>
     </div>
