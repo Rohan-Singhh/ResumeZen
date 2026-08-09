@@ -14,6 +14,12 @@ import {
   CloudIcon,
 } from '@heroicons/react/24/outline';
 
+// Seeded random for visual effects (not security-sensitive)
+const seededRandom = (seed) => {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+};
+
 export default function UploadZone({
   selectedFile,
   setSelectedFile,
@@ -116,8 +122,8 @@ export default function UploadZone({
                     className="absolute w-2 h-2 rounded-full bg-violet-400/50"
                     // Intentional pseudorandom positioning for visual effect (not security-sensitive)
                     style={{
-                      left: `${Math.random() * 80 + 10}%`,
-                      top: `${Math.random() * 80 + 10}%`,
+                      left: `${seededRandom(i) * 80 + 10}%`,
+                      top: `${seededRandom(i + 6) * 80 + 10}%`,
                     }}
                   />
                 ))}
@@ -183,8 +189,8 @@ export default function UploadZone({
                 className="absolute w-1 h-1 rounded-full bg-violet-400/30"
                 // Intentional pseudorandom positioning for visual effect (not security-sensitive)
                 style={{
-                  left: `${Math.random() * 90 + 5}%`,
-                  top: `${Math.random() * 90 + 5}%`,
+                  left: `${seededRandom(i + 12) * 90 + 5}%`,
+                  top: `${seededRandom(i + 20) * 90 + 5}%`,
                 }}
               />
             ))}
