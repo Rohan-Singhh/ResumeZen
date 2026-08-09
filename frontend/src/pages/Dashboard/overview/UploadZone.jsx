@@ -34,17 +34,21 @@ export default function UploadZone({
   fileInputRef,
   onFileChange,
 }) {
+  const glowColor = isDragging ? 'bg-violet-500/[0.08]' : uploadSuccess ? 'bg-emerald-500/[0.05]' : 'bg-violet-500/[0.03]';
+  const iconBgClass = isDragging ? 'bg-violet-500/20 border-violet-500/30 scale-110' : uploadSuccess ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-violet-500/10 border-violet-500/20';
+  const headerText = uploadSuccess ? 'Upload Complete!' : isUploading ? 'Uploading...' : 'Upload Resume';
+  const dropZoneClass = isDragging
+    ? 'border-violet-500 bg-violet-500/10 scale-[1.02] shadow-[0_0_30px_rgba(139,92,246,0.15)]'
+    : 'border-white/[0.08] bg-white/[0.02] hover:border-violet-500/40 hover:bg-white/[0.04]';
+  const iconContainerClass = isDragging ? 'bg-violet-500/20 text-violet-400 scale-110' : 'bg-white/[0.04] text-zinc-500 group-hover:bg-violet-500/10 group-hover:text-violet-400 group-hover:scale-105';
+
   return (
     <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-8 relative overflow-hidden h-full flex flex-col justify-center shadow-xl">
       {/* Dynamic glow that changes color based on state */}
-      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 transition-all duration-500 ${
-        isDragging ? 'bg-violet-500/[0.08]' : uploadSuccess ? 'bg-emerald-500/[0.05]' : 'bg-violet-500/[0.03]'
-      } blur-[60px] pointer-events-none`} />
+      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 transition-all duration-500 ${glowColor} blur-[60px] pointer-events-none`} />
 
       <div className="flex items-center justify-center gap-3 mb-6 relative z-10">
-        <div className={`p-2 rounded-xl border transition-all duration-300 ${
-          isDragging ? 'bg-violet-500/20 border-violet-500/30 scale-110' : uploadSuccess ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-violet-500/10 border-violet-500/20'
-        }`}>
+        <div className={`p-2 rounded-xl border transition-all duration-300 ${iconBgClass}`}>
           {uploadSuccess ? (
             <CheckCircleIcon className="h-5 w-5 text-emerald-400" />
           ) : isUploading ? (
@@ -54,7 +58,7 @@ export default function UploadZone({
           )}
         </div>
         <h3 className="text-xl font-bold text-zinc-100 font-display">
-          {uploadSuccess ? 'Upload Complete!' : isUploading ? 'Uploading...' : 'Upload Resume'}
+          {headerText}
         </h3>
         {isUploading && (
           <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Processing...</span>
@@ -79,10 +83,7 @@ export default function UploadZone({
           onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files?.[0]) onFileSelect(e.dataTransfer.files[0]); }}
-          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 relative z-10 group flex-1 flex flex-col items-center justify-center min-h-[220px] ${isDragging
-            ? 'border-violet-500 bg-violet-500/10 scale-[1.02] shadow-[0_0_30px_rgba(139,92,246,0.15)]'
-            : 'border-white/[0.08] bg-white/[0.02] hover:border-violet-500/40 hover:bg-white/[0.04]'
-          }`}
+          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 relative z-10 group flex-1 flex flex-col items-center justify-center min-h-[220px] ${dropZoneClass}`}
           onClick={() => fileInputRef.current?.click()}
         >
           {/* Animated background pattern */}
@@ -123,7 +124,7 @@ export default function UploadZone({
             )}
           </AnimatePresence>
 
-          <div className={`h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4 transition-all duration-300 ${isDragging ? 'bg-violet-500/20 text-violet-400 scale-110' : 'bg-white/[0.04] text-zinc-500 group-hover:bg-violet-500/10 group-hover:text-violet-400 group-hover:scale-105'}`}>
+          <div className={`h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4 transition-all duration-300 ${iconContainerClass}`}>
             <ArrowUpTrayIcon className="h-8 w-8" />
           </div>
           <p className="text-base font-semibold text-zinc-200 mb-1 font-display">Click to upload or drag & drop</p>
