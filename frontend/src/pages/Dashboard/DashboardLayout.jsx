@@ -15,6 +15,7 @@ import {
   BriefcaseIcon
 } from '@heroicons/react/24/outline';
 import SupportWidget from '../../components/SupportWidget';
+import SceneBackdrop from '../../components/three/SceneBackdrop';
 
 function TopNav() {
   const { logout, currentUser, userPlans } = useAuth();
@@ -54,7 +55,7 @@ function TopNav() {
             {/* Logo & Brand */}
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+                <div className="h-8 w-8 rounded-lg bg-[#12121c] border border-[#7c6cf6]/35 flex items-center justify-center shadow-[inset_-2px_0_0_0_rgba(124,108,246,0.85),0_0_18px_rgba(124,108,246,0.22)]">
                   <span className="text-white font-bold font-display text-sm tracking-tighter">RZ</span>
                 </div>
                 <span className="font-bold text-zinc-100 font-display tracking-tight text-lg">ResumeZen</span>
@@ -183,12 +184,10 @@ export default function DashboardLayout() {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col h-screen bg-[#0a0a0c] text-zinc-100 overflow-hidden relative selection:bg-violet-500/30">
+    <div className="flex flex-col h-screen bg-[#07070b] text-zinc-100 overflow-hidden relative selection:bg-violet-500/30">
       
-      {/* Massive Ambient Background Glows (Landing Page Style) */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[600px] bg-violet-600/10 rounded-[100%] blur-[120px] pointer-events-none mix-blend-screen z-0"></div>
-      <div className="absolute top-40 -left-40 w-[500px] h-[500px] bg-cyan-600/10 rounded-[100%] blur-[100px] pointer-events-none mix-blend-screen z-0"></div>
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-pink-600/5 rounded-[100%] blur-[120px] pointer-events-none mix-blend-screen z-0"></div>
+      {/* ATMOSPHERE: compact monolith scene replaces the flat blob glows */}
+      <SceneBackdrop compact />
 
       {/* Top Navigation replacing Sidebar */}
       <TopNav />
