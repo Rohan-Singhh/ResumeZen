@@ -1,31 +1,36 @@
 const express = require('express');
+const { z } = require('zod');
 const router = express.Router();
 const SupportMessage = require('../models/SupportMessage');
 const { sendSupportEmailToAdmin } = require('../services/emailService');
+const validate = require('../middleware/validate');
+
+// Mirrors the SupportMessage model's constraints so bad payloads are
+// rejected at the boundary with a single clear 400 instead of reaching
+// Mongoose and surfacing as per-field validation errors.
+const supportMessageSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  email: z.string().trim().email(),
+  subject: z.string().trim().min(1).max(200),
+  priority: z.enum(['Low', 'Normal', 'Urgent']).default('Normal'),
+  message: z.string().trim().min(1).max(2000)
+});
 
 /**
  * @route   POST /api/support
  * @desc    Submit a new support message
  * @access  Public
  */
-router.post('/', async (req, res) => {
+router.post('/', validate(supportMessageSchema), async (req, res) => {
   try {
     const { name, email, subject, priority, message } = req.body;
-
-    // Validate required fields
-    if (!name || !email || !subject || !message) {
-      return res.status(400).json({
-        success: false,
-        error: 'Please provide all required fields'
-      });
-    }
 
     // Create the support message
     const supportMessage = await SupportMessage.create({
       name,
       email,
       subject,
-      priority: priority || 'Normal',
+      priority,
       message
     });
 
@@ -34,7 +39,7 @@ router.post('/', async (req, res) => {
       name,
       email,
       subject,
-      priority: priority || 'Normal',
+      priority,
       message
     }).catch(err => console.error('Failed to dispatch background email:', err));
 
@@ -45,8 +50,9 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error submitting support message:', error);
-    
-    // Handle Mongoose validation errors
+
+    // Handle Mongoose validation errors (e.g. edge cases zod allows but the
+    // model regex rejects, such as long TLDs)
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(val => val.message);
       return res.status(400).json({
