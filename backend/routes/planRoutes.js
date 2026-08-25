@@ -3,6 +3,7 @@
  * Handles all subscription plan-related API endpoints
  */
 
+const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
 const Plan = require('../models/Plan');
@@ -145,9 +146,35 @@ router.post('/:planId/purchase', authMiddleware, async (req, res) => {
 /**
  * @route   POST /api/plans/seed
  * @desc    Seed initial plans (admin only)
- * @access  Private/Admin
+ * @access  Private/Admin — requires the x-admin-secret header
+ *
+ * This route can wipe and replace the entire plan catalog (?force=true), so it
+ * must never be reachable by anonymous traffic. Callers must send the shared
+ * secret configured as ADMIN_SEED_SECRET in the x-admin-secret header.
  */
 router.post('/seed', async (req, res) => {
+  const adminSecret = process.env.ADMIN_SEED_SECRET;
+  if (!adminSecret) {
+    // Fail closed: without a configured secret, seeding is disabled entirely.
+    return res.status(503).json({
+      success: false,
+      message: 'Seeding disabled',
+      error: 'ADMIN_SEED_SECRET is not configured on the server'
+    });
+  }
+
+  const provided = Buffer.from(req.header('x-admin-secret') || '');
+  const expected = Buffer.from(adminSecret);
+  const secretOk =
+    provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+  if (!secretOk) {
+    return res.status(401).json({
+      success: false,
+      message: 'Unauthorized',
+      error: 'Invalid or missing x-admin-secret header'
+    });
+  }
+
   try {
     // In a production app, this would have proper admin authorization
     // For now, we'll just check if plans already exist
@@ -265,14 +292,14 @@ router.post('/use-credit', authMiddleware, async (req, res) => {
         error: 'Missing plan ID in request'
       });
     }
-    // Find the user plan
-    const userPlan = await UserPlan.findOne({
+    // Find the user plan (read-only lookup, used to distinguish unlimited plans)
+    const existing = await UserPlan.findOne({
       _id: planId,
       userId: req.user.userId,
       isActive: true
     }).populate('planId');
-    console.log('[use-credit] Found userPlan:', userPlan ? userPlan._id : null, 'creditsLeft:', userPlan ? userPlan.creditsLeft : null);
-    if (!userPlan) {
+    console.log('[use-credit] Found userPlan:', existing ? existing._id : null, 'creditsLeft:', existing ? existing.creditsLeft : null);
+    if (!existing) {
       return res.status(404).json({
         success: false,
         message: 'Plan not found or not active',
@@ -280,16 +307,29 @@ router.post('/use-credit', authMiddleware, async (req, res) => {
       });
     }
     // If plan is unlimited, no need to decrement credits
-    if (userPlan.planId.isUnlimited) {
+    if (existing.planId.isUnlimited) {
       console.log('[use-credit] Plan is unlimited, no deduction.');
       return res.json({
         success: true,
         message: 'Credit not decremented for unlimited plan',
-        userPlan
+        userPlan: existing
       });
     }
-    // Check if there are credits left
-    if (userPlan.creditsLeft <= 0) {
+    // Atomic conditional decrement: creditsLeft must still be > 0 at write
+    // time. The previous find -> modify -> save pattern allowed two concurrent
+    // requests to both spend the same last credit.
+    const userPlan = await UserPlan.findOneAndUpdate(
+      {
+        _id: planId,
+        userId: req.user.userId,
+        isActive: true,
+        creditsLeft: { $gt: 0 }
+      },
+      { $inc: { creditsLeft: -1 } },
+      { new: true }
+    ).populate('planId');
+
+    if (!userPlan) {
       console.log('[use-credit] No credits left to deduct.');
       return res.status(400).json({
         success: false,
@@ -297,10 +337,7 @@ router.post('/use-credit', authMiddleware, async (req, res) => {
         error: 'This plan has no credits left'
       });
     }
-    // Decrement credits
-    userPlan.creditsLeft -= 1;
-    console.log('[use-credit] Deducting credit. creditsLeft after deduction:', userPlan.creditsLeft);
-    await userPlan.save();
+    console.log('[use-credit] Deducted credit. creditsLeft:', userPlan.creditsLeft);
     res.json({
       success: true,
       message: 'Credit used successfully',
@@ -333,14 +370,14 @@ router.post('/refund-credit', authMiddleware, async (req, res) => {
       });
     }
     
-    // Find the user plan
-    const userPlan = await UserPlan.findOne({
+    // Find the user plan (read-only lookup, used to distinguish unlimited plans)
+    const existing = await UserPlan.findOne({
       _id: planId,
       userId: req.user.userId,
       isActive: true
     }).populate('planId');
     
-    if (!userPlan) {
+    if (!existing) {
       return res.status(404).json({
         success: false,
         message: 'Plan not found or not active',
@@ -349,17 +386,34 @@ router.post('/refund-credit', authMiddleware, async (req, res) => {
     }
     
     // If plan is unlimited, no need to refund credits
-    if (userPlan.planId.isUnlimited) {
+    if (existing.planId.isUnlimited) {
       return res.json({
         success: true,
         message: 'Credit not refunded for unlimited plan',
-        userPlan
+        userPlan: existing
       });
     }
     
-    // Add credit back
-    userPlan.creditsLeft += 1;
-    await userPlan.save();
+    // Atomic increment, capped at the plan's original credit count. Without
+    // the cap this endpoint could be called in a loop to farm free credits.
+    const userPlan = await UserPlan.findOneAndUpdate(
+      {
+        _id: planId,
+        userId: req.user.userId,
+        isActive: true,
+        $expr: { $lt: ['$creditsLeft', existing.planId.credits] }
+      },
+      { $inc: { creditsLeft: 1 } },
+      { new: true }
+    ).populate('planId');
+    
+    if (!userPlan) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refund not applicable',
+        error: 'Credits are already at or above the plan maximum'
+      });
+    }
     
     res.json({
       success: true,
