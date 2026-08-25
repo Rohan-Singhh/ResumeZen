@@ -6,7 +6,8 @@ import { useLoading } from '../App';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
-import { CheckCircleIcon, CodeBracketIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import SceneBackdrop from '../components/three/SceneBackdrop';
 
 const pageVariants = {
   initial: { opacity: 0 },
@@ -86,54 +87,60 @@ export default function Login() {
 
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0c] selection:bg-primary/30">
-        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#07070b] selection:bg-primary/30">
+        <div className="w-16 h-16 border-4 border-white/10 border-t-[#7c6cf6] rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
     <motion.div 
-      className="min-h-screen bg-[#0a0a0c] flex flex-col lg:flex-row overflow-hidden relative selection:bg-primary/30"
+      className="min-h-screen flex flex-col lg:flex-row overflow-hidden relative selection:bg-primary/30 bg-[#07070b]"
       initial="initial"
       animate="in"
       exit="exit"
       variants={pageVariants}
       transition={{ duration: 0.6 }}
     >
+      {/* ATMOSPHERE: real-3D studio void behind everything */}
+      <SceneBackdrop className="z-0" />
+
       {/* LEFT COLUMN: Login Form */}
-      <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 lg:py-0 relative z-10 bg-[#0a0a0c]">
+      <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 lg:py-0 relative z-10">
         
         {/* Back to Home / Logo */}
         <div 
           onClick={() => navigate('/')}
           className="absolute top-8 left-6 sm:left-12 lg:left-20 flex items-center gap-3 cursor-pointer group"
         >
-          <div className="flex items-center justify-center w-10 h-10 bg-white/5 border border-white/10 rounded-xl group-hover:bg-white/10 transition-colors shadow-glow-primary/10">
-            <span className="text-white font-bold font-display text-sm">RZ</span>
+          <div className="flex items-center justify-center w-10 h-10 glass-panel rounded-xl group-hover:border-[#7c6cf6]/40 transition-colors shadow-[inset_-2px_0_0_0_rgba(124,108,246,0.85)]">
+            <span className="text-[#f4f2ec] font-bold font-display text-sm">RZ</span>
           </div>
-          <span className="text-zinc-500 font-semibold text-sm group-hover:text-white transition-colors tracking-wide">Back to Home</span>
+          <span className="text-[#a1a1ae] font-semibold text-sm group-hover:text-white transition-colors tracking-wide">Back to Home</span>
         </div>
 
-        <div className="max-w-[440px] w-full mx-auto mt-16 lg:mt-0">
+        <div className="max-w-[460px] w-full mx-auto mt-16 lg:mt-0">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-white font-display tracking-tight mb-3">
+            <p className="text-[#7c6cf6] text-xs font-bold uppercase tracking-[0.22em] mb-4">
+              ResumeZen Studio
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#f4f2ec] font-display tracking-tight mb-3">
               Welcome back
             </h2>
-            <p className="text-zinc-400 text-base mb-10 font-medium">
+            <p className="text-[#a1a1ae] text-base mb-10 font-medium">
               Sign in to engineer your next career move.
             </p>
           </motion.div>
 
           <motion.div 
             ref={loginBoxRef}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
           >
             {/* Error message */}
             <AnimatePresence>
@@ -154,10 +161,10 @@ export default function Login() {
               )}
             </AnimatePresence>
 
-            {/* Login Box */}
-            <div className="bg-white/[0.02] border border-white/5 p-6 sm:p-8 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden">
-              {/* Subtle top glow */}
-              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+            {/* Login Box — frosted glass over the monolith */}
+            <div className="glass-panel p-6 sm:p-8 rounded-[28px] relative overflow-hidden lift">
+              {/* Top-lit hairline */}
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#7c6cf6]/60 to-transparent"></div>
               
               <LoginOptions 
                 onError={handleError}
@@ -166,117 +173,82 @@ export default function Login() {
             </div>
             
             {/* Footer */}
-            <div className="text-center mt-10 text-zinc-600 text-xs font-semibold uppercase tracking-wider">
+            <div className="text-center mt-10 text-[#6b6b78] text-xs font-semibold uppercase tracking-wider">
               <p>© {new Date().getFullYear()} ResumeZen</p>
             </div>
           </motion.div>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: SaaS Showcase */}
-      <div className="hidden lg:flex flex-1 relative items-center justify-center p-12 overflow-hidden border-l border-white/5 bg-[#0f0f12]">
-        {/* Background Gradients */}
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[150px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary/15 rounded-full blur-[120px] pointer-events-none -translate-x-1/4 translate-y-1/3"></div>
-        
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_70%)] pointer-events-none"></div>
-
-        {/* Feature UI */}
-        <div className="relative z-10 w-full max-w-2xl px-12">
+      {/* RIGHT COLUMN: the monolith does the talking — copy + proof chips only */}
+      <div className="hidden lg:flex flex-1 relative items-stretch justify-stretch p-14 xl:p-20 z-10 pointer-events-none">
+        <div className="flex flex-col justify-between w-full max-w-3xl ml-auto">
+          
+          {/* Headline */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-16"
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="pt-10"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-300 text-sm font-bold mb-8 shadow-lg">
-              <SparklesIcon className="w-4 h-4 text-primary" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 glass-panel rounded-full text-[#c9c4f2] text-sm font-bold mb-8">
+              <SparklesIcon className="w-4 h-4 text-[#7c6cf6]" />
               The Engine
             </div>
-            <h1 className="text-5xl xl:text-6xl font-extrabold text-white font-display leading-[1.1] tracking-tight mb-8">
-              A relentless <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-secondary">Optimization pipeline</span>
+            <h1 className="text-5xl xl:text-[3.6rem] font-extrabold text-[#f4f2ec] font-display leading-[1.08] tracking-tight mb-7">
+              A relentless<br />
+              <span className="text-[#a99cf9]">optimization pipeline.</span>
             </h1>
-            <p className="text-xl text-zinc-400 max-w-xl leading-relaxed font-medium">
-              We built the exact tool we wish we had when interviewing at FAANG. Stop guessing and start engineering your resume with data.
+            <p className="text-lg xl:text-xl text-[#a1a1ae] max-w-lg leading-relaxed font-medium">
+              We built the exact tool we wish we had when interviewing at FAANG.
+              Stop guessing — start engineering your resume with data.
             </p>
           </motion.div>
 
-          {/* Floating UI Elements */}
-          <div className="relative h-[340px] w-full">
-            
-            {/* ATS Score Card */}
+          {/* Proof chips floating over the scene floor */}
+          <div className="flex flex-wrap items-end gap-5 pb-6 pointer-events-auto">
             <motion.div 
               variants={floatVariants}
               animate="animate"
-              className="absolute top-0 left-0 w-72 bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20"
+              initial={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.7, delay: 0.35 }}
+              className="glass-panel lift rounded-2xl p-6 w-64"
             >
-              <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-4">ATS Match Score</h3>
-              <div className="flex items-end gap-3">
-                <span className="text-6xl font-bold text-white font-display leading-none">98</span>
-                <span className="text-emerald-400 font-bold mb-1">/100</span>
+              <h3 className="text-[#a1a1ae] text-xs font-bold uppercase tracking-wider mb-4">ATS Match Score</h3>
+              <div className="flex items-end gap-2">
+                <span className="text-5xl font-bold text-[#f4f2ec] font-display leading-none">98</span>
+                <span className="text-[#7c6cf6] font-bold mb-0.5">/100</span>
               </div>
-              <div className="mt-6 h-2 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="mt-5 h-1.5 w-full bg-white/[0.07] rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: '98%' }}
-                  transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                  transition={{ duration: 1.5, delay: 0.9, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-r from-[#7c6cf6] to-[#a99cf9]"
                 ></motion.div>
               </div>
             </motion.div>
 
-            {/* Keyword Injection Card */}
             <motion.div 
               variants={floatVariants}
               animate="animate"
-              style={{ animationDelay: '-1s' }}
-              className="absolute top-16 right-0 w-80 bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10"
+              initial={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.7, delay: 0.5 }}
+              className="glass-panel lift rounded-2xl p-6 w-56"
             >
-              <div className="flex items-center gap-4 mb-5">
-                <div className="p-2.5 bg-primary/10 border border-primary/20 rounded-xl shadow-inner">
-                  <CodeBracketIcon className="w-5 h-5 text-primary" />
-                </div>
-                <h3 className="text-white font-bold text-sm">Keyword Injection</h3>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {['React.js', 'Node.js', 'PostgreSQL', 'AWS'].map((tag, i) => (
-                  <span key={i} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-zinc-300 font-mono font-medium">
-                    {tag}
-                  </span>
-                ))}
-                <motion.span 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 2, duration: 0.5 }}
-                  className="px-3 py-1.5 bg-primary/20 border border-primary/30 rounded-lg text-xs text-primary font-mono font-bold shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                >
-                  + Kubernetes
-                </motion.span>
-              </div>
-            </motion.div>
-
-            {/* Impact Metric Card */}
-            <motion.div 
-              variants={floatVariants}
-              animate="animate"
-              style={{ animationDelay: '-2s' }}
-              className="absolute bottom-4 left-16 w-64 bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-30"
-            >
-               <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-4">Impact Quantified</h3>
-               <div className="flex items-center gap-5">
-                 <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner">
-                   <CheckCircleIcon className="w-7 h-7 text-emerald-400" />
+               <h3 className="text-[#a1a1ae] text-xs font-bold uppercase tracking-wider mb-4">Impact Quantified</h3>
+               <div className="flex items-center gap-4">
+                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#7c6cf6]/10 border border-[#7c6cf6]/25">
+                   <CheckCircleIcon className="w-6 h-6 text-[#a99cf9]" />
                  </div>
                  <div>
-                   <div className="text-3xl font-extrabold text-white font-display leading-none mb-1">+340%</div>
-                   <div className="text-xs font-semibold text-zinc-500">Performance</div>
+                   <div className="text-3xl font-extrabold text-[#f4f2ec] font-display leading-none mb-1">+340%</div>
+                   <div className="text-xs font-semibold text-[#6b6b78]">Performance</div>
                  </div>
                </div>
             </motion.div>
-
           </div>
+
         </div>
       </div>
     </motion.div>
