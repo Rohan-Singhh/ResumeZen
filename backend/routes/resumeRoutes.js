@@ -62,26 +62,47 @@ router.post('/analyze-upload', authMiddleware, async (req, res) => {
     }
 
     const now = new Date();
-    const userPlan = userPlans.find(p =>
+    const candidate = userPlans.find(p =>
       p.planId && (!p.expiresAt || new Date(p.expiresAt) > now) && (p.planId.isUnlimited || p.creditsLeft > 0)
     );
 
-    if (!userPlan) {
+    if (!candidate) {
       return res.status(403).json({ success: false, message: 'No credits remaining' });
     }
 
-    // Deduct credit
-    if (!userPlan.planId.isUnlimited) {
-      userPlan.creditsLeft -= 1;
-      await userPlan.save();
+    const isUnlimited = Boolean(candidate.planId.isUnlimited);
+    const planCreditCap = Number(candidate.planId.credits ?? 0);
+
+    // Deduct credit atomically: creditsLeft must still be > 0 at write time,
+    // so parallel uploads can never both consume the same last credit (the
+    // old find -> modify -> save pattern allowed exactly that race).
+    let userPlan = candidate;
+    if (!isUnlimited) {
+      userPlan = await UserPlan.findOneAndUpdate(
+        {
+          _id: candidate._id,
+          userId,
+          isActive: true,
+          creditsLeft: { $gt: 0 }
+        },
+        { $inc: { creditsLeft: -1 } },
+        { new: true }
+      );
+      if (!userPlan) {
+        return res.status(403).json({ success: false, message: 'No credits remaining' });
+      }
       console.log(`[analyze-upload] Deducted 1 credit for user ${userId}.`);
     }
 
-    // Refund helper — every failure path below must go through this
+    // Refund helper — every failure path below must go through this.
+    // Atomic increment capped at the plan's original credit count so repeated
+    // failures cannot push credits above what was purchased.
     const refund = async (reason) => {
-      if (userPlan.planId.isUnlimited) return;
-      userPlan.creditsLeft += 1;
-      await userPlan.save();
+      if (isUnlimited) return;
+      await UserPlan.updateOne(
+        { _id: userPlan._id, userId, isActive: true, creditsLeft: { $lt: planCreditCap } },
+        { $inc: { creditsLeft: 1 } }
+      );
       console.log(`[analyze-upload] Refunded 1 credit for user ${userId}: ${reason}`);
     };
 
