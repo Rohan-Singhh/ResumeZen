@@ -106,8 +106,9 @@ const uploadPdf = async (file) => {
     // 2. Download URL with attachment flag
     const downloadCloudinaryUrl = `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/fl_attachment/${fullPublicId}.pdf`;
     
-    // 3. Backend proxy URL for consistent PDF access
-    const downloadUrl = `/api/upload/download/${fullPublicId}.pdf`;
+    // NOTE: no backend proxy URL here. An earlier revision advertised
+    // `/api/upload/download/<id>`, but no route serves that path, so anything
+    // using it got a 404.
     
     // 4. Generated signed URL with SDK
     const signedUrl = cloudinary.url(fullPublicId, {
@@ -123,7 +124,6 @@ const uploadPdf = async (file) => {
     console.log('- Primary URL (secure_url):', result.secure_url);
     console.log('- View URL (for browser viewing):', viewUrl);
     console.log('- Download Cloudinary URL:', downloadCloudinaryUrl);
-    console.log('- Backend proxy URL:', downloadUrl);
     console.log('- Signed URL:', signedUrl);
     
     // Return structured response with consistent property names
@@ -133,7 +133,6 @@ const uploadPdf = async (file) => {
       secure_url: result.secure_url, // Keep original property too
       cloudinaryUrl: downloadCloudinaryUrl, // Direct URL for download with attachment flag
       viewUrl: viewUrl, // URL for viewing in browser
-      downloadUrl: downloadUrl, // Our proxy URL (most reliable)
       signedUrl: signedUrl, // Signed URL for secure access
       
       // ID and metadata information
@@ -161,7 +160,7 @@ const uploadPdf = async (file) => {
       access_mode: result.access_mode, // Keep original property too
       
       // Additional helper property for frontend routing
-      fileUrl: downloadUrl, // Preferred URL for frontend to use
+      fileUrl: downloadCloudinaryUrl, // Preferred URL for frontend to use
     };
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);

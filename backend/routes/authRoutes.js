@@ -33,8 +33,16 @@ if (!admin.apps.length) {
   console.log('Firebase Admin SDK initialized successfully');
 }
 
-// Check if we're in development mode (using emulator)
-const isDevelopmentMode = process.env.NODE_ENV === 'development';
+// Development-mode gate for the emulator/dev-token login bypass below.
+//
+// SECURITY: that bypass lets hand-crafted tokens ("test-token", any JWT-shaped
+// string, ...) mint a real account and a real session JWT. It therefore
+// requires BOTH NODE_ENV=development AND an explicit DEV_AUTH_BYPASS=true, so
+// a stray NODE_ENV=development in a deployed environment can no longer open
+// the hole by accident.
+const isDevelopmentMode =
+  process.env.NODE_ENV === 'development' &&
+  process.env.DEV_AUTH_BYPASS === 'true';
 
 // Function to check if a token is from Firebase Auth Emulator
 const isEmulatorToken = (token) => {
@@ -44,7 +52,7 @@ const isEmulatorToken = (token) => {
          token === 'development-token' ||                          // Our own dev token
          token === 'test-token' ||                                // Test token
          token.startsWith('emulator-token-') ||                   // Emulator prefix
-         (process.env.NODE_ENV === 'development' && 
+         (isDevelopmentMode && 
           token.startsWith('eyJ'));                               // Any JWT in dev mode as fallback
 };
 

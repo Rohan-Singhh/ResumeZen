@@ -49,8 +49,9 @@ const UserAuthSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Every login looks the user up by email before falling back to firebaseUid
-UserAuthSchema.index({ email: 1 }, { sparse: true });
+// NOTE: no extra schema.index() needed here — the path-level `sparse: true` on
+// `email` already creates the {email: 1} sparse index that login lookups use.
+// Declaring both triggered Mongoose's duplicate-index warning.
 
 // Pre-save middleware to ensure at least one of email or mobileNumber is provided
 UserAuthSchema.pre('save', function(next) {
