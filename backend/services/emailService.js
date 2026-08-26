@@ -11,8 +11,13 @@ const createTransporter = () => {
     return null;
   }
 
+  // Explicit TLS transport (smtp.gmail.com:465, secure). Being explicit about
+  // `secure: true` documents that mail is sent over an encrypted channel and
+  // satisfies static analysis that flags the implicit `service: 'gmail'` form.
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_APP_PASSWORD
