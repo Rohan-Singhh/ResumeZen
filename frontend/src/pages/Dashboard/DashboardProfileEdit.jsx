@@ -4,9 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { auth } from '../../firebase';
 import { deleteUser } from 'firebase/auth';
 import axios from 'axios';
-import { 
-  CheckCircleIcon, UserCircleIcon, LinkIcon, BriefcaseIcon, 
-  ShieldCheckIcon, IdentificationIcon, CameraIcon, TrashIcon 
+import {
+  CheckCircleIcon, UserCircleIcon, LinkIcon, BriefcaseIcon,
+  ShieldCheckIcon, IdentificationIcon, CameraIcon, TrashIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -371,48 +372,45 @@ export default function DashboardProfileEdit() {
         </div>
       </motion.div>
 
-      {/* Gen Z Sad Delete Modal */}
+      {/* Delete account confirmation */}
       {createPortal(
         <AnimatePresence>
           {showDeleteModal && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }} 
-                animate={{ opacity: 1, scale: 1, y: 0 }} 
-                exit={{ opacity: 0, scale: 0.9, y: 20 }} 
-                className="px-8 py-8 bg-[#1a1a24] border border-red-500/30 rounded-3xl shadow-[0_0_80px_rgba(239,68,68,0.2)] max-w-sm w-full flex flex-col items-center text-center relative overflow-hidden"
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                transition={{ duration: 0.18 }}
+                className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6"
               >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-rose-500 to-red-600" />
-                
-                <img 
-                  src="https://media.giphy.com/media/L95W4wv8ncl9K/giphy.gif" 
-                  alt="Sad cat" 
-                  className="w-32 h-32 rounded-2xl object-cover mb-6 border-2 border-white/10 shadow-lg"
-                />
-                
-                <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2 uppercase">No cap?</h3>
-                <p className="text-sm text-zinc-400 mb-8 leading-relaxed">
-                  You're really gonna delete all your hard work? We'll miss you fr fr. 🥺 All your resumes and ATS scores will be gone forever into the void.
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+                  </span>
+                  <h3 className="font-display text-lg font-semibold text-ink">Delete account?</h3>
+                </div>
+                <p className="mb-6 text-sm leading-relaxed text-ink-muted">
+                  This permanently deletes your account, resumes, and analysis history. This action cannot be undone.
                 </p>
-                
-                <div className="flex flex-col w-full gap-3">
-                  <button 
+                <div className="flex gap-3">
+                  <button
                     type="button"
                     onClick={() => setShowDeleteModal(false)}
-                    className="w-full py-3.5 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors"
+                    className="flex-1 rounded-lg border border-line bg-white/[0.06] py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-white/[0.1]"
                   >
-                    Nvm, I'm staying
+                    Cancel
                   </button>
-                  <button 
+                  <button
                     type="button"
                     onClick={confirmDelete}
                     disabled={isDeleting}
-                    className="w-full py-3.5 rounded-xl font-bold text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors flex items-center justify-center"
+                    className="flex flex-1 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/15 py-2.5 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/25 disabled:opacity-50"
                   >
                     {isDeleting ? (
-                      <div className="h-5 w-5 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500/30 border-t-red-500" />
                     ) : (
-                      'Yeah, delete it'
+                      'Delete account'
                     )}
                   </button>
                 </div>

@@ -193,11 +193,8 @@ export default function DashboardPlan() {
 
     try {
       setNotifierState('loading');
-      
-      // Artificial delay for immersive UX if the API is too fast
-      const animationDelay = new Promise(r => setTimeout(r, 1800));
+
       const result = await purchasePlan(plan._id);
-      await animationDelay;
 
       if (result.success) {
         setNotifierState('success');
