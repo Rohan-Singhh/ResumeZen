@@ -1,10 +1,13 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { tapPress } from '../../utils/motion';
 
 /**
  * Button — the one button primitive. Replaces inline class strings.
  *
  * Variants: primary (accent) | secondary (surface) | ghost | danger
  * Sizes:    sm | md
+ * Rendered as motion.button for a spring press; disabled buttons don't animate.
  */
 const BASE =
   'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors ' +
@@ -24,21 +27,23 @@ const SIZES = {
 };
 
 export default function Button({
-  as: Tag = 'button',
   variant = 'primary',
   size = 'md',
   className = '',
+  disabled = false,
   children,
   ...rest
 }) {
   return (
-    <Tag
+    <motion.button
+      whileTap={disabled ? undefined : tapPress}
+      disabled={disabled}
       className={[BASE, VARIANTS[variant] || VARIANTS.primary, SIZES[size] || SIZES.md, className]
         .filter(Boolean)
         .join(' ')}
       {...rest}
     >
       {children}
-    </Tag>
+    </motion.button>
   );
 }
