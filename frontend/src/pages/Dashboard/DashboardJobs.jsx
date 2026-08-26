@@ -13,6 +13,7 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { getResumeHistory } from '../../services/resumeService';
+import { timeAgo } from '../../utils/timeAgo';
 
 export default function DashboardJobs() {
   const [jobs, setJobs] = useState([]);
@@ -80,27 +81,6 @@ export default function DashboardJobs() {
     }
   };
 
-  /**
-   * Providers disagree on date format: Arbeitnow sends a Unix timestamp in
-   * seconds, Remotive and The Muse send ISO date strings. Multiplying an ISO
-   * string by 1000 produced NaN, so every card read "NaN days ago".
-   */
-  const timeAgo = (value) => {
-    if (!value) return 'Recently';
-
-    const date = typeof value === 'number'
-      ? new Date(value * 1000)
-      : new Date(value);
-
-    if (Number.isNaN(date.getTime())) return 'Recently';
-
-    const diffDays = Math.floor((Date.now() - date.getTime()) / 86400000);
-    if (diffDays < 0) return 'Today';
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    return `${diffDays} days ago`;
-  };
-
   return (
     <div className="space-y-8 relative z-10 pb-20">
       {/* Header */}
@@ -116,7 +96,7 @@ export default function DashboardJobs() {
             {jobs.length} tech jobs from {' '}
             <span className="text-emerald-400 font-semibold">Remotive</span>, {' '}
             <span className="text-blue-400 font-semibold">Arbeitnow</span>, and {' '}
-            <span className="text-violet-400 font-semibold">The Muse</span>
+            <span className="text-primary font-semibold">The Muse</span>
           </p>
         </motion.div>
 
@@ -144,8 +124,8 @@ export default function DashboardJobs() {
               disabled={isAiLoading}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
                 viewMode === 'ai' 
-                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]' 
-                  : 'text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10'
+                  ? 'bg-primary text-white'
+                  : 'text-zinc-500 hover:text-primary hover:bg-primary/10'
               }`}
             >
               <SparklesIcon className="h-4 w-4" />
@@ -165,8 +145,7 @@ export default function DashboardJobs() {
       {(loading || isAiLoading) ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="bg-[#0d0d12]/80 border border-white/[0.06] rounded-2xl p-6 h-64 animate-pulse relative overflow-hidden">
-              {isAiLoading && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-500/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />}
+            <div key={i} className="bg-surface border border-line rounded-xl p-6 h-64 animate-pulse relative overflow-hidden">
               <div className="h-6 w-3/4 bg-white/5 rounded-md mb-3" />
               <div className="h-4 w-1/2 bg-white/5 rounded-md mb-6" />
               <div className="space-y-2 mb-6">
@@ -201,19 +180,15 @@ export default function DashboardJobs() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
-              className={`group relative bg-[#0d0d12]/80 backdrop-blur-xl rounded-2xl border flex flex-col transition-all duration-300 hover:-translate-y-1 ${
-                isAiMatch ? 'border-violet-500/30 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)]' : 'border-white/[0.08] hover:border-emerald-500/30 hover:shadow-[0_0_30px_rgba(16,185,129,0.1)]'
+              className={`group relative bg-surface rounded-xl border flex flex-col transition-colors ${
+                isAiMatch ? 'border-primary/30 hover:border-primary/50' : 'border-line hover:border-line-strong'
               }`}
             >
-              {/* Subtle ambient glow on hover */}
-              <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[40px] pointer-events-none transition-colors ${
-                isAiMatch ? 'bg-violet-500/[0.05] group-hover:bg-violet-500/[0.1]' : 'bg-emerald-500/[0.03] group-hover:bg-emerald-500/[0.08]'
-              }`} />
 
               {isAiMatch && (
-                <div className="absolute -top-3 -right-3 h-12 w-12 rounded-full bg-zinc-900 border border-violet-500/30 flex items-center justify-center shadow-lg z-20">
+                <div className="absolute -top-3 -right-3 h-12 w-12 rounded-full bg-surface-raised border border-primary/30 flex items-center justify-center z-20">
                   <div className="text-center">
-                    <span className="block text-xs font-black text-violet-400 leading-none">{job.matchScore}</span>
+                    <span className="block text-xs font-bold text-primary leading-none">{job.matchScore}</span>
                     <span className="block text-[8px] font-bold text-zinc-500 uppercase">Score</span>
                   </div>
                 </div>
@@ -222,12 +197,12 @@ export default function DashboardJobs() {
               <div className="flex-1 relative z-10 p-6 pb-0">
                 <div className="flex justify-between items-start gap-4 mb-3">
                   <h3 className={`text-lg font-bold font-display leading-tight transition-colors line-clamp-2 pr-6 ${
-                    isAiMatch ? 'text-violet-100 group-hover:text-violet-400' : 'text-zinc-100 group-hover:text-emerald-400'
+                    isAiMatch ? 'text-primary-light group-hover:text-primary' : 'text-zinc-100 group-hover:text-emerald-400'
                   }`}>
                     {job.title}
                   </h3>
                   {job.remote && !isAiMatch && (
-                    <span className="flex-shrink-0 text-[10px] font-bold px-2 py-1 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20 uppercase tracking-widest">
+                    <span className="flex-shrink-0 text-[10px] font-bold px-2 py-1 rounded bg-primary/10 text-primary border border-primary/20 uppercase tracking-widest">
                       Remote
                     </span>
                   )}
@@ -258,8 +233,8 @@ export default function DashboardJobs() {
 
                 {isAiMatch ? (
                   <div className="space-y-4 mb-6">
-                    <div className="bg-violet-500/5 border border-violet-500/10 rounded-xl p-3">
-                      <h4 className="text-[10px] font-bold text-violet-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
+                      <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1 flex items-center gap-1">
                         <CheckCircleIcon className="h-3 w-3" /> Why it matches
                       </h4>
                       <p className="text-xs text-zinc-300 leading-relaxed">{job.reason}</p>
@@ -310,7 +285,7 @@ export default function DashboardJobs() {
                   rel="noopener noreferrer"
                   className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-bold transition-all ${
                     isAiMatch 
-                      ? 'bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-violet-200 border-violet-500/20 hover:border-violet-500/40' 
+                      ? 'bg-primary/10 hover:bg-primary/20 text-primary-light hover:text-primary border-primary/20 hover:border-primary/40' 
                       : 'bg-white/[0.04] hover:bg-emerald-500/10 text-zinc-300 hover:text-emerald-400 border-white/[0.08] hover:border-emerald-500/30'
                   }`}
                 >
