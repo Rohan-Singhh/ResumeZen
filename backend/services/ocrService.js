@@ -141,7 +141,10 @@ const extractText = async (source, options = {}) => {
 
   try {
     if (typeof source === 'string') {
-      if (source.startsWith('http://') || source.startsWith('https://')) {
+      // Only fetch remote sources over TLS. Resume files come from Cloudinary
+      // secure URLs (https), so plain-http remote fetching is intentionally
+      // unsupported.
+      if (source.startsWith('https://')) {
         sourceType = 'url';
         tempFilePath = await downloadFile(source);
         target = tempFilePath;

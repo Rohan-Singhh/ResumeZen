@@ -34,9 +34,9 @@ export default function AiInsightsPanel({ latestAnalysis, onViewReport }) {
 
       {issues.length > 0 && (
         <div className="space-y-2 mb-5">
-          {issues.map((issue, i) => (
+          {issues.map((issue) => (
             <button
-              key={i}
+              key={issue}
               onClick={() => onViewReport?.()}
               className="group flex w-full items-start gap-3 rounded-lg border border-line bg-white/[0.02] p-3 text-left transition-colors hover:bg-white/[0.04]"
             >
@@ -52,8 +52,8 @@ export default function AiInsightsPanel({ latestAnalysis, onViewReport }) {
         <div>
           <p className="text-[11px] font-medium uppercase tracking-wider text-ink-faint mb-2.5">Strengths detected</p>
           <div className="flex flex-wrap gap-2">
-            {strengths.map((str, i) => (
-              <Badge key={i} variant="emerald">
+            {strengths.map((str) => (
+              <Badge key={str} variant="emerald">
                 <CheckCircleIcon className="h-3.5 w-3.5" />
                 {str}
               </Badge>

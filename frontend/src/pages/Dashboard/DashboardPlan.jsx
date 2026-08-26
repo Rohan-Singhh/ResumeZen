@@ -225,8 +225,8 @@ export default function DashboardPlan() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-            {userPlans.map((up, i) => (
-              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white/[0.02] border border-white/[0.05] rounded-xl transition-all hover:bg-white/[0.04] hover:border-white/[0.1]">
+            {userPlans.map((up) => (
+              <div key={up._id || up.planId?._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white/[0.02] border border-white/[0.05] rounded-xl transition-all hover:bg-white/[0.04] hover:border-white/[0.1]">
                 <div>
                   <p className="text-lg font-bold text-white font-display tracking-tight mb-0.5">{up.planId?.name || 'Unknown Plan'}</p>
                   <p className="text-sm text-zinc-400 font-medium">
@@ -308,8 +308,8 @@ export default function DashboardPlan() {
                       </div>
                       <span className="text-sm font-bold text-zinc-200">{plan.isUnlimited ? 'Unlimited checks' : `${plan.credits} resume ${plan.credits === 1 ? 'check' : 'checks'}`}</span>
                     </li>
-                    {plan.features?.map((f, i) => (
-                      <li key={i} className="flex items-start gap-3">
+                    {plan.features?.map((f) => (
+                      <li key={f} className="flex items-start gap-3">
                         <div className="mt-0.5 p-1 rounded-md bg-white/[0.03] text-zinc-500 border border-white/[0.05]">
                           <CheckCircleIcon className="h-3.5 w-3.5" />
                         </div>

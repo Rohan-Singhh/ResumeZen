@@ -194,8 +194,8 @@ export default function Studio() {
                     <CheckCircleIcon className="h-4 w-4" /> Strengths
                   </h4>
                   <ul className="space-y-3">
-                    {activeResume.strengths.map((s, i) => (
-                      <li key={i} className="text-sm text-zinc-300 flex items-start gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
+                    {activeResume.strengths.map((s) => (
+                      <li key={s} className="text-sm text-zinc-300 flex items-start gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
                         <CheckCircleIcon className="h-5 w-5 text-emerald-500 flex-shrink-0" />
                         <span className="leading-relaxed font-medium">{s}</span>
                       </li>
@@ -211,8 +211,8 @@ export default function Studio() {
                     <LightBulbIcon className="h-4 w-4" /> Areas to Improve
                   </h4>
                   <ul className="space-y-3">
-                    {activeResume.issues.map((s, i) => (
-                      <li key={i} className="text-sm text-zinc-300 flex items-start gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
+                    {activeResume.issues.map((s) => (
+                      <li key={s} className="text-sm text-zinc-300 flex items-start gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
                         <div className="h-5 w-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5 border border-amber-500/30">
                           <span className="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
                         </div>
@@ -234,7 +234,7 @@ export default function Studio() {
                 <div className="mb-5">
                   <p className="text-xs font-semibold text-zinc-500 mb-3 uppercase tracking-wider">Technical Skills</p>
                   <div className="flex flex-wrap gap-2">
-                    {activeResume.skills.technical.map((s, i) => <Tag key={i} variant="primary">{s}</Tag>)}
+                    {activeResume.skills.technical.map((s) => <Tag key={s} variant="primary">{s}</Tag>)}
                   </div>
                 </div>
               )}
@@ -242,7 +242,7 @@ export default function Studio() {
                 <div className="mb-5">
                   <p className="text-xs font-semibold text-zinc-500 mb-3 uppercase tracking-wider">Soft Skills</p>
                   <div className="flex flex-wrap gap-2">
-                    {activeResume.skills.soft.map((s, i) => <Tag key={i} variant="secondary">{s}</Tag>)}
+                    {activeResume.skills.soft.map((s) => <Tag key={s} variant="secondary">{s}</Tag>)}
                   </div>
                 </div>
               )}
@@ -253,8 +253,8 @@ export default function Studio() {
                     <LightBulbIcon className="h-4 w-4" /> Suggested Keywords to Add
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {activeResume.missingKeywords.map((kw, i) => (
-                      <span key={i} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold rounded-lg">
+                    {activeResume.missingKeywords.map((kw) => (
+                      <span key={kw} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold rounded-lg">
                         + {kw}
                       </span>
                     ))}
