@@ -145,7 +145,7 @@ export default function DashboardProfileEdit() {
     }
   };
 
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-500 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 outline-none transition-all duration-300 backdrop-blur-sm";
+  const inputClass = "w-full bg-white/5 border border-line rounded-lg px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-primary focus:bg-white/10 focus:ring-2 focus:ring-primary/20 outline-none transition-colors";
   const labelClass = "block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider";
 
   return (
@@ -174,7 +174,7 @@ export default function DashboardProfileEdit() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.9, y: 20 }} 
-              className="px-8 py-6 bg-[#1a1a24] border border-emerald-500/30 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.2)] flex flex-col items-center gap-3"
+              className="px-8 py-6 bg-surface border border-emerald-500/30 rounded-2xl flex flex-col items-center gap-3"
             >
               <div className="h-14 w-14 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 mb-2">
                 <CheckCircleIcon className="h-7 w-7 text-emerald-400" />
@@ -205,14 +205,13 @@ export default function DashboardProfileEdit() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="bg-[#131318]/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative w-full"
+        className="bg-surface border border-line rounded-xl overflow-hidden relative w-full"
       >
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[100px] pointer-events-none" />
 
         {/* --- GENERAL SECTION --- */}
         <div className="p-6 sm:p-10 relative z-10 border-b border-white/5">
           <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5">
-            <IdentificationIcon className="h-6 w-6 text-violet-400" />
+            <IdentificationIcon className="h-6 w-6 text-primary" />
             <h3 className="text-xl font-bold text-zinc-100 font-display">General Information</h3>
           </div>
 
@@ -249,7 +248,7 @@ export default function DashboardProfileEdit() {
                 type="button" 
                 onClick={() => fileInputRef.current?.click()} 
                 disabled={avatarUploading}
-                className="text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors px-4 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 disabled:opacity-50"
+                className="text-xs font-semibold text-primary hover:text-primary-light transition-colors px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 hover:bg-primary/20 disabled:opacity-50"
               >
                 {avatarUploading ? 'Uploading...' : 'Upload Photo'}
               </button>
@@ -324,7 +323,7 @@ export default function DashboardProfileEdit() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 text-white text-sm font-bold px-8 py-3 rounded-xl shadow-glow-primary disabled:shadow-none transition-all duration-300 flex items-center justify-center min-w-[140px]"
+            className="bg-primary hover:bg-primary-dark disabled:bg-zinc-800 disabled:text-zinc-500 text-white text-sm font-semibold px-8 py-3 rounded-lg transition-colors flex items-center justify-center min-w-[140px]"
           >
             {isSubmitting ? (
               <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
