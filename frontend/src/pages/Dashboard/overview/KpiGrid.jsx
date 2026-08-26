@@ -9,8 +9,10 @@ import {
   CreditCardIcon,
   BoltIcon,
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import { skillCount } from '../../../utils/analysisSchema';
 import StatTile from '../../../components/ui/StatTile';
+import { staggerContainer, staggerItem } from '../../../utils/motion';
 
 // One accent metric (ATS score); the rest stay neutral so color means
 // something instead of decorating every tile a different hue.
@@ -96,10 +98,16 @@ export default function KpiGrid({ latestAnalysis, previousAnalysis, historyCount
   const data = { latestAnalysis, previousAnalysis, historyCount, creditsText };
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <motion.div
+      variants={staggerContainer}
+      initial="initial"
+      animate="animate"
+      className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+    >
       {kpiConfigs.map((kpi) => (
         <StatTile
           key={kpi.key}
+          variants={staggerItem}
           icon={kpi.icon}
           label={kpi.label}
           value={kpi.getValue(data)}
@@ -107,6 +115,6 @@ export default function KpiGrid({ latestAnalysis, previousAnalysis, historyCount
           accent={kpi.accent}
         />
       ))}
-    </div>
+    </motion.div>
   );
 }
