@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { useState, createContext, useContext, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import Landing from './pages/Landing';
 import AuthGuard from './components/auth/AuthGuard';
@@ -165,10 +165,14 @@ function AnimatedRoutes() {
 
 export default function App() {
   return (
-    <Router>
-      <LoadingProvider>
-        <AnimatedRoutes />
-      </LoadingProvider>
-    </Router>
+    // reducedMotion="user" makes every framer-motion animation respect the
+    // OS "reduce motion" setting without per-component guards.
+    <MotionConfig reducedMotion="user">
+      <Router>
+        <LoadingProvider>
+          <AnimatedRoutes />
+        </LoadingProvider>
+      </Router>
+    </MotionConfig>
   );
 }
