@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { auth, googleProvider } from '../../firebase';
 import { signInWithPopup, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, beginInteractiveLogin, endInteractiveLogin } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useLoading } from '../../App';
 
@@ -45,10 +45,14 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
       setError('');
       
       console.log("Initiating Google sign-in process...");
-      
-      // Force account selection prompt so users don't get auto-logged back in
-      googleProvider.setCustomParameters({ prompt: 'select_account' });
-      
+
+      // This path owns the backend handshake; tell AuthContext to stand down so
+      // its onAuthStateChanged listener doesn't fire a duplicate exchange.
+      beginInteractiveLogin();
+
+      // Account-selection prompt is already configured on the provider
+      // (see firebase.js) — no need to re-set it here.
+
       // Sign in with Google using Firebase
       const result = await signInWithPopup(auth, googleProvider);
       
@@ -86,11 +90,13 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
            navigate('/login');
         }
       }).finally(() => {
+        endInteractiveLogin();
         setIsLoading(false);
         setLoading(false);
       });
 
     } catch (err) {
+      endInteractiveLogin();
       setLoading(false);
       setIsLoading(false);
       

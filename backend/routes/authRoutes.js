@@ -78,19 +78,14 @@ const authLimiter = rateLimit({
  */
 const handleAuthUser = async (firebaseUID, userData) => {
   try {
-    // First try to find user by email to avoid duplicate key errors
-    let user = null;
-    
-    if (userData.email) {
-      user = await UserAuth.findOne({ email: userData.email });
-      console.log(`Checking for existing user with email ${userData.email}: ${user ? 'Found' : 'Not found'}`);
-    }
-    
-    // If not found by email, try to find by firebaseUID
-    if (!user) {
-      user = await UserAuth.findOne({ firebaseUid: firebaseUID });
-      console.log(`Checking for existing user with firebaseUID ${firebaseUID}: ${user ? 'Found' : 'Not found'}`);
-    }
+    // Look up by email and by firebaseUid in parallel, then prefer the email
+    // match (matches the previous email-first precedence). These were two
+    // sequential round trips before.
+    const [userByEmail, userByUid] = await Promise.all([
+      userData.email ? UserAuth.findOne({ email: userData.email }) : null,
+      UserAuth.findOne({ firebaseUid: firebaseUID })
+    ]);
+    let user = userByEmail || userByUid;
     
     if (!user) {
       // Prepare user data for creation
@@ -187,29 +182,20 @@ const handleAuthUser = async (firebaseUID, userData) => {
         user.firebaseUid = firebaseUID;
         needsUpdate = true;
       }
-      
-      // Update lastLoginAt
+
+      // lastLoginAt changes on every login. Keep it current for the response,
+      // but don't force a full document save on the request's critical path —
+      // fire it off separately so the JWT/response isn't blocked by the write.
       user.lastLoginAt = new Date();
-      needsUpdate = true;
-      
+
       if (needsUpdate) {
-        console.log('Updating existing user with new data');
         await user.save();
+      } else {
+        UserAuth.updateOne({ _id: user._id }, { lastLoginAt: user.lastLoginAt })
+          .catch(err => console.error('lastLoginAt update failed:', err.message));
       }
-      
-      // If we received a photoURL (e.g. from Google) and the user doesn't have an avatar yet, set it
-      if (userData.photoURL) {
-        try {
-          const profile = await UserProfile.findOne({ userId: user._id });
-          if (profile && !profile.avatarUrl) {
-            profile.avatarUrl = userData.photoURL;
-            await profile.save();
-            console.log('Updated existing user profile with Google photoURL');
-          }
-        } catch (profileErr) {
-          console.error('Error updating profile photoURL:', profileErr);
-        }
-      }
+      // photoURL is applied below against the profile we fetch anyway,
+      // avoiding a second UserProfile read.
     }
     
     // Check if JWT_SECRET exists
@@ -236,7 +222,14 @@ const handleAuthUser = async (firebaseUID, userData) => {
         UserProfile.findOne({ userId: user._id }),
         UserLinks.findOne({ userId: user._id })
       ]);
-      
+
+      // Backfill avatar from the Google photoURL on first sign-in, reusing the
+      // profile we just fetched instead of reading UserProfile a second time.
+      if (userData.photoURL && userProfile && !userProfile.avatarUrl) {
+        userProfile.avatarUrl = userData.photoURL;
+        userProfile.save().catch(err => console.error('avatar backfill failed:', err.message));
+      }
+
       const fullUserData = {
         _id: user._id,
         name: user.fullName,

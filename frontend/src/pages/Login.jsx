@@ -62,12 +62,9 @@ export default function Login() {
   const handleNavigate = useCallback(() => {
     if (navigatingRef.current) return;
     navigatingRef.current = true;
-    
+
     setLoading(false);
-    
-    setTimeout(() => {
-      navigate(from.pathname, { replace: true });
-    }, 100);
+    navigate(from.pathname, { replace: true });
   }, [navigate, from, setLoading]);
 
   // Auto-redirect if already logged in
