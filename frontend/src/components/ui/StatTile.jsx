@@ -15,9 +15,9 @@ import Card from './Card';
  *   trend  — number (signed) | null; renders a +/- chip when non-zero
  *   accent — highlight this tile's icon/value in the accent color
  */
-export default function StatTile({ icon: Icon, label, value, trend = null, accent = false }) {
+export default function StatTile({ icon: Icon, label, value, trend = null, accent = false, ...rest }) {
   return (
-    <Card padded={false} hover className="group p-4">
+    <Card padded={false} hover className="group p-4" {...rest}>
       <div className="mb-3 flex items-center justify-between">
         {Icon && (
           <span
