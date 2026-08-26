@@ -15,7 +15,6 @@ import {
   BriefcaseIcon
 } from '@heroicons/react/24/outline';
 import SupportWidget from '../../components/SupportWidget';
-import SceneBackdrop from '../../components/three/SceneBackdrop';
 
 function TopNav() {
   const { logout, currentUser, userPlans } = useAuth();
@@ -82,7 +81,7 @@ function TopNav() {
                           transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         />
                       )}
-                      <item.icon className={`h-4 w-4 relative z-10 ${isActive ? 'text-violet-400' : ''}`} />
+                      <item.icon className={`h-4 w-4 relative z-10 ${isActive ? 'text-primary' : ''}`} />
                       <span className="relative z-10">{item.name}</span>
                     </NavLink>
                   );
@@ -144,10 +143,10 @@ function TopNav() {
                       to={item.path}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`block px-3 py-3 rounded-lg text-base font-medium transition-colors flex items-center gap-3 ${
-                        isActive ? 'bg-violet-500/20 text-white border border-violet-500/30' : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
+                        isActive ? 'bg-primary/15 text-white border border-primary/30' : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
                       }`}
                     >
-                      <item.icon className={`h-5 w-5 ${isActive ? 'text-violet-400' : ''}`} />
+                      <item.icon className={`h-5 w-5 ${isActive ? 'text-primary' : ''}`} />
                       {item.name}
                     </NavLink>
                   );
@@ -157,7 +156,7 @@ function TopNav() {
                   {!hasUnlimitedPlan && (
                     <button 
                       onClick={() => { setIsMobileMenuOpen(false); navigate('/dashboard/plans'); }} 
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-4 py-3 rounded-xl text-sm font-bold shadow-glow-primary transition-all"
+                      className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-3 rounded-xl text-sm font-bold transition-colors"
                     >
                       <SparklesIcon className="h-5 w-5" /> Go Unlimited
                     </button>
@@ -184,10 +183,7 @@ export default function DashboardLayout() {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col h-screen bg-[#07070b] text-zinc-100 overflow-hidden relative selection:bg-violet-500/30">
-      
-      {/* ATMOSPHERE: compact monolith scene replaces the flat blob glows */}
-      <SceneBackdrop compact />
+    <div className="flex flex-col h-screen bg-surface-void text-ink overflow-hidden relative selection:bg-primary/30">
 
       {/* Top Navigation replacing Sidebar */}
       <TopNav />
@@ -198,10 +194,10 @@ export default function DashboardLayout() {
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 15, filter: 'blur(8px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -15, filter: 'blur(8px)' }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
               <Outlet />
             </motion.div>
