@@ -109,8 +109,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                   
                   {analysisData.recruiterScreening?.redFlags?.length > 0 && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {analysisData.recruiterScreening.redFlags.map((flag, i) => (
-                        <span key={i} className="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                      {analysisData.recruiterScreening.redFlags.map((flag) => (
+                        <span key={flag} className="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold rounded-lg flex items-center gap-1.5">
                           <ExclamationTriangleIcon className="w-3.5 h-3.5" /> {flag}
                         </span>
                       ))}
@@ -127,8 +127,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                   <FireIcon className="h-5 w-5" /> Brutal Feedback
                 </h4>
                 <ul className="space-y-3">
-                  {analysisData.recruiterScreening.brutalFeedback.map((feedback, i) => (
-                    <li key={i} className="text-zinc-300 text-sm font-medium flex items-start gap-3 leading-relaxed">
+                  {analysisData.recruiterScreening.brutalFeedback.map((feedback) => (
+                    <li key={feedback} className="text-zinc-300 text-sm font-medium flex items-start gap-3 leading-relaxed">
                       <span className="text-red-500 font-bold mt-0.5">•</span> {feedback}
                     </li>
                   ))}
@@ -158,8 +158,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                     <div className="mb-4">
                       <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Critical Gaps</p>
                       <div className="flex flex-wrap gap-2">
-                        {analysisData.technicalDepth.skillGaps.map((gap, i) => (
-                          <span key={i} className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold rounded-md shadow-inner">
+                        {analysisData.technicalDepth.skillGaps.map((gap) => (
+                          <span key={gap} className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold rounded-md shadow-inner">
                             {gap}
                           </span>
                         ))}
@@ -171,8 +171,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                     <div>
                       <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Buzzwords Dumped</p>
                       <div className="flex flex-wrap gap-2">
-                        {analysisData.technicalDepth.overusedBuzzwords.map((bw, i) => (
-                          <span key={i} className="px-2.5 py-1 bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs font-semibold rounded-md line-through opacity-70">
+                        {analysisData.technicalDepth.overusedBuzzwords.map((bw) => (
+                          <span key={bw} className="px-2.5 py-1 bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs font-semibold rounded-md line-through opacity-70">
                             {bw}
                           </span>
                         ))}
@@ -196,8 +196,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                     <div className="mb-5">
                       <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Unquantified Claims</p>
                       <ul className="space-y-2">
-                        {analysisData.impactAndOwnership.missingMetrics.map((missing, i) => (
-                          <li key={i} className="text-xs text-zinc-300 flex items-start gap-2 bg-black/20 p-2.5 rounded-lg border border-white/5">
+                        {analysisData.impactAndOwnership.missingMetrics.map((missing) => (
+                          <li key={missing} className="text-xs text-zinc-300 flex items-start gap-2 bg-black/20 p-2.5 rounded-lg border border-white/5">
                             <span className="text-amber-500 mt-0.5 opacity-70">?</span> {missing}
                           </li>
                         ))}
@@ -209,8 +209,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                     <div>
                       <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Metric Injections Required</p>
                       <ul className="space-y-3">
-                        {analysisData.impactAndOwnership.recommendedMetricInjections.map((rec, i) => (
-                          <li key={i} className="text-xs font-mono bg-emerald-900/10 p-3 rounded-lg border border-emerald-500/20 text-emerald-300 leading-relaxed shadow-inner">
+                        {analysisData.impactAndOwnership.recommendedMetricInjections.map((rec) => (
+                          <li key={rec} className="text-xs font-mono bg-emerald-900/10 p-3 rounded-lg border border-emerald-500/20 text-emerald-300 leading-relaxed shadow-inner">
                             {rec}
                           </li>
                         ))}
@@ -229,8 +229,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                   <MagnifyingGlassIcon className="h-4 w-4" /> Keyword Injection Strategy
                 </h4>
                 <div className="flex flex-wrap gap-2.5">
-                  {analysisData.missingKeywords.map((kw, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-bold rounded-lg shadow-inner">
+                  {analysisData.missingKeywords.map((kw) => (
+                    <span key={kw} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-bold rounded-lg shadow-inner">
                       + {kw}
                     </span>
                   ))}
@@ -243,11 +243,11 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
               <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
                 <h4 className="text-sm font-bold text-zinc-100 mb-4 font-display uppercase tracking-wider">Extracted Skills</h4>
                 <div className="flex flex-wrap gap-2">
-                  {analysisData.skills.technical.map((s, i) => (
-                    <span key={`t-${i}`} className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs rounded">{s}</span>
+                  {analysisData.skills.technical.map((s) => (
+                    <span key={`t-${s}`} className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs rounded">{s}</span>
                   ))}
-                  {analysisData.skills.soft.map((s, i) => (
-                    <span key={`s-${i}`} className="px-2.5 py-1 bg-white/5 border border-white/10 text-zinc-300 text-xs rounded">{s}</span>
+                  {analysisData.skills.soft.map((s) => (
+                    <span key={`s-${s}`} className="px-2.5 py-1 bg-white/5 border border-white/10 text-zinc-300 text-xs rounded">{s}</span>
                   ))}
                 </div>
               </div>
@@ -260,8 +260,8 @@ export default function ResumeDetailModal({ modalItem, onClose }) {
                   <CheckCircleIcon className="h-5 w-5" /> Strengths
                 </h4>
                 <ul className="space-y-3">
-                  {analysisData.strengths.map((s, i) => (
-                    <li key={i} className="text-zinc-300 text-sm font-medium flex items-start gap-3 leading-relaxed">
+                  {analysisData.strengths.map((s) => (
+                    <li key={s} className="text-zinc-300 text-sm font-medium flex items-start gap-3 leading-relaxed">
                       <span className="text-emerald-500 font-bold mt-0.5">•</span> {s}
                     </li>
                   ))}

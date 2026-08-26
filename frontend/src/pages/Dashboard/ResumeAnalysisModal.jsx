@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { analyzeUploadResume } from '../../services/resumeService';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,8 +52,6 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
   const [currentStep, setCurrentStep] = useState(0);
   const [vibeIndex, setVibeIndex] = useState(0);
   const [savedAnalysisData, setSavedAnalysisData] = useState(null);
-  const canvasRef = useRef(null);
-  const animFrameRef = useRef(null);
 
   // Rotate vibes text
   useEffect(() => {
@@ -62,53 +60,6 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
       setVibeIndex(prev => (prev + 1) % LOADING_PHRASES.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, [loading]);
-
-  // Particle background animation
-  useEffect(() => {
-    if (!loading || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const particles = [];
-    const PARTICLE_COUNT = 35;
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth * 2;
-      canvas.height = canvas.offsetHeight * 2;
-      ctx.scale(2, 2);
-    };
-    resize();
-
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      particles.push({
-        x: Math.random() * canvas.offsetWidth,
-        y: Math.random() * canvas.offsetHeight,
-        r: Math.random() * 2 + 0.5,
-        dx: (Math.random() - 0.5) * 0.4,
-        dy: (Math.random() - 0.5) * 0.4,
-        opacity: Math.random() * 0.5 + 0.1,
-      });
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-      for (const p of particles) {
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.offsetWidth) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.offsetHeight) p.dy *= -1;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(99, 102, 241, ${p.opacity})`;
-        ctx.fill();
-      }
-      animFrameRef.current = requestAnimationFrame(draw);
-    };
-    draw();
-
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
   }, [loading]);
 
   useEffect(() => {
@@ -122,7 +73,9 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
       const progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 95) return 95;
-          return prev + Math.random() * 4 + 1;
+          // Ease toward 95: bigger steps early, smaller as it fills. Deterministic
+          // (no PRNG) so it reads as steady progress, not jitter.
+          return prev + Math.max(1, (95 - prev) * 0.08);
         });
       }, 350);
 
@@ -206,12 +159,6 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
 
           {loading ? (
             <div className="relative p-6 sm:p-8 overflow-hidden">
-              {/* Particle canvas background */}
-              <canvas
-                ref={canvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none opacity-40"
-              />
-
               {/* Ambient glow behind the ring */}
               <div className={`absolute top-8 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full blur-[60px] ${activeColor.bg} opacity-20 pointer-events-none transition-colors duration-700`} />
 
@@ -290,7 +237,7 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
 
                     return (
                       <motion.div
-                        key={i}
+                        key={step.label}
                         initial={{ opacity: 0, x: -15 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.08 }}
