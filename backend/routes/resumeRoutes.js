@@ -106,12 +106,16 @@ router.post('/analyze-upload', authMiddleware, async (req, res) => {
       console.log(`[analyze-upload] Refunded 1 credit for user ${userId}: ${reason}`);
     };
 
+    // express-fileupload only populates req.body when the multipart form has
+    // non-file text fields. The client may send just the file, so req.body can
+    // be undefined here — default it before reading options.
+    const body = req.body || {};
     const options = {
-      language: req.body.language || 'eng',
-      scale: req.body.scale !== 'false',
-      isTable: req.body.isTable === 'true',
-      engine: req.body.engine ? parseInt(req.body.engine, 10) : 2,
-      model: req.body.model,
+      language: body.language || 'eng',
+      scale: body.scale !== 'false',
+      isTable: body.isTable === 'true',
+      engine: body.engine ? parseInt(body.engine, 10) : 2,
+      model: body.model,
       userId,
       planId: userPlan._id
     };
