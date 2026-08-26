@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
-  CheckCircleIcon, 
-  XMarkIcon, 
-  SparklesIcon, 
-  BoltIcon, 
+  CheckCircleIcon,
+  XMarkIcon,
+  SparklesIcon,
   ShieldCheckIcon,
   ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
@@ -58,66 +57,33 @@ const PurchaseNotifier = ({ status, errorMsg }) => {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
     >
-      <div className="relative flex flex-col items-center justify-center w-full max-w-md p-8">
+      <div className="relative flex w-full max-w-sm flex-col items-center justify-center rounded-2xl border border-line bg-surface p-8 text-center">
         {status === 'loading' && (
           <>
-            <motion.div 
-              className="absolute w-40 h-40 rounded-full border border-violet-500/20"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div 
-              className="absolute w-32 h-32 rounded-full border border-violet-400/40"
-              animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.8, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <div className="relative w-24 h-24 rounded-full bg-violet-950 flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.3)]">
-              <BoltIcon className="h-10 w-10 text-violet-400 animate-pulse" />
-            </div>
-            <motion.h3 
-              className="mt-8 text-xl font-bold text-white font-display tracking-tight"
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              Activating your AI capabilities...
-            </motion.h3>
-            <p className="mt-2 text-sm text-zinc-400 font-medium">Please wait while we secure your transaction.</p>
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Processing payment</h3>
+            <p className="mt-1.5 text-sm text-ink-muted">Securing your transaction…</p>
           </>
         )}
 
         {status === 'success' && (
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }} 
-            animate={{ scale: 1, opacity: 1 }} 
-            className="flex flex-col items-center text-center"
-          >
-            <div className="relative">
-              <motion.div 
-                className="absolute inset-0 rounded-full bg-emerald-500/20"
-                animate={{ scale: [1, 1.5, 2], opacity: [0.5, 0, 0] }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              />
-              <div className="w-24 h-24 rounded-full bg-emerald-950 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.4)]">
-                <CheckCircleIcon className="h-12 w-12 text-emerald-400" />
-              </div>
-            </div>
-            <h3 className="mt-8 text-2xl font-extrabold text-white font-display tracking-tight">Purchase Successful!</h3>
-            <p className="mt-3 text-sm text-zinc-300">Your AI engine is now fully powered and ready to optimize.</p>
-          </motion.div>
+          <>
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
+              <CheckCircleIcon className="h-8 w-8 text-emerald-400" />
+            </span>
+            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Purchase successful</h3>
+            <p className="mt-1.5 text-sm text-ink-muted">Your plan is active.</p>
+          </>
         )}
 
         {status === 'error' && (
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }} 
-            animate={{ y: 0, opacity: 1 }} 
-            className="flex flex-col items-center text-center bg-[#131318] p-8 rounded-2xl border border-red-500/20 shadow-2xl"
-          >
-            <div className="w-16 h-16 rounded-full bg-red-950 flex items-center justify-center mb-5">
+          <>
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
               <ExclamationCircleIcon className="h-8 w-8 text-red-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white font-display mb-2">Transaction Failed</h3>
-            <p className="text-sm text-red-300/80">{errorMsg}</p>
-          </motion.div>
+            </span>
+            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Transaction failed</h3>
+            <p className="mt-1.5 text-sm text-red-400/90">{errorMsg}</p>
+          </>
         )}
       </div>
     </motion.div>
@@ -193,11 +159,8 @@ export default function DashboardPlan() {
 
     try {
       setNotifierState('loading');
-      
-      // Artificial delay for immersive UX if the API is too fast
-      const animationDelay = new Promise(r => setTimeout(r, 1800));
+
       const result = await purchasePlan(plan._id);
-      await animationDelay;
 
       if (result.success) {
         setNotifierState('success');
@@ -236,8 +199,8 @@ export default function DashboardPlan() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl font-extrabold text-zinc-100 font-display tracking-tight">Upgrade Your Engine</h1>
-          <p className="text-sm text-zinc-400 mt-1.5 font-light">Select an intelligence tier that fits your career trajectory.</p>
+          <h1 className="text-3xl font-semibold text-ink font-display tracking-tight">Plans</h1>
+          <p className="text-sm text-ink-muted mt-1.5">Choose the plan that fits how often you analyze resumes.</p>
         </motion.div>
       </div>
 
@@ -250,14 +213,14 @@ export default function DashboardPlan() {
           <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/[0.04] rounded-full blur-[80px] pointer-events-none" />
           
           <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 p-[1px] shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+            <div className="h-10 w-10 rounded-xl bg-emerald-500 p-[1px]">
               <div className="w-full h-full bg-[#0d0d12] rounded-[10px] flex items-center justify-center">
                 <ShieldCheckIcon className="h-5 w-5 text-emerald-400" />
               </div>
             </div>
             <div>
               <h2 className="text-lg font-bold text-zinc-100 font-display">Active Subscriptions</h2>
-              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Command Center</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Your Plan</p>
             </div>
           </div>
 
@@ -278,7 +241,7 @@ export default function DashboardPlan() {
                         Active until {new Date(up.expiresAt).toLocaleDateString()}
                       </span>
                     ) : (
-                      <span className="text-xs font-semibold px-2 py-1 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                      <span className="text-xs font-semibold px-2 py-1 rounded bg-primary/10 text-primary border border-primary/20">
                         Lifetime Access
                       </span>
                     )}
@@ -293,7 +256,7 @@ export default function DashboardPlan() {
       {/* Pricing Grid */}
       {loading ? (
         <div className="flex justify-center py-32">
-          <div className="h-10 w-10 border-[3px] border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+          <div className="h-10 w-10 border-[3px] border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -308,18 +271,18 @@ export default function DashboardPlan() {
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ delay: 0.2 + index * 0.1 }}
                 className={`relative bg-[#0d0d12]/80 backdrop-blur-xl rounded-2xl p-8 flex flex-col transition-all duration-300 group hover:-translate-y-1.5 ${
-                  isPop ? 'border border-violet-500/30 shadow-[0_0_40px_rgba(139,92,246,0.1)]' : 
-                  isSpec ? 'border border-emerald-500/30 shadow-[0_0_40px_rgba(16,185,129,0.08)]' : 
+                  isPop ? 'border border-primary/30' : 
+                  isSpec ? 'border border-emerald-500/30' : 
                   'border border-white/[0.08] hover:border-white/[0.15]'
                 }`}
               >
                 {/* Glow Effects */}
-                {isPop && <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/[0.06] rounded-full blur-[60px] pointer-events-none group-hover:bg-violet-500/[0.1] transition-colors" />}
+                {isPop && <div className="absolute top-0 right-0 w-48 h-48 bg-primary/[0.06] rounded-full blur-[60px] pointer-events-none group-hover:bg-primary/[0.1] transition-colors" />}
                 {isSpec && <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/[0.05] rounded-full blur-[60px] pointer-events-none group-hover:bg-emerald-500/[0.08] transition-colors" />}
 
                 {/* Badges */}
                 {isPop && (
-                  <div className="absolute -top-3 left-8 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-violet-500/25">
+                  <div className="absolute -top-3 left-8 bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
                     Most Popular
                   </div>
                 )}
@@ -340,7 +303,7 @@ export default function DashboardPlan() {
 
                   <ul className="space-y-4 mb-8">
                     <li className="flex items-start gap-3">
-                      <div className={`mt-0.5 p-1 rounded-md ${isPop ? 'bg-violet-500/20 text-violet-400' : isSpec ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-zinc-300'}`}>
+                      <div className={`mt-0.5 p-1 rounded-md ${isPop ? 'bg-primary/20 text-primary' : isSpec ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-zinc-300'}`}>
                         <SparklesIcon className="h-3.5 w-3.5" />
                       </div>
                       <span className="text-sm font-bold text-zinc-200">{plan.isUnlimited ? 'Unlimited checks' : `${plan.credits} resume ${plan.credits === 1 ? 'check' : 'checks'}`}</span>
@@ -360,12 +323,12 @@ export default function DashboardPlan() {
                   <button
                     onClick={() => handlePurchase(plan)}
                     disabled={notifierState !== 'idle'}
-                    className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                    className={`w-full py-3.5 rounded-xl text-sm font-semibold transition-colors ${
                       isPop
-                        ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(139,92,246,0.2)]'
+                        ? 'bg-primary hover:bg-primary-dark text-white'
                         : isSpec
-                          ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.15)]'
-                          : 'bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] hover:border-white/[0.15]'
+                          ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                          : 'bg-white/[0.06] hover:bg-white/[0.1] text-ink border border-line hover:border-line-strong'
                     }`}
                   >
                     Select Plan

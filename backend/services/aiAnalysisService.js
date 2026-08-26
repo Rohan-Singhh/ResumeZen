@@ -18,7 +18,7 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
  * hardcode their own defaults — they previously disagreed three ways, which
  * meant most requests burned a failed call before falling back.
  */
-const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+const DEFAULT_MODEL = 'stealth/ox-alpha';
 
 /**
  * Fallback chain, tried in order after the requested model.

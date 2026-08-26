@@ -10,14 +10,31 @@ export default {
         display: ['Space Grotesk', 'Outfit', 'sans-serif'],
       },
       colors: {
-        // Neon Electric Purple / Blue vibe
-        primary: '#8b5cf6', // Violet
-        'primary-dark': '#7c3aed',
-        'primary-light': '#a78bfa',
-        secondary: '#06b6d4', // Cyan
+        // Single accent (indigo-violet) — one accent, used sparingly.
+        primary: '#7c6cf6',
+        'primary-dark': '#5b4bd4',
+        'primary-light': '#a99cf9',
+        secondary: '#06b6d4', // Cyan (legacy, marketing pages only)
         'secondary-dark': '#0891b2',
-        accent: '#f472b6', // Pink
-        
+        accent: '#f472b6', // Pink (legacy, marketing pages only)
+
+        // Neutral-enterprise surface + text ramp (dashboard).
+        // Near-black surfaces, crisp translucent borders, warm-neutral text.
+        surface: {
+          void: '#08080b',   // page background
+          DEFAULT: '#0f0f14', // card
+          raised: '#16161d',  // raised / hover card
+        },
+        line: {
+          DEFAULT: 'rgba(255,255,255,0.08)', // default border
+          strong: 'rgba(255,255,255,0.14)',  // emphasized border
+        },
+        ink: {
+          DEFAULT: '#f4f4f6', // primary text
+          muted: '#a1a1aa',   // secondary text
+          faint: '#71717a',   // tertiary text
+        },
+
         // Dark Mode Base Colors
         dark: {
           bg: '#09090b', // Zinc 950

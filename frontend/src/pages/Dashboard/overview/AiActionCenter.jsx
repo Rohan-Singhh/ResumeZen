@@ -10,6 +10,10 @@ import {
   AdjustmentsHorizontalIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
+import Card from '../../../components/ui/Card';
+import SectionHeader from '../../../components/ui/SectionHeader';
+import EmptyState from '../../../components/ui/EmptyState';
+import Badge from '../../../components/ui/Badge';
 
 function generateTasks(analysis) {
   if (!analysis) return [];
@@ -82,9 +86,9 @@ function generateTasks(analysis) {
 }
 
 const priorityConfig = {
-  high: { dot: 'bg-red-500', label: 'High', labelClass: 'text-red-400 bg-red-500/15' },
-  medium: { dot: 'bg-amber-500', label: 'Med', labelClass: 'text-amber-400 bg-amber-500/15' },
-  low: { dot: 'bg-blue-500', label: 'Low', labelClass: 'text-blue-400 bg-blue-500/15' },
+  high: { label: 'High', variant: 'red' },
+  medium: { label: 'Med', variant: 'amber' },
+  low: { label: 'Low', variant: 'neutral' },
 };
 
 export default function AiActionCenter({ latestAnalysis }) {
@@ -128,95 +132,69 @@ export default function AiActionCenter({ latestAnalysis }) {
 
   if (!latestAnalysis) {
     return (
-      <div className="bg-[#0d0d12]/80 backdrop-blur-md border border-white/[0.06] rounded-xl p-6">
-        <div className="flex items-center gap-2.5 mb-4">
-          <QueueListIcon className="h-5 w-5 text-violet-400" />
-          <h3 className="text-base font-bold text-zinc-100 font-display">Action Center</h3>
-        </div>
-        <div className="flex flex-col items-center justify-center py-10 text-center">
-          <div className="h-14 w-14 bg-white/[0.03] rounded-full flex items-center justify-center mb-3 border border-white/[0.06]">
-            <QueueListIcon className="h-7 w-7 text-zinc-600" />
-          </div>
-          <p className="text-sm font-medium text-zinc-500">AI tasks will appear after your first analysis</p>
-        </div>
-      </div>
+      <Card>
+        <SectionHeader icon={QueueListIcon} title="Action Center" className="mb-4" />
+        <EmptyState icon={QueueListIcon} message="AI tasks will appear after your first analysis" />
+      </Card>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 relative overflow-hidden hover:border-white/[0.15] transition-all duration-300">
-      <div className="absolute top-0 left-0 w-40 h-40 bg-violet-500/[0.03] blur-[60px rounded-full pointer-events-none group-hover:bg-violet-500/[0.05] transition-colors" />
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 relative z-10">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-violet-500/10 rounded-xl border border-violet-500/20">
-            <QueueListIcon className="h-4 w-4 text-violet-400" />
-          </div>
-          <h3 className="text-lg font-bold text-zinc-100 font-display">Action Center</h3>
-        </div>
-        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-          {completedCount}/{tasks.length} done
-        </span>
-      </div>
+    <Card>
+      <SectionHeader
+        icon={QueueListIcon}
+        title="Action Center"
+        right={
+          <span className="text-[11px] font-medium uppercase tracking-wider text-ink-faint">
+            {completedCount}/{tasks.length} done
+          </span>
+        }
+        className="mb-4"
+      />
 
       {/* Progress bar */}
       {tasks.length > 0 && (
-        <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden mb-5 relative z-10">
+        <div className="h-1.5 w-full bg-white/[0.06] rounded-full overflow-hidden mb-5">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+            className="h-full rounded-full bg-primary"
             initial={{ width: 0 }}
-            animate={{ width: `${tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0}%` }}
+            animate={{ width: `${(completedCount / tasks.length) * 100}%` }}
             transition={{ duration: 0.5 }}
           />
         </div>
       )}
 
       {/* Tasks */}
-      <div className="space-y-1.5 relative z-10">
-        {tasks.map((task, i) => {
+      <div className="space-y-1.5">
+        {tasks.map((task) => {
           const isDone = completed[task.id];
           const pConfig = priorityConfig[task.priority];
 
           return (
-            <motion.div
+            <div
               key={task.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.04 * i }}
               onClick={() => toggleTask(task.id)}
-              className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                isDone
-                  ? 'bg-white/[0.02] opacity-50'
-                  : 'hover:bg-white/[0.03] border border-transparent hover:border-white/[0.06] hover:shadow-lg'
+              className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                isDone ? 'opacity-50' : 'hover:bg-white/[0.03]'
               }`}
             >
-              {/* Checkbox */}
-              <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-                isDone
-                  ? 'bg-violet-500/20 border-violet-500/40'
-                  : 'border-white/15 group-hover:border-white/30'
+              <div className={`h-5 w-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${
+                isDone ? 'bg-primary/20 border-primary/40' : 'border-line group-hover:border-line-strong'
               }`}>
-                {isDone && <CheckCircleIcon className="h-3.5 w-3.5 text-violet-400" />}
+                {isDone && <CheckCircleIcon className="h-3.5 w-3.5 text-primary" />}
               </div>
 
-              {/* Label */}
-              <p className={`text-sm font-medium flex-1 min-w-0 truncate transition-all ${
-                isDone ? 'text-zinc-600 line-through' : 'text-zinc-300'
+              <p className={`text-sm font-medium flex-1 min-w-0 truncate ${
+                isDone ? 'text-ink-faint line-through' : 'text-ink-muted'
               }`}>
                 {task.label}
               </p>
 
-              {/* Priority badge */}
-              {!isDone && (
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${pConfig.labelClass} uppercase tracking-wider flex-shrink-0`}>
-                  {pConfig.label}
-                </span>
-              )}
-            </motion.div>
+              {!isDone && <Badge variant={pConfig.variant}>{pConfig.label}</Badge>}
+            </div>
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

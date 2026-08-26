@@ -53,6 +53,20 @@ const setAuthHeader = (token) => {
   }
 };
 
+/**
+ * Interactive-login guard.
+ *
+ * When a user signs in via the Google button, LoginOptions owns the
+ * `/api/auth/google` handshake. Firebase's onAuthStateChanged also fires on the
+ * same popup completion, and in the window before LoginOptions has written the
+ * token it would run a *second* handshake (with a forced token refresh). This
+ * flag lets AuthContext skip its fallback exchange while an interactive login
+ * is in flight, so the backend gets one request, not two.
+ */
+let interactiveLoginInFlight = false;
+export const beginInteractiveLogin = () => { interactiveLoginInFlight = true; };
+export const endInteractiveLogin = () => { interactiveLoginInFlight = false; };
+
 export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
 
@@ -123,10 +137,12 @@ export const AuthProvider = ({ children }) => {
       setFirebaseUser(user);
 
       // Signed in with Firebase but no backend session yet — exchange the
-      // Firebase ID token for our own JWT.
-      if (user && !localStorage.getItem('token')) {
+      // Firebase ID token for our own JWT. Skipped while LoginOptions owns an
+      // interactive login (see interactiveLoginInFlight) to avoid a duplicate
+      // handshake. Uses the cached ID token — no forced refresh round trip.
+      if (user && !localStorage.getItem('token') && !interactiveLoginInFlight) {
         try {
-          const idToken = await user.getIdToken(true);
+          const idToken = await user.getIdToken();
           const response = await axios.post('/api/auth/google', { idToken });
 
           if (response.data.success) {

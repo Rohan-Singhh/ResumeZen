@@ -6,9 +6,10 @@ import PlanModal from '../../components/PlanModal';
 import DashboardCreditConfirmationPopup from './dashboardwelcome/DashboardCreditConfirmationPopup';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
 import ResumeDetailModal from './ResumeDetailModal';
-import { motion } from 'framer-motion';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { useResumeHistory } from '../../hooks/useResumeHistory';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
 
 // Overview sub-components
 import HeroSection from './overview/HeroSection';
@@ -172,7 +173,7 @@ export default function DashboardWelcome() {
 
   // ─── RENDER ──────────────────────────────────────────────
   return (
-    <div className="space-y-5 relative z-10">
+    <div className="space-y-5">
 
       {/* 1. Top Section: Hero + Upload Zone */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -240,43 +241,34 @@ export default function DashboardWelcome() {
       </div>
 
       {/* 6. Plan Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        {activePlan ? (
-          <div className="bg-[#0d0d12]/80 backdrop-blur-md border border-white/[0.06] rounded-xl px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden group">
-            <div className="absolute -right-16 -top-16 w-36 h-36 bg-violet-500/[0.06] rounded-full blur-2xl group-hover:bg-violet-500/[0.1] transition-colors" />
-            <div className="flex items-center gap-4 relative z-10">
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 p-[1px] flex-shrink-0">
-                <div className="w-full h-full bg-[#0d0d12] rounded-[10px] flex items-center justify-center">
-                  <SparklesIcon className="h-5 w-5 text-violet-400" />
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-zinc-100 font-display">{activePlan.planId.name}</p>
-                <p className="text-xs text-zinc-500">
-                  {activePlan.planId.isUnlimited ? 'Unlimited checks available' : `${activePlan.creditsLeft} of ${activePlan.planId.credits} checks remaining`}
-                </p>
-              </div>
-            </div>
-            <button onClick={() => navigate('/dashboard/plans')} className="text-xs font-semibold text-white bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] px-4 py-2 rounded-lg transition-colors whitespace-nowrap relative z-10">
-              Manage Plan
-            </button>
-          </div>
-        ) : (
-          <div className="bg-gradient-to-r from-violet-600/15 to-fuchsia-600/15 backdrop-blur-md border border-violet-500/25 rounded-xl px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {activePlan ? (
+        <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+              <SparklesIcon className="h-5 w-5 text-primary" />
+            </span>
             <div>
-              <p className="text-sm font-bold text-white font-display">No Active Plan</p>
-              <p className="text-xs text-violet-200/70">Select a plan to start analyzing your resumes.</p>
+              <p className="font-display text-sm font-semibold text-ink">{activePlan.planId.name}</p>
+              <p className="text-xs text-ink-muted">
+                {activePlan.planId.isUnlimited ? 'Unlimited checks available' : `${activePlan.creditsLeft} of ${activePlan.planId.credits} checks remaining`}
+              </p>
             </div>
-            <button onClick={() => navigate('/dashboard/plans')} className="bg-white text-violet-900 hover:bg-zinc-100 font-bold text-xs px-5 py-2.5 rounded-xl transition-colors">
-              View Pricing
-            </button>
           </div>
-        )}
-      </motion.div>
+          <Button variant="secondary" size="sm" onClick={() => navigate('/dashboard/plans')} className="whitespace-nowrap">
+            Manage plan
+          </Button>
+        </Card>
+      ) : (
+        <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-primary/25">
+          <div>
+            <p className="font-display text-sm font-semibold text-ink">No active plan</p>
+            <p className="text-xs text-ink-muted">Select a plan to start analyzing your resumes.</p>
+          </div>
+          <Button size="sm" onClick={() => navigate('/dashboard/plans')} className="whitespace-nowrap">
+            View pricing
+          </Button>
+        </Card>
+      )}
 
       {/* Modals */}
       <PlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} />

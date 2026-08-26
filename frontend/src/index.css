@@ -12,10 +12,10 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Define primary colors as CSS variables */
-  --color-primary: #8b5cf6;
-  --color-primary-dark: #7c3aed;
-  --color-primary-light: #a78bfa;
+  /* Primary accent — single source, mirrors tailwind `primary` */
+  --color-primary: #7c6cf6;
+  --color-primary-dark: #5b4bd4;
+  --color-primary-light: #a99cf9;
 }
 
 /* Improve page transitions */
@@ -85,7 +85,7 @@ a, button, input, select, textarea {
 }
 
 .bg-primary\/10 {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(124, 108, 246, 0.1);
 }
 
 /* Dashboard specific styles */

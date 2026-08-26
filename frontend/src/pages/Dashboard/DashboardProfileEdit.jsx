@@ -4,9 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { auth } from '../../firebase';
 import { deleteUser } from 'firebase/auth';
 import axios from 'axios';
-import { 
-  CheckCircleIcon, UserCircleIcon, LinkIcon, BriefcaseIcon, 
-  ShieldCheckIcon, IdentificationIcon, CameraIcon, TrashIcon 
+import {
+  CheckCircleIcon, UserCircleIcon, LinkIcon, BriefcaseIcon,
+  ShieldCheckIcon, IdentificationIcon, CameraIcon, TrashIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -144,7 +145,7 @@ export default function DashboardProfileEdit() {
     }
   };
 
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-500 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 outline-none transition-all duration-300 backdrop-blur-sm";
+  const inputClass = "w-full bg-white/5 border border-line rounded-lg px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-primary focus:bg-white/10 focus:ring-2 focus:ring-primary/20 outline-none transition-colors";
   const labelClass = "block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider";
 
   return (
@@ -173,7 +174,7 @@ export default function DashboardProfileEdit() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.9, y: 20 }} 
-              className="px-8 py-6 bg-[#1a1a24] border border-emerald-500/30 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.2)] flex flex-col items-center gap-3"
+              className="px-8 py-6 bg-surface border border-emerald-500/30 rounded-2xl flex flex-col items-center gap-3"
             >
               <div className="h-14 w-14 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 mb-2">
                 <CheckCircleIcon className="h-7 w-7 text-emerald-400" />
@@ -204,14 +205,13 @@ export default function DashboardProfileEdit() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="bg-[#131318]/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative w-full"
+        className="bg-surface border border-line rounded-xl overflow-hidden relative w-full"
       >
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[100px] pointer-events-none" />
 
         {/* --- GENERAL SECTION --- */}
         <div className="p-6 sm:p-10 relative z-10 border-b border-white/5">
           <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5">
-            <IdentificationIcon className="h-6 w-6 text-violet-400" />
+            <IdentificationIcon className="h-6 w-6 text-primary" />
             <h3 className="text-xl font-bold text-zinc-100 font-display">General Information</h3>
           </div>
 
@@ -248,7 +248,7 @@ export default function DashboardProfileEdit() {
                 type="button" 
                 onClick={() => fileInputRef.current?.click()} 
                 disabled={avatarUploading}
-                className="text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors px-4 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 disabled:opacity-50"
+                className="text-xs font-semibold text-primary hover:text-primary-light transition-colors px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 hover:bg-primary/20 disabled:opacity-50"
               >
                 {avatarUploading ? 'Uploading...' : 'Upload Photo'}
               </button>
@@ -323,7 +323,7 @@ export default function DashboardProfileEdit() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 text-white text-sm font-bold px-8 py-3 rounded-xl shadow-glow-primary disabled:shadow-none transition-all duration-300 flex items-center justify-center min-w-[140px]"
+            className="bg-primary hover:bg-primary-dark disabled:bg-zinc-800 disabled:text-zinc-500 text-white text-sm font-semibold px-8 py-3 rounded-lg transition-colors flex items-center justify-center min-w-[140px]"
           >
             {isSubmitting ? (
               <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -371,48 +371,45 @@ export default function DashboardProfileEdit() {
         </div>
       </motion.div>
 
-      {/* Gen Z Sad Delete Modal */}
+      {/* Delete account confirmation */}
       {createPortal(
         <AnimatePresence>
           {showDeleteModal && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }} 
-                animate={{ opacity: 1, scale: 1, y: 0 }} 
-                exit={{ opacity: 0, scale: 0.9, y: 20 }} 
-                className="px-8 py-8 bg-[#1a1a24] border border-red-500/30 rounded-3xl shadow-[0_0_80px_rgba(239,68,68,0.2)] max-w-sm w-full flex flex-col items-center text-center relative overflow-hidden"
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                transition={{ duration: 0.18 }}
+                className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6"
               >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-rose-500 to-red-600" />
-                
-                <img 
-                  src="https://media.giphy.com/media/L95W4wv8ncl9K/giphy.gif" 
-                  alt="Sad cat" 
-                  className="w-32 h-32 rounded-2xl object-cover mb-6 border-2 border-white/10 shadow-lg"
-                />
-                
-                <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2 uppercase">No cap?</h3>
-                <p className="text-sm text-zinc-400 mb-8 leading-relaxed">
-                  You're really gonna delete all your hard work? We'll miss you fr fr. 🥺 All your resumes and ATS scores will be gone forever into the void.
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+                  </span>
+                  <h3 className="font-display text-lg font-semibold text-ink">Delete account?</h3>
+                </div>
+                <p className="mb-6 text-sm leading-relaxed text-ink-muted">
+                  This permanently deletes your account, resumes, and analysis history. This action cannot be undone.
                 </p>
-                
-                <div className="flex flex-col w-full gap-3">
-                  <button 
+                <div className="flex gap-3">
+                  <button
                     type="button"
                     onClick={() => setShowDeleteModal(false)}
-                    className="w-full py-3.5 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors"
+                    className="flex-1 rounded-lg border border-line bg-white/[0.06] py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-white/[0.1]"
                   >
-                    Nvm, I'm staying
+                    Cancel
                   </button>
-                  <button 
+                  <button
                     type="button"
                     onClick={confirmDelete}
                     disabled={isDeleting}
-                    className="w-full py-3.5 rounded-xl font-bold text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors flex items-center justify-center"
+                    className="flex flex-1 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/15 py-2.5 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/25 disabled:opacity-50"
                   >
                     {isDeleting ? (
-                      <div className="h-5 w-5 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500/30 border-t-red-500" />
                     ) : (
-                      'Yeah, delete it'
+                      'Delete account'
                     )}
                   </button>
                 </div>
