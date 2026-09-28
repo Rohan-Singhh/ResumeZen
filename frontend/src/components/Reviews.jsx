@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { motion } from 'framer-motion';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
@@ -81,7 +82,7 @@ export default function Reviews() {
   return (
     <section id="reviews" className="bg-dark-bg py-24 sm:py-32 border-t border-white/5 relative">
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-secondary/5 rounded-full blur-[120px]"></div>
+        <Glow className="top-0 right-0 w-[800px] h-[800px]" color={GLOW.secondary} strength={0.06} />
       </div>
 
       <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">

@@ -1,3 +1,4 @@
+import Glow from './Glow';
 import { motion } from 'framer-motion';
 import {
   SparklesIcon,
@@ -132,7 +133,7 @@ export default function Features() {
   return (
     <div id="features" className="bg-dark-bg py-24 sm:py-32 relative overflow-hidden border-t border-white/5">
       {/* Decorative Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[150px] pointer-events-none mix-blend-screen"></div>
+      <Glow className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px]" strength={0.1} />
 
       <div className="mx-auto w-full max-w-[1400px] px-6 lg:px-8 relative z-10">
         <motion.div 

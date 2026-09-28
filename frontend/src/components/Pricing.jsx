@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/solid';
@@ -121,8 +122,8 @@ export default function Pricing() {
     <section id="pricing" className="py-24 sm:py-32 bg-dark-bg relative overflow-hidden border-t border-white/5">
       {/* Decorative Glows */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[100px]"></div>
-        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-accent/10 rounded-full blur-[100px]"></div>
+        <Glow className="top-1/2 left-1/4 -translate-y-1/2 w-96 h-96" strength={0.12} />
+        <Glow className="top-1/2 right-1/4 -translate-y-1/2 w-96 h-96" color={GLOW.accent} strength={0.12} />
       </div>
 
       <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">

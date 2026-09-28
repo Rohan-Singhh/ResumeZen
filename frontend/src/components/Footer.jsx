@@ -1,3 +1,4 @@
+import Glow from './Glow';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,7 +16,7 @@ export default function Footer() {
   return (
     <footer className="bg-dark-bg border-t border-white/5 pt-16 pb-8 relative overflow-hidden">
       {/* Subtle background glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/5 rounded-t-full blur-[100px] pointer-events-none"></div>
+      <Glow className="bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px]" strength={0.06} />
       
       <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">

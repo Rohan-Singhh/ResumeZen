@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnvelopeIcon, PhoneIcon, ChatBubbleLeftRightIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
@@ -100,7 +101,7 @@ export default function Support() {
 
   return (
     <section id="support" className="bg-dark-bg py-24 sm:py-32 border-t border-white/5 relative">
-      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] pointer-events-none"></div>
+      <Glow className="top-0 right-0 w-[800px] h-[800px]" strength={0.06} />
 
       <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
         <div className="text-center mb-16 lg:mb-24">
@@ -152,8 +153,8 @@ export default function Support() {
         >
           {/* Form Background Decor */}
           <div className="absolute top-0 right-0 w-full h-full overflow-hidden z-0">
-             <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 blur-[100px] rounded-full"></div>
-             <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-accent/20 blur-[100px] rounded-full"></div>
+             <Glow className="-top-32 -right-32 w-96 h-96" strength={0.18} />
+             <Glow className="-bottom-32 -left-32 w-96 h-96" color={GLOW.accent} strength={0.18} />
           </div>
 
           <div className="grid lg:grid-cols-5 gap-0 relative z-10">

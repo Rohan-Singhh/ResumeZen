@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -47,7 +48,7 @@ export default function Steps() {
   return (
     <section id="how-it-works" className="py-24 sm:py-32 bg-dark-bg border-t border-white/5 relative overflow-hidden">
       {/* Decorative Glow */}
-      <div className="absolute right-0 bottom-0 w-[600px] h-[600px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <Glow className="right-0 bottom-0 w-[600px] h-[600px]" color={GLOW.secondary} strength={0.1} />
 
       <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
         <div className="text-left md:text-center mb-16 lg:mb-24">

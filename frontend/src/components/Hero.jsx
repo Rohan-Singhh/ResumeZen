@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { motion, useInView, useAnimation } from 'framer-motion';
 import { ArrowRightIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
@@ -40,9 +41,9 @@ export default function Hero({ onShowSuccessStories }) {
   return (
     <div id="home" className="relative min-h-screen overflow-hidden bg-dark-bg text-white pt-28 sm:pt-36">
       {/* Massive Background Glows for SaaS look */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[500px] bg-primary/20 rounded-[100%] blur-[120px] opacity-60 mix-blend-screen pointer-events-none"></div>
-      <div className="absolute top-40 -left-20 w-[500px] h-[500px] bg-secondary/20 rounded-[100%] blur-[120px] mix-blend-screen pointer-events-none"></div>
-      <div className="absolute top-40 -right-20 w-[500px] h-[500px] bg-accent/20 rounded-[100%] blur-[120px] mix-blend-screen pointer-events-none"></div>
+      <Glow className="top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[500px]" strength={0.16} />
+      <Glow className="top-40 -left-20 w-[500px] h-[500px]" color={GLOW.secondary} strength={0.14} />
+      <Glow className="top-40 -right-20 w-[500px] h-[500px]" color={GLOW.accent} strength={0.14} />
 
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center">
         
