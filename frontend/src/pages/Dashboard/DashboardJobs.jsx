@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import {
@@ -12,7 +12,8 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
-import { getResumeHistory } from '../../services/resumeService';
+import { useResumeHistory } from '../../hooks/useResumeHistory';
+import { normalizeAnalysis, skillCount } from '../../utils/analysisSchema';
 import { timeAgo } from '../../utils/timeAgo';
 
 export default function DashboardJobs() {
@@ -22,29 +23,26 @@ export default function DashboardJobs() {
   const [viewMode, setViewMode] = useState('all'); // 'all' or 'ai'
   const [aiJobs, setAiJobs] = useState([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [hasResume, setHasResume] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
-  const [jobSources, setJobSources] = useState({ remotive: 0, arbeitnow: 0, themuse: 0 });
+
+  // Shared, cached history (same query the overview uses). The latest record is
+  // normalized so both current-schema and legacy records can drive AI matching;
+  // the old `history[0].analysis` check only matched pre-migration records.
+  const { data: history = [] } = useResumeHistory();
+  const userProfile = useMemo(() => normalizeAnalysis(history[0]), [history]);
+  const hasResume = Boolean(
+    userProfile &&
+    (skillCount(userProfile) > 0 || userProfile.summary || userProfile.workExperience.length > 0)
+  );
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchJobs = async () => {
       try {
         setLoading(true);
-        
-        // Fetch standard jobs
         const response = await axios.get('/api/jobs');
         if (response.data.success) {
           setJobs(response.data.jobs);
-          setJobSources(response.data.sources || {});
         } else {
           setError('Failed to load jobs');
-        }
-
-        // Fetch user resume to see if AI matching is possible
-        const history = await getResumeHistory();
-        if (history && history.length > 0 && history[0].analysis) {
-          setHasResume(true);
-          setUserProfile(history[0]);
         }
       } catch (err) {
         setError('Error fetching data. Please try again later.');
@@ -54,7 +52,7 @@ export default function DashboardJobs() {
       }
     };
 
-    fetchInitialData();
+    fetchJobs();
   }, []);
 
   const handleAIMatch = async () => {
