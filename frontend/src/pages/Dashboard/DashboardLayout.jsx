@@ -16,12 +16,25 @@ import {
 } from '@heroicons/react/24/outline';
 import SupportWidget from '../../components/SupportWidget';
 
+function Avatar({ user, size = 'h-7 w-7' }) {
+  return (
+    <span className={`${size} flex flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-surface-raised`}>
+      {user?.avatarUrl ? (
+        <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-xs font-semibold text-ink-muted">{user?.name?.charAt(0)?.toUpperCase() || '?'}</span>
+      )}
+    </span>
+  );
+}
+
 function TopNav() {
   const { logout, currentUser, userPlans } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const firstName = currentUser?.name?.split(' ')[0] || 'Account';
 
   // Check if user already has an active unlimited plan
   const hasUnlimitedPlan = userPlans?.some(p => p.isActive && p.planId?.isUnlimited);
@@ -47,18 +60,22 @@ function TopNav() {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 w-full bg-[#0f0f13]/80 backdrop-blur-2xl border-b border-white/5">
+      <nav className="sticky top-0 z-40 w-full bg-surface-void/80 backdrop-blur-2xl border-b border-line">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             
             {/* Logo & Brand */}
             <div className="flex items-center gap-8">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-                <div className="h-8 w-8 rounded-lg bg-[#12121c] border border-[#7c6cf6]/35 flex items-center justify-center shadow-[inset_-2px_0_0_0_rgba(124,108,246,0.85),0_0_18px_rgba(124,108,246,0.22)]">
-                  <span className="text-white font-bold font-display text-sm tracking-tighter">RZ</span>
-                </div>
-                <span className="font-bold text-zinc-100 font-display tracking-tight text-lg">ResumeZen</span>
-              </div>
+              <button
+                onClick={() => navigate('/dashboard')}
+                aria-label="ResumeZen overview"
+                className="flex items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/30 bg-surface-raised">
+                  <span className="font-display text-sm font-bold tracking-tighter text-ink">RZ</span>
+                </span>
+                <span className="font-display text-lg font-semibold tracking-tight text-ink">ResumeZen</span>
+              </button>
               
               {/* Desktop Navigation Links */}
               <div className="hidden md:flex items-center space-x-1">
@@ -70,7 +87,7 @@ function TopNav() {
                       key={item.name}
                       to={item.path}
                       className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                        isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
+                        isActive ? 'text-ink' : 'text-ink-muted hover:text-ink hover:bg-white/5'
                       }`}
                     >
                       {isActive && (
@@ -90,25 +107,36 @@ function TopNav() {
             </div>
 
             {/* Right Side Actions (Desktop) */}
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-3">
               {!hasUnlimitedPlan && (
-                <button 
-                  onClick={() => navigate('/dashboard/plans')} 
-                  className="flex items-center gap-2 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors"
+                <button
+                  onClick={() => navigate('/dashboard/plans')}
+                  className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary-light transition-colors hover:bg-primary/20"
                 >
-                  <SparklesIcon className="h-4 w-4" /> Go Unlimited
+                  <SparklesIcon className="h-4 w-4" /> Go unlimited
                 </button>
               )}
-              
-              <div className="h-6 w-px bg-white/10"></div>
-              
+
+              <div className="h-6 w-px bg-line" />
+
+              {/* Who is signed in — previously nowhere on the page */}
+              <NavLink
+                to="/dashboard/profile"
+                title={currentUser?.email}
+                className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-ink-muted transition-colors hover:bg-white/[0.05] hover:text-ink"
+              >
+                <Avatar user={currentUser} />
+                <span className="max-w-[120px] truncate">{firstName}</span>
+              </NavLink>
+
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                className="flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-red-400 transition-colors"
+                aria-label="Log out"
+                title="Log out"
+                className="rounded-lg p-2 text-ink-faint transition-colors hover:bg-red-500/10 hover:text-red-400"
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-                {isLoggingOut ? 'Logging out...' : 'Log out'}
               </button>
             </div>
 
@@ -116,7 +144,7 @@ function TopNav() {
             <div className="md:hidden flex items-center">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-md text-zinc-400 hover:text-white hover:bg-white/5 focus:outline-none"
+                className="p-2 rounded-md text-ink-muted hover:text-ink hover:bg-white/5 focus:outline-none"
               >
                 {isMobileMenuOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
               </button>
@@ -131,9 +159,16 @@ function TopNav() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-white/5 bg-[#0f0f13]/95 backdrop-blur-2xl"
+              className="md:hidden border-t border-line bg-surface-void/95 backdrop-blur-2xl"
             >
               <div className="px-4 pt-2 pb-6 space-y-1">
+                <div className="mb-2 flex items-center gap-3 border-b border-line px-3 pb-4 pt-2">
+                  <Avatar user={currentUser} size="h-9 w-9" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-ink">{currentUser?.name || 'Your account'}</p>
+                    <p className="truncate text-xs text-ink-faint">{currentUser?.email}</p>
+                  </div>
+                </div>
                 {navItems.map((item) => {
                   const isActive = location.pathname === item.path || 
                                   (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
@@ -143,7 +178,7 @@ function TopNav() {
                       to={item.path}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`block px-3 py-3 rounded-lg text-base font-medium transition-colors flex items-center gap-3 ${
-                        isActive ? 'bg-primary/15 text-white border border-primary/30' : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
+                        isActive ? 'bg-primary/15 text-ink border border-primary/30' : 'text-ink-muted hover:text-ink hover:bg-white/5'
                       }`}
                     >
                       <item.icon className={`h-5 w-5 ${isActive ? 'text-primary' : ''}`} />
@@ -152,7 +187,7 @@ function TopNav() {
                   );
                 })}
                 
-                <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
+                <div className="mt-6 pt-6 border-t border-line space-y-4">
                   {!hasUnlimitedPlan && (
                     <button 
                       onClick={() => { setIsMobileMenuOpen(false); navigate('/dashboard/plans'); }} 
@@ -164,7 +199,7 @@ function TopNav() {
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="w-full flex items-center justify-center gap-2 text-sm font-medium text-zinc-400 hover:text-red-400 bg-white/5 hover:bg-red-500/10 px-4 py-3 rounded-xl transition-colors"
+                    className="w-full flex items-center justify-center gap-2 text-sm font-medium text-ink-muted hover:text-red-400 bg-white/5 hover:bg-red-500/10 px-4 py-3 rounded-xl transition-colors"
                   >
                     <ArrowLeftOnRectangleIcon className="h-5 w-5" />
                     {isLoggingOut ? 'Logging out...' : 'Log out'}
