@@ -82,7 +82,10 @@ function generateTasks(analysis) {
     }
   });
 
-  return tasks.slice(0, 7);
+  // Scope ids to this analysis. Generic ids like 'ats-improve' made a task
+  // ticked off on one resume show as already done on every later resume.
+  const scope = analysis.id || 'latest';
+  return tasks.slice(0, 7).map(t => ({ ...t, id: `${scope}:${t.id}` }));
 }
 
 const priorityConfig = {
@@ -95,40 +98,31 @@ export default function AiActionCenter({ latestAnalysis }) {
   const { currentUser, updateProfile } = useAuth();
   const tasks = useMemo(() => generateTasks(latestAnalysis), [latestAnalysis]);
 
-  // Read completed state from backend profile
-  const [completed, setCompleted] = useState({});
-  
+  // Completed task ids, seeded from the backend profile
+  const [completed, setCompleted] = useState(() => new Set(currentUser?.completedTasks || []));
+
   // Sync local state when currentUser updates from backend
   useEffect(() => {
-    if (currentUser?.completedTasks) {
-      const completedMap = {};
-      currentUser.completedTasks.forEach(taskId => {
-        completedMap[taskId] = true;
-      });
-      setCompleted(completedMap);
-    }
+    setCompleted(new Set(currentUser?.completedTasks || []));
   }, [currentUser?.completedTasks]);
 
   const toggleTask = async (id) => {
-    // Optimistic UI update
-    const isNowDone = !completed[id];
-    const newCompleted = { ...completed, [id]: isNowDone };
-    setCompleted(newCompleted);
+    const previous = completed;
+    const next = new Set(previous);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setCompleted(next); // optimistic
 
-    // Convert map back to array for backend
-    const completedArray = Object.keys(newCompleted).filter(key => newCompleted[key]);
-    
-    // Sync to backend silently
-    try {
-      await updateProfile({ completedTasks: completedArray });
-    } catch (err) {
-      console.error('Failed to sync tasks to database', err);
-      // Revert on failure
-      setCompleted(completed);
-    }
+    // Persist only the tasks currently on screen: ids from older analyses (and
+    // the old unscoped ids) can never be shown again, so don't keep them.
+    const visible = new Set(tasks.map(t => t.id));
+    const result = await updateProfile({ completedTasks: [...next].filter(t => visible.has(t)) });
+
+    // updateProfile reports failure via { success: false } rather than
+    // throwing, so the old try/catch revert never ran.
+    if (!result?.success) setCompleted(previous);
   };
 
-  const completedCount = tasks.filter(t => completed[t.id]).length;
+  const completedCount = tasks.filter(t => completed.has(t.id)).length;
 
   if (!latestAnalysis) {
     return (
@@ -167,14 +161,17 @@ export default function AiActionCenter({ latestAnalysis }) {
       {/* Tasks */}
       <div className="space-y-1.5">
         {tasks.map((task) => {
-          const isDone = completed[task.id];
+          const isDone = completed.has(task.id);
           const pConfig = priorityConfig[task.priority];
 
           return (
-            <div
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={isDone}
               key={task.id}
               onClick={() => toggleTask(task.id)}
-              className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+              className={`group flex w-full items-center gap-3 p-3 rounded-lg text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                 isDone ? 'opacity-50' : 'hover:bg-white/[0.03]'
               }`}
             >
@@ -191,7 +188,7 @@ export default function AiActionCenter({ latestAnalysis }) {
               </p>
 
               {!isDone && <Badge variant={pConfig.variant}>{pConfig.label}</Badge>}
-            </div>
+            </button>
           );
         })}
       </div>
