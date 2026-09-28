@@ -9,45 +9,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Fallback plans to display if API fails
-const FALLBACK_PLANS = [
-  {
-    _id: 'one-time-check',
-    name: "One-Time Check",
-    price: 19,
-    currency: "INR",
-    credits: 1,
-    durationInDays: null,
-    isUnlimited: false,
-    period: "one-time",
-    features: ["1 resume ATS check", "Personalized improvement tips", "Basic AI analysis", "Email support", "Export to PDF"]
-  },
-  {
-    _id: 'boost-pack',
-    name: "Boost Pack",
-    price: 70,
-    currency: "INR",
-    credits: 5,
-    durationInDays: null,
-    isUnlimited: false,
-    isPopular: true,
-    period: "one-time",
-    features: ["5 resume checks", "Track improvement history", "Advanced AI analysis", "Priority support", "Multiple export formats"]
-  },
-  {
-    _id: 'unlimited-pack',
-    name: "Unlimited Pro",
-    price: 500,
-    currency: "INR",
-    credits: 999,
-    durationInDays: 90,
-    isUnlimited: true,
-    isSpecial: true,
-    period: "3 months",
-    features: ["Unlimited resume checks", "Real-time ATS scoring", "Premium AI suggestions", "24/7 priority support", "Custom branding options"]
-  }
-];
-
 // --- Purchase Notifier Overlay ---
 const PurchaseNotifier = ({ status, errorMsg }) => {
   return (
@@ -61,8 +22,8 @@ const PurchaseNotifier = ({ status, errorMsg }) => {
         {status === 'loading' && (
           <>
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Processing payment</h3>
-            <p className="mt-1.5 text-sm text-ink-muted">Securing your transaction…</p>
+            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Activating your plan</h3>
+            <p className="mt-1.5 text-sm text-ink-muted">This only takes a moment…</p>
           </>
         )}
 
@@ -71,8 +32,8 @@ const PurchaseNotifier = ({ status, errorMsg }) => {
             <span className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
               <CheckCircleIcon className="h-8 w-8 text-emerald-400" />
             </span>
-            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Purchase successful</h3>
-            <p className="mt-1.5 text-sm text-ink-muted">Your plan is active.</p>
+            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Plan activated</h3>
+            <p className="mt-1.5 text-sm text-ink-muted">Your credits are ready to use.</p>
           </>
         )}
 
@@ -81,7 +42,7 @@ const PurchaseNotifier = ({ status, errorMsg }) => {
             <span className="flex h-14 w-14 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
               <ExclamationCircleIcon className="h-8 w-8 text-red-400" />
             </span>
-            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Transaction failed</h3>
+            <h3 className="mt-6 font-display text-lg font-semibold text-ink">Couldn't activate plan</h3>
             <p className="mt-1.5 text-sm text-red-400/90">{errorMsg}</p>
           </>
         )}
@@ -94,7 +55,8 @@ export default function DashboardPlan() {
   const { userPlans, getAvailablePlans, purchasePlan, fetchUserPlans } = useAuth();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [loadError, setLoadError] = useState('');
+
   // 'idle' | 'loading' | 'success' | 'error'
   const [notifierState, setNotifierState] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -102,22 +64,32 @@ export default function DashboardPlan() {
   const [showSubscriptionWarning, setShowSubscriptionWarning] = useState(false);
   const [activePlanInfo, setActivePlanInfo] = useState(null);
 
+  // The catalogue only needs loading once; it used to refetch on every
+  // userPlans change.
   useEffect(() => {
     fetchPlans();
+  }, []);
+
+  useEffect(() => {
     if (userPlans?.length > 0) hasActiveSubscription();
   }, [userPlans]);
 
+  // Show the real catalogue or an honest error. The old hard-coded fallback
+  // plans could show prices and features that no longer match the backend.
   const fetchPlans = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const result = await getAvailablePlans();
       if (result.success && result.plans?.length > 0) {
         setPlans(result.plans);
       } else {
-        setPlans(FALLBACK_PLANS);
+        setPlans([]);
+        setLoadError("We couldn't load plans right now.");
       }
-    } catch (err) {
-      setPlans(FALLBACK_PLANS);
+    } catch {
+      setPlans([]);
+      setLoadError("We couldn't load plans right now.");
     } finally {
       setLoading(false);
     }
@@ -184,8 +156,6 @@ export default function DashboardPlan() {
       setTimeout(() => setNotifierState('idle'), 4000);
     }
   };
-
-  const displayPlans = plans.length < 3 ? FALLBACK_PLANS : plans;
 
   return (
     <div className="space-y-10 relative z-10 pb-20">
@@ -258,9 +228,23 @@ export default function DashboardPlan() {
         <div className="flex justify-center py-32">
           <div className="h-10 w-10 border-[3px] border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
+      ) : loadError ? (
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-line bg-surface py-16 text-center">
+          <ExclamationCircleIcon className="h-8 w-8 text-ink-faint" />
+          <div>
+            <p className="font-display text-base font-semibold text-ink">{loadError}</p>
+            <p className="mt-1 text-sm text-ink-muted">Check your connection and try again.</p>
+          </div>
+          <button
+            onClick={fetchPlans}
+            className="rounded-lg border border-line bg-white/[0.06] px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-white/[0.1]"
+          >
+            Retry
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {displayPlans.map((plan, index) => {
+          {plans.map((plan, index) => {
             const isPop = plan.isPopular;
             const isSpec = plan.isSpecial;
             
