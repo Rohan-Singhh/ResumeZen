@@ -157,7 +157,17 @@ export default function Reviews() {
               </div>
 
               <div className="mt-8 flex items-center gap-4 border-t border-white/10 pt-6">
-                <img className="h-14 w-14 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-colors duration-300" src={review.image} alt={review.name} />
+                {/* Sized, lazy and async-decoded: six third-party avatars no
+                    longer shift layout or decode on the main thread mid-scroll */}
+                <img
+                  className="h-14 w-14 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-colors duration-300"
+                  src={review.image}
+                  alt={review.name}
+                  width={56}
+                  height={56}
+                  loading="lazy"
+                  decoding="async"
+                />
                 <div>
                   <h3 className="font-bold text-white text-lg">{review.name}</h3>
                   <p className="text-sm text-primary-light font-medium">{review.role}</p>
