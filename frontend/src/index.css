@@ -18,9 +18,27 @@
   --color-primary-light: #a99cf9;
 }
 
-/* Improve page transitions */
+/* Smooth in-page anchor scrolling (navbar + footer links) */
 html {
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Land landing-page sections below the fixed 80px navbar, for both the navbar
+   buttons (scrollIntoView) and plain #anchor links in the footer. */
+#home,
+#features,
+#how-it-works,
+#pricing,
+#reviews,
+#faq,
+#support {
+  scroll-margin-top: 88px;
 }
 
 body {
