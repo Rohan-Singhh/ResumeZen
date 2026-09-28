@@ -49,7 +49,7 @@ export default function UploadZone({
         <div className="mb-5 flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3">
           <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 text-red-400" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-red-300">Something went wrong</p>
+            <p className="text-sm font-semibold text-red-300">Can't use this file</p>
             <p className="text-xs text-red-400/90">{errorMessage}</p>
           </div>
         </div>

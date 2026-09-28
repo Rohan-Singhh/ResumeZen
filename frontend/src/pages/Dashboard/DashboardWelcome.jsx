@@ -41,7 +41,6 @@ export default function DashboardWelcome() {
   const [showCreditConfirmation, setShowCreditConfirmation] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisFileDetails, setAnalysisFileDetails] = useState(null);
-  const [fileSizeError, setFileSizeError] = useState(false);
   const [selectedResume, setSelectedResume] = useState(null);
 
   // Data state
@@ -88,13 +87,25 @@ export default function DashboardWelcome() {
   // previously disagreed (1MB here, 10MB there).
   const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
+  // The picker's accept=".pdf" does not apply to drag-and-drop, so check the
+  // type here too. Returns a user-facing message, or null when the file is OK.
   const validateFile = (file) => {
-    if (file.size > MAX_UPLOAD_BYTES) { setFileSizeError(true); return false; }
-    return true;
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    if (!isPdf) return 'Only PDF files are supported. Export your resume as a PDF and try again.';
+    if (file.size > MAX_UPLOAD_BYTES) {
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      return `This file is ${mb}MB. The limit is 5MB — try compressing the PDF or removing images.`;
+    }
+    return null;
   };
 
   const handleFileSelect = (file) => {
-    if (!validateFile(file)) return;
+    const problem = validateFile(file);
+    if (problem) {
+      setErrorMessage(problem);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     setSelectedFile(file);
     setUploadSuccess(false);
     setErrorMessage('');
@@ -198,7 +209,6 @@ export default function DashboardWelcome() {
             setIsDragging={setIsDragging}
             hasCredits={hasCredits}
             isProcessing={isProcessing}
-            fileSizeError={fileSizeError}
             onFileSelect={handleFileSelect}
             onUpload={handleUpload}
             onProceed={handleProceed}
