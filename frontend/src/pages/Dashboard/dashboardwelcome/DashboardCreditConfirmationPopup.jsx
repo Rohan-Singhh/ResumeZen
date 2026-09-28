@@ -1,7 +1,7 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import Modal from '../../../components/ui/Modal';
+import Button from '../../../components/ui/Button';
 
 /**
  * DashboardCreditConfirmationPopup
@@ -12,71 +12,45 @@ import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
  * @param {Object} props.activePlan - The user's active plan
  */
 const DashboardCreditConfirmationPopup = ({ show, onClose, onConfirm, activePlan }) => {
-  // If unlimited plan, auto-confirm and do not show popup
+  const isUnlimited = Boolean(activePlan?.planId?.isUnlimited);
+
+  // Unlimited plans have nothing to confirm — proceed straight away
   React.useEffect(() => {
-    if (show && activePlan?.planId?.isUnlimited) {
-      onConfirm && onConfirm();
-    }
-    // Only run when show or activePlan changes
-  }, [show, activePlan, onConfirm]);
+    if (show && isUnlimited) onConfirm?.();
+  }, [show, isUnlimited, onConfirm]);
 
-  // Do not render popup for unlimited plan
-  if (show && activePlan?.planId?.isUnlimited) return null;
+  const remaining = activePlan?.creditsLeft ?? 0;
 
-  if (typeof document === 'undefined') return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+  return (
+    <Modal open={show && !isUnlimited} onClose={onClose} labelledBy="confirm-analysis-title">
+      <div className="mb-4 flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+            <InformationCircleIcon className="h-5 w-5 text-primary" />
+          </span>
+          <h3 id="confirm-analysis-title" className="font-display text-lg font-semibold text-ink">
+            Confirm analysis
+          </h3>
+        </div>
+        <button
           onClick={onClose}
+          aria-label="Close"
+          className="rounded-lg p-1 text-ink-faint transition-colors hover:bg-white/[0.05] hover:text-ink"
         >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-zinc-900 border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center">
-                <div className="bg-purple-500/10 p-2 rounded-xl mr-3 border border-purple-500/20">
-                  <InformationCircleIcon className="h-6 w-6 text-purple-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-zinc-100">Confirm Analysis</h3>
-              </div>
-              <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/5 transition-colors">
-                <XMarkIcon className="h-5 w-5 text-zinc-400 hover:text-zinc-200" />
-              </button>
-            </div>
-            <p className="text-zinc-300 mb-6 text-sm">
-              This will use <span className="font-semibold text-purple-300">1 credit</span> from your current plan 
-              ({activePlan?.creditsLeft} credits remaining).
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg text-sm font-semibold transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={onConfirm}
-                className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors"
-              >
-                Proceed
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>,
-    document.body
+          <XMarkIcon className="h-5 w-5" />
+        </button>
+      </div>
+      <p className="mb-6 text-sm leading-relaxed text-ink-muted">
+        This uses <span className="font-semibold text-ink">1 credit</span> from your plan.
+        You have {remaining} {remaining === 1 ? 'credit' : 'credits'} left. If the analysis
+        fails, the credit is refunded automatically.
+      </p>
+      <div className="flex justify-end gap-3">
+        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button onClick={onConfirm}>Analyze resume</Button>
+      </div>
+    </Modal>
   );
 };
 
-export default DashboardCreditConfirmationPopup; 
+export default DashboardCreditConfirmationPopup;
