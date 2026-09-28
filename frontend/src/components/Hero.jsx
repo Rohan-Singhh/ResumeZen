@@ -95,7 +95,7 @@ export default function Hero({ onShowSuccessStories }) {
               <div className="absolute -inset-[2px] bg-gradient-to-r from-primary via-accent to-secondary rounded-lg blur-sm opacity-70 group-hover:opacity-100 transition duration-500"></div>
               <motion.button 
                 onClick={() => navigate('/login')}
-                className="relative w-full sm:w-auto rounded-lg bg-white text-zinc-950 px-10 py-4 font-bold text-lg hover:bg-zinc-100 transition-all duration-300 flex items-center justify-center gap-2"
+                className="relative w-full sm:w-auto rounded-lg bg-white text-zinc-950 px-10 py-4 font-bold text-lg hover:bg-zinc-100 transition-colors duration-300 flex items-center justify-center gap-2"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -105,7 +105,7 @@ export default function Hero({ onShowSuccessStories }) {
             </div>
             
             <motion.button 
-              className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 backdrop-blur-md px-10 py-4 font-bold text-lg text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+              className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 backdrop-blur-md px-10 py-4 font-bold text-lg text-white hover:bg-white/10 hover:border-white/20 transition-colors duration-300"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onShowSuccessStories}

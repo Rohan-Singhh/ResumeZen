@@ -119,9 +119,13 @@ export default function Reviews() {
           {reviews.map((review, index) => (
             <motion.article
               key={review.id}
-              className="break-inside-avoid flex flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:bg-white/10 hover:border-white/20 group"
+              // Hover lift lives in framer-motion with the entrance. The old CSS
+              // `transition-all hover:-translate-y-2` fought framer's inline
+              // transform: it smeared the entrance and the hover never applied.
+              className="break-inside-avoid flex flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 hover:border-white/20 group"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -6, transition: { type: 'spring', stiffness: 320, damping: 26 } }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: (index % 3) * 0.15, duration: 0.5 }}
             >

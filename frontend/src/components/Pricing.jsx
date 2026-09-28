@@ -195,7 +195,7 @@ export default function Pricing() {
                 <motion.button 
                   onClick={() => handleSelectPlan(plan)}
                   disabled={paymentLoading}
-                  className={`w-full font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 ${
+                  className={`w-full font-bold py-4 px-8 rounded-xl text-lg transition-[color,background-color,border-color,box-shadow] duration-300 ${
                     paymentLoading 
                       ? 'bg-white/10 text-white/50 cursor-not-allowed' 
                       : plan.isSpecial 

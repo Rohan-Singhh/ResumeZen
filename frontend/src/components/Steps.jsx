@@ -105,7 +105,7 @@ export default function Steps() {
         >
           <motion.button
             onClick={() => navigate('/login')}
-            className="bg-white text-dark-bg hover:shadow-glow-secondary font-bold py-4 px-10 rounded-full text-lg transition-all duration-300"
+            className="bg-white text-dark-bg hover:shadow-glow-secondary font-bold py-4 px-10 rounded-full text-lg transition-[color,background-color,border-color,box-shadow] duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

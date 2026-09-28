@@ -38,7 +38,7 @@ export default function CTA() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <motion.button 
                 onClick={() => navigate('/login')}
-                className="w-full sm:w-auto rounded-xl bg-white text-dark-bg px-10 py-5 font-bold text-lg hover:shadow-glow-primary transition-all duration-300 flex items-center justify-center gap-2 group"
+                className="w-full sm:w-auto rounded-xl bg-white text-dark-bg px-10 py-5 font-bold text-lg hover:shadow-glow-primary transition-[color,background-color,border-color,box-shadow] duration-300 flex items-center justify-center gap-2 group"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >

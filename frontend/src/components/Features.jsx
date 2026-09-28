@@ -167,7 +167,7 @@ export default function Features() {
                 <motion.div 
                   key={feature.id}
                   variants={item}
-                  className={`relative rounded-3xl border border-white/10 bg-[#0a0a0c] p-8 overflow-hidden group hover:border-white/20 transition-all duration-500 ${feature.colSpan} ${feature.bgClass}`}
+                  className={`relative rounded-3xl border border-white/10 bg-[#0a0a0c] p-8 overflow-hidden group hover:border-white/20 transition-colors duration-500 ${feature.colSpan} ${feature.bgClass}`}
                 >
                   {/* Subtle inner radial glow that tracks mouse (simulated with CSS hover for now) */}
                   <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>

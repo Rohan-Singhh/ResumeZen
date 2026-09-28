@@ -108,7 +108,7 @@ export default function Navbar() {
             <>
               <motion.button
                 onClick={() => navigate('/dashboard')}
-                className="bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 px-6 rounded-lg transition-all duration-300 border border-white/10"
+                className="bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 px-6 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300 border border-white/10"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -117,7 +117,7 @@ export default function Navbar() {
               {!isLandingPage && (
                 <motion.button
                   onClick={handleLogout}
-                  className="bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300"
+                  className="bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-semibold py-2.5 px-4 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -128,7 +128,7 @@ export default function Navbar() {
           ) : (
             <motion.button
               onClick={() => navigate('/login')}
-              className="bg-white text-dark-bg hover:shadow-glow-primary font-bold py-2.5 px-6 rounded-lg transition-all duration-300"
+              className="bg-white text-dark-bg hover:shadow-glow-primary font-bold py-2.5 px-6 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

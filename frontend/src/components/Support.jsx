@@ -278,7 +278,7 @@ export default function Support() {
               </div>
               <motion.button
                 type="submit"
-                className="w-full bg-white text-dark-bg font-bold py-4 px-8 rounded-xl hover:shadow-glow-primary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 text-lg mt-4"
+                className="w-full bg-white text-dark-bg font-bold py-4 px-8 rounded-xl hover:shadow-glow-primary transition-[color,background-color,border-color,box-shadow] duration-300 disabled:cursor-not-allowed disabled:opacity-50 text-lg mt-4"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isSubmitting}
