@@ -1,8 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { auth } from '../../firebase';
-import { deleteUser } from 'firebase/auth';
 import axios from 'axios';
 import {
   CheckCircleIcon, UserCircleIcon, LinkIcon, BriefcaseIcon,
@@ -10,48 +7,49 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
+import Modal from '../../components/ui/Modal';
+import Button from '../../components/ui/Button';
+
+// Form shape derived from the user record — also what Cancel resets to
+const toForm = (user) => ({
+  fullName: user?.name || '',
+  email: user?.email || '',
+  mobileNumber: user?.phone || '',
+  occupation: user?.occupation || '',
+  graduationYear: user?.graduationYear || '',
+  linkedin: user?.linkedin || '',
+  github: user?.github || '',
+  website: user?.website || '',
+  bio: user?.bio || '',
+  avatarUrl: user?.avatarUrl || ''
+});
 
 export default function DashboardProfileEdit() {
   const { currentUser, setCurrentUser, updateProfile, logout } = useAuth();
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    mobileNumber: '',
-    occupation: '',
-    graduationYear: '',
-    linkedin: '',
-    github: '',
-    website: '',
-    bio: '',
-    avatarUrl: ''
-  });
+  const [formData, setFormData] = useState(() => toForm(currentUser));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [error, setError] = useState('');
-  
+
   const [toastMessage, setToastMessage] = useState('');
-  
+
   const fileInputRef = useRef(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
-    if (currentUser) {
-      setFormData({
-        fullName: currentUser.name || '',
-        email: currentUser.email || '',
-        mobileNumber: currentUser.phone || '',
-        occupation: currentUser.occupation || '',
-        graduationYear: currentUser.graduationYear || '',
-        linkedin: currentUser.linkedin || '',
-        github: currentUser.github || '',
-        website: currentUser.website || '',
-        bio: currentUser.bio || '',
-        avatarUrl: currentUser.avatarUrl || ''
-      });
-    }
+    if (currentUser) setFormData(toForm(currentUser));
   }, [currentUser]);
+
+  const savedForm = useMemo(() => toForm(currentUser), [currentUser]);
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(savedForm);
+
+  // The Cancel button used to do nothing at all
+  const handleCancel = () => {
+    setFormData(savedForm);
+    setError('');
+  };
 
   const isValidPhone = (value) => /^\+?\d*$/.test(value);
   const isValidUrl = (value) => {
@@ -146,53 +144,33 @@ export default function DashboardProfileEdit() {
   };
 
   const inputClass = "w-full bg-white/5 border border-line rounded-lg px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-primary focus:bg-white/10 focus:ring-2 focus:ring-primary/20 outline-none transition-colors";
-  const labelClass = "block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider";
+  const labelClass = "block text-xs font-medium text-ink-muted mb-2 uppercase tracking-wider";
 
   return (
-    <div className="space-y-8 relative z-10 w-full">
+    <div className="space-y-8 w-full">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-zinc-100 font-display tracking-tight">Profile Settings</h1>
-          <p className="text-base text-zinc-400 mt-2 font-light">Manage your personal information, career details, and web links</p>
-        </div>
-      </motion.div>
+      <div>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">Profile</h1>
+        <p className="mt-1.5 text-sm text-ink-muted">Manage your personal information, career details, and web links.</p>
+      </div>
 
       {/* Alerts */}
       <AnimatePresence>
         {error && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-5 py-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm font-medium text-red-400 backdrop-blur-md mb-6">
+          <motion.div role="alert" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm font-medium text-red-400">
             {error}
           </motion.div>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {submitSuccess && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-none">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
-              animate={{ opacity: 1, scale: 1, y: 0 }} 
-              exit={{ opacity: 0, scale: 0.9, y: 20 }} 
-              className="px-8 py-6 bg-surface border border-emerald-500/30 rounded-2xl flex flex-col items-center gap-3"
-            >
-              <div className="h-14 w-14 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 mb-2">
-                <CheckCircleIcon className="h-7 w-7 text-emerald-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white font-display tracking-tight">Profile Updated</h3>
-              <p className="text-sm text-zinc-400">Your changes have been saved successfully.</p>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {toastMessage && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, x: '-50%' }} 
-            animate={{ opacity: 1, y: 0, x: '-50%' }} 
-            exit={{ opacity: 0, y: 50, x: '-50%' }} 
-            className="fixed bottom-10 left-1/2 z-50 px-6 py-3 bg-zinc-800 border border-zinc-700 rounded-full shadow-2xl text-sm font-medium text-white backdrop-blur-md"
+          <motion.div
+            role="status"
+            initial={{ opacity: 0, y: 24, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 24, x: '-50%' }}
+            className="fixed bottom-10 left-1/2 z-50 rounded-full border border-line bg-surface-raised px-6 py-3 text-sm font-medium text-ink shadow-2xl"
           >
             {toastMessage}
           </motion.div>
@@ -211,18 +189,18 @@ export default function DashboardProfileEdit() {
         {/* --- GENERAL SECTION --- */}
         <div className="p-6 sm:p-10 relative z-10 border-b border-white/5">
           <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5">
-            <IdentificationIcon className="h-6 w-6 text-primary" />
-            <h3 className="text-xl font-bold text-zinc-100 font-display">General Information</h3>
+            <IdentificationIcon className="h-5 w-5 text-ink-muted" />
+            <h3 className="font-display text-lg font-semibold text-ink">General information</h3>
           </div>
 
           <div className="mb-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
             <div className="relative group shrink-0">
-              <div className="h-24 w-24 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden flex items-center justify-center">
+              <div className="h-24 w-24 rounded-full bg-surface-raised border border-line overflow-hidden flex items-center justify-center">
                 {formData.avatarUrl ? (
                   <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <UserCircleIcon className="h-16 w-16 text-zinc-500" />
+                  <UserCircleIcon className="h-16 w-16 text-ink-faint" />
                 )}
               </div>
               <button 
@@ -242,8 +220,8 @@ export default function DashboardProfileEdit() {
               </button>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-zinc-200 mb-1">Profile Photo</h4>
-              <p className="text-xs text-zinc-500 mb-3 max-w-sm">We recommend an image of at least 300x300. Max size 2MB.</p>
+              <h4 className="text-sm font-semibold text-ink mb-1">Profile photo</h4>
+              <p className="text-xs text-ink-faint mb-3 max-w-sm">We recommend an image of at least 300x300. Max size 2MB.</p>
               <button 
                 type="button" 
                 onClick={() => fileInputRef.current?.click()} 
@@ -262,11 +240,11 @@ export default function DashboardProfileEdit() {
             </div>
             <div>
               <label htmlFor="email" className={labelClass}>Email Address</label>
-              <input type="email" id="email" name="email" value={formData.email} className={`${inputClass} text-zinc-500 cursor-not-allowed bg-black/20`} disabled />
+              <input type="email" id="email" name="email" value={formData.email} className={`${inputClass} text-ink-faint cursor-not-allowed bg-black/20`} disabled />
             </div>
             <div>
               <label htmlFor="mobileNumber" className={labelClass}>Phone Number</label>
-              <input type="text" id="mobileNumber" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} className={inputClass} placeholder="+1 (123) 456-7890" />
+              <input type="text" id="mobileNumber" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} className={inputClass} placeholder="+91 98765 43210" />
             </div>
           </div>
         </div>
@@ -274,8 +252,8 @@ export default function DashboardProfileEdit() {
         {/* --- PROFESSIONAL SECTION --- */}
         <div className="p-6 sm:p-10 relative z-10 border-b border-white/5">
           <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5">
-            <BriefcaseIcon className="h-6 w-6 text-cyan-400" />
-            <h3 className="text-xl font-bold text-zinc-100 font-display">Professional Background</h3>
+            <BriefcaseIcon className="h-5 w-5 text-ink-muted" />
+            <h3 className="font-display text-lg font-semibold text-ink">Professional background</h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
@@ -290,8 +268,8 @@ export default function DashboardProfileEdit() {
           </div>
 
           <div className="flex items-center gap-3 mb-6 pt-6 border-t border-white/5">
-            <LinkIcon className="h-5 w-5 text-emerald-400" />
-            <h4 className="text-lg font-bold text-zinc-100 font-display">Web Links</h4>
+            <LinkIcon className="h-5 w-5 text-ink-muted" />
+            <h4 className="font-display text-base font-semibold text-ink">Web links</h4>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
@@ -316,109 +294,85 @@ export default function DashboardProfileEdit() {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 bg-black/20 flex items-center justify-end gap-4 relative z-10">
-          <button type="button" className="text-sm font-semibold text-zinc-400 hover:text-white px-5 py-2.5 transition-colors">
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-primary hover:bg-primary-dark disabled:bg-zinc-800 disabled:text-zinc-500 text-white text-sm font-semibold px-8 py-3 rounded-lg transition-colors flex items-center justify-center min-w-[140px]"
-          >
-            {isSubmitting ? (
-              <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-            ) : (
-              'Save Profile'
+        <div className="flex items-center justify-end gap-3 border-t border-line bg-black/20 p-5">
+          {/* Inline confirmation instead of the old full-screen overlay */}
+          <AnimatePresence>
+            {submitSuccess && (
+              <motion.span
+                role="status"
+                initial={{ opacity: 0, x: 6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0 }}
+                className="mr-auto flex items-center gap-1.5 text-sm font-medium text-emerald-400"
+              >
+                <CheckCircleIcon className="h-4 w-4" /> Changes saved
+              </motion.span>
             )}
-          </button>
+          </AnimatePresence>
+          <Button type="button" variant="ghost" onClick={handleCancel} disabled={!isDirty || isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={!isDirty || isSubmitting} className="min-w-[130px]">
+            {isSubmitting ? (
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            ) : (
+              'Save changes'
+            )}
+          </Button>
         </div>
       </motion.form>
 
       {/* --- SECURITY & DANGER ZONE SECTION --- */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-        className="bg-[#131318]/80 backdrop-blur-xl border border-red-500/20 rounded-2xl overflow-hidden shadow-2xl p-6 sm:p-10 relative w-full mt-8"
-      >
-        <div className="absolute top-0 left-0 w-64 h-64 bg-red-500/5 rounded-full blur-[80px] pointer-events-none" />
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-6">
-            <ShieldCheckIcon className="h-6 w-6 text-red-500" />
-            <h3 className="text-xl font-bold text-red-500 font-display">Danger Zone</h3>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-6 border-t border-red-500/10">
-            <div>
-              <h4 className="text-base font-semibold text-red-400">Delete Account</h4>
-              <p className="text-sm text-zinc-400 mt-2 max-w-xl leading-relaxed">Once you delete your account, there is no going back. All your data, uploaded resumes, and saved analysis information will be permanently removed.</p>
-            </div>
-            <button 
-              type="button" 
-              onClick={handleDeleteAccount}
-              disabled={isDeleting}
-              className="shrink-0 flex items-center gap-2 text-sm font-bold text-white transition-colors px-6 py-3 rounded-xl border border-red-500/30 bg-red-500/20 hover:bg-red-500/40 disabled:opacity-50 mt-4 sm:mt-0"
-            >
-              {isDeleting ? (
-                 <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : (
-                 <TrashIcon className="h-5 w-5" />
-              )}
-              Delete Account
-            </button>
-          </div>
+      <section className="w-full rounded-xl border border-red-500/20 bg-surface p-6 sm:p-8">
+        <div className="mb-5 flex items-center gap-3">
+          <ShieldCheckIcon className="h-5 w-5 text-red-400" />
+          <h3 className="font-display text-lg font-semibold text-ink">Danger zone</h3>
         </div>
-      </motion.div>
+
+        <div className="flex flex-col items-start justify-between gap-5 border-t border-line pt-5 sm:flex-row sm:items-center">
+          <div>
+            <h4 className="text-sm font-semibold text-red-400">Delete account</h4>
+            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink-muted">
+              Permanently removes your account, uploaded resumes and every analysis. This can't be undone.
+            </p>
+          </div>
+          <Button variant="danger" onClick={handleDeleteAccount} disabled={isDeleting} className="flex-shrink-0">
+            <TrashIcon className="h-4 w-4" />
+            Delete account
+          </Button>
+        </div>
+      </section>
 
       {/* Delete account confirmation */}
-      {createPortal(
-        <AnimatePresence>
-          {showDeleteModal && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96, y: 12 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96, y: 12 }}
-                transition={{ duration: 0.18 }}
-                className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6"
-              >
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10">
-                    <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
-                  </span>
-                  <h3 className="font-display text-lg font-semibold text-ink">Delete account?</h3>
-                </div>
-                <p className="mb-6 text-sm leading-relaxed text-ink-muted">
-                  This permanently deletes your account, resumes, and analysis history. This action cannot be undone.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteModal(false)}
-                    className="flex-1 rounded-lg border border-line bg-white/[0.06] py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-white/[0.1]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={confirmDelete}
-                    disabled={isDeleting}
-                    className="flex flex-1 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/15 py-2.5 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/25 disabled:opacity-50"
-                  >
-                    {isDeleting ? (
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500/30 border-t-red-500" />
-                    ) : (
-                      'Delete account'
-                    )}
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+      <Modal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        dismissible={!isDeleting}
+        labelledBy="delete-account-title"
+        maxWidth="max-w-sm"
+      >
+        <div className="mb-4 flex items-center gap-3">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10">
+            <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+          </span>
+          <h3 id="delete-account-title" className="font-display text-lg font-semibold text-ink">Delete account?</h3>
+        </div>
+        <p className="mb-6 text-sm leading-relaxed text-ink-muted">
+          This permanently deletes your account, resumes, and analysis history. This action cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} disabled={isDeleting} className="flex-1">
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete} disabled={isDeleting} className="flex-1">
+            {isDeleting ? (
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-red-500/30 border-t-red-500" />
+            ) : (
+              'Delete account'
+            )}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
