@@ -7,7 +7,7 @@ import {
   TagIcon,
   DocumentTextIcon,
   CreditCardIcon,
-  BoltIcon,
+  ScaleIcon,
 } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import { skillCount } from '../../../utils/analysisSchema';
@@ -80,16 +80,14 @@ const kpiConfigs = [
     getValue: (d) => d.creditsText,
   },
   {
-    key: 'strength',
-    label: 'Resume Strength',
-    icon: BoltIcon,
-    getValue: (d) =>
-      d.latestAnalysis?.overallScore != null ? `${d.latestAnalysis.overallScore}%` : '—',
-    getTrend: (d) => {
-      const curr = d.latestAnalysis?.overallScore;
-      const prev = d.previousAnalysis?.overallScore;
-      if (curr == null || prev == null) return null;
-      return curr - prev;
+    // Was "Resume Strength", a second copy of the overall score the hero
+    // already shows. Hiring risk is a distinct signal from the same report.
+    key: 'risk',
+    label: 'Hiring Risk',
+    icon: ScaleIcon,
+    getValue: (d) => {
+      const risk = d.latestAnalysis?.hiringRiskLevel;
+      return risk && risk !== 'Unknown' ? risk : '—';
     },
   },
 ];
