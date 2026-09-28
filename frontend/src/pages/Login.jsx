@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LoginOptions from '../components/auth/LoginOptions';
 import { useLoading } from '../App';
-import { auth } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import { CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import SceneBackdrop from '../components/three/SceneBackdrop';
@@ -21,61 +19,30 @@ export default function Login() {
   // LoginOptions sends users back here with a reason when the backend
   // handshake fails after Google sign-in
   const [error, setError] = useState(location.state?.authError || '');
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const loginBoxRef = useRef(null);
   const navigatingRef = useRef(false);
   const { setLoading } = useLoading();
-  const { currentUser } = useAuth();
+  // AuthContext already owns the Firebase listener; reuse its "checked" flag
+  // instead of subscribing a second (and, with LoginOptions, third) listener.
+  const { currentUser, authStatusChecked } = useAuth();
 
-  // state may carry only authError, so default `from` independently
-  const from = location.state?.from || { pathname: '/dashboard' };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsCheckingAuth(false);
-      if (user) {
-        console.log("User is already authenticated with Firebase:", user.email);
-      }
-    });
-    
-    return () => unsubscribe();
-  }, [navigate]);
-
-  useEffect(() => {
-    const navigateFunction = navigate;
-    
-    const handleClickOutside = (event) => {
-      if (loginBoxRef.current && !loginBoxRef.current.contains(event.target)) {
-        // Only navigate away if clicking outside the form area (for non-modal approach, we don't necessarily want this behavior anymore since it's a full page)
-        // Let's remove the click-outside-to-home behavior as it's annoying on a split screen layout
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  // state may carry only authError, so default the redirect target independently
+  const fromPath = location.state?.from?.pathname || '/dashboard';
 
   const handleError = useCallback((message) => {
     setError(message);
   }, []);
-  
+
   const handleNavigate = useCallback(() => {
     if (navigatingRef.current) return;
     navigatingRef.current = true;
 
     setLoading(false);
-    navigate(from.pathname, { replace: true });
-  }, [navigate, from, setLoading]);
+    navigate(fromPath, { replace: true });
+  }, [navigate, fromPath, setLoading]);
 
   // Auto-redirect if already logged in
   useEffect(() => {
-    if (currentUser && !navigatingRef.current) {
-      console.log("User fully authenticated, proceeding to dashboard...");
-      handleNavigate();
-    }
+    if (currentUser) handleNavigate();
   }, [currentUser, handleNavigate]);
 
   const floatVariants = {
@@ -85,7 +52,7 @@ export default function Login() {
     }
   };
 
-  if (isCheckingAuth) {
+  if (!authStatusChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#07070b] selection:bg-primary/30">
         <div className="w-16 h-16 border-4 border-white/10 border-t-[#7c6cf6] rounded-full animate-spin"></div>
@@ -136,8 +103,7 @@ export default function Login() {
             </p>
           </motion.div>
 
-          <motion.div 
-            ref={loginBoxRef}
+          <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
