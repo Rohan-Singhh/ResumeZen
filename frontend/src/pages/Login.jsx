@@ -4,14 +4,45 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import LoginOptions from '../components/auth/LoginOptions';
 import { useLoading } from '../App';
 import { useAuth } from '../context/AuthContext';
-import { CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import SceneBackdrop from '../components/three/SceneBackdrop';
+import {
+  ArrowLeftIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  ExclamationCircleIcon,
+  MagnifyingGlassIcon,
+  BriefcaseIcon,
+} from '@heroicons/react/24/outline';
+import { staggerContainer, staggerItem } from '../utils/motion';
 
 const pageVariants = {
   initial: { opacity: 0 },
   in: { opacity: 1 },
   exit: { opacity: 0 }
 };
+
+// What the product actually does — no invented scores or growth figures
+const VALUE_POINTS = [
+  {
+    icon: ChartBarIcon,
+    title: 'Scored, not guessed',
+    body: 'An overall score with an ATS, technical-depth and impact breakdown.',
+  },
+  {
+    icon: ChatBubbleLeftRightIcon,
+    title: 'Recruiter-style review',
+    body: 'Specific feedback on what a screener would question, and why.',
+  },
+  {
+    icon: MagnifyingGlassIcon,
+    title: 'Keyword gaps',
+    body: 'The terms your resume is missing for the roles it targets.',
+  },
+  {
+    icon: BriefcaseIcon,
+    title: 'Matched jobs',
+    body: 'Open roles ranked against the skills in your latest resume.',
+  },
+];
 
 export default function Login() {
   const navigate = useNavigate();
@@ -45,176 +76,135 @@ export default function Login() {
     if (currentUser) handleNavigate();
   }, [currentUser, handleNavigate]);
 
-  const floatVariants = {
-    animate: {
-      y: [0, -10, 0],
-      transition: { duration: 4, repeat: Infinity, ease: "easeInOut" }
-    }
-  };
-
   if (!authStatusChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#07070b] selection:bg-primary/30">
-        <div className="w-16 h-16 border-4 border-white/10 border-t-[#7c6cf6] rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-surface-void">
+        <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <motion.div 
-      className="min-h-screen flex flex-col lg:flex-row overflow-hidden relative selection:bg-primary/30 bg-[#07070b]"
+    <motion.div
+      className="min-h-screen flex flex-col lg:flex-row relative bg-surface-void selection:bg-primary/30"
       initial="initial"
       animate="in"
       exit="exit"
       variants={pageVariants}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* ATMOSPHERE: real-3D studio void behind everything */}
-      <SceneBackdrop className="z-0" />
+      {/* Static accent wash — replaces the WebGL scene, which cost a three.js
+          bundle and a GPU loop on the one page that should load fastest */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(55% 50% at 75% 40%, rgba(124,108,246,0.10), transparent 65%), radial-gradient(40% 35% at 15% 85%, rgba(124,108,246,0.06), transparent 60%)',
+        }}
+      />
 
-      {/* LEFT COLUMN: Login Form */}
-      <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 lg:py-0 relative z-10">
-        
-        {/* Back to Home / Logo */}
-        <div 
+      {/* LEFT COLUMN: sign-in */}
+      <div className="relative z-10 flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-[45%] lg:px-20 lg:py-0 xl:w-[40%]">
+
+        <button
           onClick={() => navigate('/')}
-          className="absolute top-8 left-6 sm:left-12 lg:left-20 flex items-center gap-3 cursor-pointer group"
+          className="group absolute left-6 top-8 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:left-12 lg:left-20"
         >
-          <div className="flex items-center justify-center w-10 h-10 glass-panel rounded-xl group-hover:border-[#7c6cf6]/40 transition-colors shadow-[inset_-2px_0_0_0_rgba(124,108,246,0.85)]">
-            <span className="text-[#f4f2ec] font-bold font-display text-sm">RZ</span>
-          </div>
-          <span className="text-[#a1a1ae] font-semibold text-sm group-hover:text-white transition-colors tracking-wide">Back to Home</span>
-        </div>
+          <ArrowLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+          Back to home
+        </button>
 
-        <div className="max-w-[460px] w-full mx-auto mt-16 lg:mt-0">
+        <div className="mx-auto mt-16 w-full max-w-[420px] lg:mt-0">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
-            <p className="text-[#7c6cf6] text-xs font-bold uppercase tracking-[0.22em] mb-4">
-              ResumeZen Studio
-            </p>
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#f4f2ec] font-display tracking-tight mb-3">
-              Welcome back
-            </h2>
-            <p className="text-[#a1a1ae] text-base mb-10 font-medium">
-              Sign in to engineer your next career move.
+            <div className="mb-8 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-surface-raised">
+              <span className="font-display text-sm font-bold text-ink">RZ</span>
+            </div>
+            <h1 className="mb-2 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+              Sign in to ResumeZen
+            </h1>
+            <p className="mb-8 text-base text-ink-muted">
+              Pick up where you left off with your resume reports.
             </p>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Error message */}
             <AnimatePresence>
               {error && (
                 <motion.div
+                  role="alert"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="bg-red-500/10 border border-red-500/20 rounded-xl mb-6 overflow-hidden"
+                  className="mb-5 overflow-hidden rounded-xl border border-red-500/20 bg-red-500/10"
                 >
-                  <div className="px-5 py-4 flex items-start">
-                    <svg className="w-5 h-5 mr-3 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-red-400 text-sm font-medium leading-relaxed">{error}</p>
+                  <div className="flex items-start gap-3 px-4 py-3.5">
+                    <ExclamationCircleIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-400" />
+                    <p className="text-sm font-medium leading-relaxed text-red-300">{error}</p>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Login Box — frosted glass over the monolith */}
-            <div className="glass-panel p-6 sm:p-8 rounded-[28px] relative overflow-hidden lift">
-              {/* Top-lit hairline */}
-              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#7c6cf6]/60 to-transparent"></div>
-              
-              <LoginOptions 
+            <div className="rounded-2xl border border-line bg-surface p-6 sm:p-7">
+              <LoginOptions
                 onError={handleError}
-                onSuccessNavigation={handleNavigate} 
+                onSuccessNavigation={handleNavigate}
               />
             </div>
-            
-            {/* Footer */}
-            <div className="text-center mt-10 text-[#6b6b78] text-xs font-semibold uppercase tracking-wider">
-              <p>© {new Date().getFullYear()} ResumeZen</p>
-            </div>
+
+            <p className="mt-10 text-center text-xs text-ink-faint">
+              © {new Date().getFullYear()} ResumeZen
+            </p>
           </motion.div>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: the monolith does the talking — copy + proof chips only */}
-      <div className="hidden lg:flex flex-1 relative items-stretch justify-stretch p-14 xl:p-20 z-10 pointer-events-none">
-        <div className="flex flex-col justify-between w-full max-w-3xl ml-auto">
-          
-          {/* Headline */}
+      {/* RIGHT COLUMN: what you get */}
+      <div className="relative z-10 hidden flex-1 items-center border-l border-line p-14 lg:flex xl:p-20">
+        <div className="mx-auto w-full max-w-xl">
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.15 }}
-            className="pt-10"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 glass-panel rounded-full text-[#c9c4f2] text-sm font-bold mb-8">
-              <SparklesIcon className="w-4 h-4 text-[#7c6cf6]" />
-              The Engine
-            </div>
-            <h1 className="text-5xl xl:text-[3.6rem] font-extrabold text-[#f4f2ec] font-display leading-[1.08] tracking-tight mb-7">
-              A relentless<br />
-              <span className="text-[#a99cf9]">optimization pipeline.</span>
-            </h1>
-            <p className="text-lg xl:text-xl text-[#a1a1ae] max-w-lg leading-relaxed font-medium">
-              We built the exact tool we wish we had when interviewing at FAANG.
-              Stop guessing — start engineering your resume with data.
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              What you get
+            </p>
+            <h2 className="mb-4 font-display text-4xl font-semibold leading-tight tracking-tight text-ink xl:text-5xl">
+              Know exactly what to fix before you apply.
+            </h2>
+            <p className="mb-10 max-w-lg text-lg leading-relaxed text-ink-muted">
+              Upload a PDF and get a structured report in about a minute.
             </p>
           </motion.div>
 
-          {/* Proof chips floating over the scene floor */}
-          <div className="flex flex-wrap items-end gap-5 pb-6 pointer-events-auto">
-            <motion.div 
-              variants={floatVariants}
-              animate="animate"
-              initial={{ opacity: 0, y: 30 }}
-              transition={{ duration: 0.7, delay: 0.35 }}
-              className="glass-panel lift rounded-2xl p-6 w-64"
-            >
-              <h3 className="text-[#a1a1ae] text-xs font-bold uppercase tracking-wider mb-4">ATS Match Score</h3>
-              <div className="flex items-end gap-2">
-                <span className="text-5xl font-bold text-[#f4f2ec] font-display leading-none">98</span>
-                <span className="text-[#7c6cf6] font-bold mb-0.5">/100</span>
-              </div>
-              <div className="mt-5 h-1.5 w-full bg-white/[0.07] rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: '98%' }}
-                  transition={{ duration: 1.5, delay: 0.9, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-[#7c6cf6] to-[#a99cf9]"
-                ></motion.div>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              variants={floatVariants}
-              animate="animate"
-              initial={{ opacity: 0, y: 30 }}
-              transition={{ duration: 0.7, delay: 0.5 }}
-              className="glass-panel lift rounded-2xl p-6 w-56"
-            >
-               <h3 className="text-[#a1a1ae] text-xs font-bold uppercase tracking-wider mb-4">Impact Quantified</h3>
-               <div className="flex items-center gap-4">
-                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#7c6cf6]/10 border border-[#7c6cf6]/25">
-                   <CheckCircleIcon className="w-6 h-6 text-[#a99cf9]" />
-                 </div>
-                 <div>
-                   <div className="text-3xl font-extrabold text-[#f4f2ec] font-display leading-none mb-1">+340%</div>
-                   <div className="text-xs font-semibold text-[#6b6b78]">Performance</div>
-                 </div>
-               </div>
-            </motion.div>
-          </div>
-
+          <motion.ul
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+            className="grid grid-cols-2 gap-3"
+          >
+            {VALUE_POINTS.map(({ icon: Icon, title, body }) => (
+              <motion.li
+                key={title}
+                variants={staggerItem}
+                className="rounded-xl border border-line bg-surface p-5"
+              >
+                <Icon className="mb-3 h-5 w-5 text-primary" />
+                <p className="mb-1 font-display text-sm font-semibold text-ink">{title}</p>
+                <p className="text-sm leading-relaxed text-ink-muted">{body}</p>
+              </motion.li>
+            ))}
+          </motion.ul>
         </div>
       </div>
     </motion.div>
