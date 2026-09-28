@@ -18,9 +18,27 @@
   --color-primary-light: #a99cf9;
 }
 
-/* Improve page transitions */
+/* Smooth in-page anchor scrolling (navbar + footer links) */
 html {
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Land landing-page sections below the fixed 80px navbar, for both the navbar
+   buttons (scrollIntoView) and plain #anchor links in the footer. */
+#home,
+#features,
+#how-it-works,
+#pricing,
+#reviews,
+#faq,
+#support {
+  scroll-margin-top: 88px;
 }
 
 body {
@@ -38,9 +56,15 @@ body {
   height: 100%;
 }
 
-/* Add smooth transitions for all interactive elements */
+/* Smooth color/shadow changes on interactive elements. Deliberately NOT
+   `transition: all`: framer-motion drives `transform` on buttons every frame
+   (whileHover / whileTap / entrance), and a CSS transition on transform makes
+   each of those frames ease toward its target — hovers and entrances lag and
+   wobble instead of tracking the spring. */
 a, button, input, select, textarea {
-  transition: all 0.2s ease-in-out;
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-in-out;
 }
 
 /* Utility classes for primary colors */

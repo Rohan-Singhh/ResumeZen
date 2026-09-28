@@ -1,3 +1,4 @@
+import Glow from './Glow';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,7 +16,7 @@ export default function Footer() {
   return (
     <footer className="bg-dark-bg border-t border-white/5 pt-16 pb-8 relative overflow-hidden">
       {/* Subtle background glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/5 rounded-t-full blur-[100px] pointer-events-none"></div>
+      <Glow className="bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px]" strength={0.06} />
       
       <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
@@ -102,7 +103,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-6">
             <span className="text-gray-500 text-sm flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
               All systems operational
             </span>
           </div>
@@ -139,7 +140,7 @@ export default function Footer() {
 
               <div className="p-8 text-center">
                 <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-primary animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>

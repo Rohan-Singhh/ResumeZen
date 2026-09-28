@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnvelopeIcon, PhoneIcon, ChatBubbleLeftRightIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
@@ -100,7 +101,7 @@ export default function Support() {
 
   return (
     <section id="support" className="bg-dark-bg py-24 sm:py-32 border-t border-white/5 relative">
-      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] pointer-events-none"></div>
+      <Glow className="top-0 right-0 w-[800px] h-[800px]" strength={0.06} />
 
       <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
         <div className="text-center mb-16 lg:mb-24">
@@ -126,7 +127,7 @@ export default function Support() {
           {contactMethods.map((method, index) => (
             <motion.div
               key={method.id}
-              className={`relative bg-dark-card p-8 rounded-3xl border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300 group`}
+              className={`relative bg-dark-card p-8 rounded-3xl border border-white/10 hover:bg-white/5 transition-colors duration-300 group`}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
@@ -144,7 +145,7 @@ export default function Support() {
         </div>
 
         <motion.div
-          className="rounded-3xl overflow-hidden border border-white/10 bg-dark-card/50 backdrop-blur-xl shadow-2xl relative"
+          className="rounded-3xl overflow-hidden border border-white/10 bg-dark-card/50 shadow-2xl relative"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -152,8 +153,8 @@ export default function Support() {
         >
           {/* Form Background Decor */}
           <div className="absolute top-0 right-0 w-full h-full overflow-hidden z-0">
-             <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 blur-[100px] rounded-full"></div>
-             <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-accent/20 blur-[100px] rounded-full"></div>
+             <Glow className="-top-32 -right-32 w-96 h-96" strength={0.18} />
+             <Glow className="-bottom-32 -left-32 w-96 h-96" color={GLOW.accent} strength={0.18} />
           </div>
 
           <div className="grid lg:grid-cols-5 gap-0 relative z-10">
@@ -164,7 +165,7 @@ export default function Support() {
                   Have a specific question? Fill out this form and we'll get back to you as soon as possible.
                 </p>
                 <div className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-green-400">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+                  <span className="h-2 w-2 rounded-full bg-green-400" />
                   Live Support Queue
                 </div>
                 
@@ -269,16 +270,19 @@ export default function Support() {
                   className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none resize-none"
                 ></textarea>
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-dark-bg border border-white/5">
+                  {/* scaleX, not width: this runs on every keystroke */}
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-secondary"
-                    animate={{ width: `${progress}%` }}
+                    className="h-full w-full rounded-full bg-gradient-to-r from-primary via-accent to-secondary"
+                    style={{ originX: 0 }}
+                    initial={false}
+                    animate={{ scaleX: progress / 100 }}
                     transition={{ type: 'spring', stiffness: 120, damping: 20 }}
                   />
                 </div>
               </div>
               <motion.button
                 type="submit"
-                className="w-full bg-white text-dark-bg font-bold py-4 px-8 rounded-xl hover:shadow-glow-primary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 text-lg mt-4"
+                className="w-full bg-white text-dark-bg font-bold py-4 px-8 rounded-xl hover:shadow-glow-primary transition-[color,background-color,border-color,box-shadow] duration-300 disabled:cursor-not-allowed disabled:opacity-50 text-lg mt-4"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isSubmitting}

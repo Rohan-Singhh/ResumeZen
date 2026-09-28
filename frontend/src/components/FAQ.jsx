@@ -1,3 +1,4 @@
+import Glow from './Glow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { ChevronDownIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
@@ -39,7 +40,7 @@ export default function FAQ() {
 
   return (
     <section id="faq" className="py-24 sm:py-32 bg-dark-bg border-t border-white/5 relative">
-      <div className="absolute top-1/2 left-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none -translate-y-1/2 -translate-x-1/2"></div>
+      <Glow className="top-1/2 left-0 w-96 h-96 -translate-y-1/2 -translate-x-1/2" strength={0.12} />
       
       <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
         <div className="flex flex-col lg:flex-row gap-16 items-start">
@@ -63,7 +64,7 @@ export default function FAQ() {
               {faqs.map((faq, index) => (
                 <motion.div
                   key={faq.id}
-                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm"
+                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
                   initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-50px" }}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, useNavigate, useLocation, NavLink } from 'react-router-dom';
+import { useOutlet, useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -216,6 +216,10 @@ function TopNav() {
 
 export default function DashboardLayout() {
   const location = useLocation();
+  // Capture the outlet element per render. A live <Outlet /> inside the exiting
+  // motion.div would already show the *new* tab while fading out, so each tab
+  // switch flashed the destination twice.
+  const outlet = useOutlet();
 
   return (
     <div className="flex flex-col h-screen bg-surface-void text-ink overflow-hidden relative selection:bg-primary/30">
@@ -234,7 +238,7 @@ export default function DashboardLayout() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Outlet />
+              {outlet}
             </motion.div>
           </AnimatePresence>
         </div>

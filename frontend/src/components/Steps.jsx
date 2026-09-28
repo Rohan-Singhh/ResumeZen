@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -47,7 +48,7 @@ export default function Steps() {
   return (
     <section id="how-it-works" className="py-24 sm:py-32 bg-dark-bg border-t border-white/5 relative overflow-hidden">
       {/* Decorative Glow */}
-      <div className="absolute right-0 bottom-0 w-[600px] h-[600px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <Glow className="right-0 bottom-0 w-[600px] h-[600px]" color={GLOW.secondary} strength={0.1} />
 
       <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
         <div className="text-left md:text-center mb-16 lg:mb-24">
@@ -72,7 +73,7 @@ export default function Steps() {
               return (
                 <motion.div
                   key={index}
-                  className="relative bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md hover:bg-white/10 transition-colors duration-300 group"
+                  className="relative bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors duration-300 group"
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
@@ -105,7 +106,7 @@ export default function Steps() {
         >
           <motion.button
             onClick={() => navigate('/login')}
-            className="bg-white text-dark-bg hover:shadow-glow-secondary font-bold py-4 px-10 rounded-full text-lg transition-all duration-300"
+            className="bg-white text-dark-bg hover:shadow-glow-secondary font-bold py-4 px-10 rounded-full text-lg transition-[color,background-color,border-color,box-shadow] duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

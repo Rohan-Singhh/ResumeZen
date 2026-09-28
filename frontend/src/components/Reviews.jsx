@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { motion } from 'framer-motion';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
@@ -81,7 +82,7 @@ export default function Reviews() {
   return (
     <section id="reviews" className="bg-dark-bg py-24 sm:py-32 border-t border-white/5 relative">
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-secondary/5 rounded-full blur-[120px]"></div>
+        <Glow className="top-0 right-0 w-[800px] h-[800px]" color={GLOW.secondary} strength={0.06} />
       </div>
 
       <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
@@ -119,9 +120,13 @@ export default function Reviews() {
           {reviews.map((review, index) => (
             <motion.article
               key={review.id}
-              className="break-inside-avoid flex flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:bg-white/10 hover:border-white/20 group"
+              // Hover lift lives in framer-motion with the entrance. The old CSS
+              // `transition-all hover:-translate-y-2` fought framer's inline
+              // transform: it smeared the entrance and the hover never applied.
+              className="break-inside-avoid flex flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-8 transition-colors duration-300 hover:bg-white/10 hover:border-white/20 group"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -6, transition: { type: 'spring', stiffness: 320, damping: 26 } }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: (index % 3) * 0.15, duration: 0.5 }}
             >
@@ -152,7 +157,17 @@ export default function Reviews() {
               </div>
 
               <div className="mt-8 flex items-center gap-4 border-t border-white/10 pt-6">
-                <img className="h-14 w-14 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-colors duration-300" src={review.image} alt={review.name} />
+                {/* Sized, lazy and async-decoded: six third-party avatars no
+                    longer shift layout or decode on the main thread mid-scroll */}
+                <img
+                  className="h-14 w-14 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-colors duration-300"
+                  src={review.image}
+                  alt={review.name}
+                  width={56}
+                  height={56}
+                  loading="lazy"
+                  decoding="async"
+                />
                 <div>
                   <h3 className="font-bold text-white text-lg">{review.name}</h3>
                   <p className="text-sm text-primary-light font-medium">{review.role}</p>

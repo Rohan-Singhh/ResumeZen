@@ -1,3 +1,4 @@
+import Glow, { GLOW } from './Glow';
 import { motion } from 'framer-motion';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
@@ -8,14 +9,14 @@ export default function CTA() {
   return (
     <section className="bg-dark-bg py-24 sm:py-32 relative overflow-hidden border-t border-white/5">
       {/* Background Elements */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[1000px] h-[500px] bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 rounded-full blur-[100px] opacity-50 pointer-events-none mix-blend-screen"></div>
+      <Glow className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[1000px] h-[500px]" strength={0.12} />
       
       {/* Grid Pattern */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)] pointer-events-none"></div>
 
       <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 relative z-10">
         <motion.div 
-          className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] p-10 md:p-20 text-center shadow-2xl relative overflow-hidden"
+          className="bg-white/5 border border-white/10 rounded-[3rem] p-10 md:p-20 text-center shadow-2xl relative overflow-hidden"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
@@ -23,8 +24,8 @@ export default function CTA() {
         >
           {/* Inner Glows */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-secondary"></div>
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-secondary/30 blur-[80px] rounded-full"></div>
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-primary/30 blur-[80px] rounded-full"></div>
+          <Glow className="-top-24 -right-24 w-64 h-64" color={GLOW.secondary} strength={0.25} />
+          <Glow className="-bottom-24 -left-24 w-64 h-64" strength={0.25} />
           
           <div className="max-w-3xl mx-auto relative z-10">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 font-display tracking-tight leading-tight">
@@ -38,7 +39,7 @@ export default function CTA() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <motion.button 
                 onClick={() => navigate('/login')}
-                className="w-full sm:w-auto rounded-xl bg-white text-dark-bg px-10 py-5 font-bold text-lg hover:shadow-glow-primary transition-all duration-300 flex items-center justify-center gap-2 group"
+                className="w-full sm:w-auto rounded-xl bg-white text-dark-bg px-10 py-5 font-bold text-lg hover:shadow-glow-primary transition-[color,background-color,border-color,box-shadow] duration-300 flex items-center justify-center gap-2 group"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >

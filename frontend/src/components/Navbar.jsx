@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useLenis } from '@studio-freight/react-lenis';
 
 const navLinks = [
   { name: 'Features', id: 'features' },
@@ -18,49 +17,56 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
-  const lenis = useLenis();
 
   const isLandingPage = location.pathname === '/';
 
+  // Passive listener, at most one read per frame, and a state update only when
+  // the threshold is actually crossed — not a handler on every scroll event.
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const scrolled = window.scrollY > 20;
+      setIsScrolled((prev) => (prev === scrolled ? prev : scrolled));
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
-  const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (!element) return;
+  // Sections carry scroll-margin-top (index.css) for the fixed bar, so the
+  // browser handles the offset; honor reduced motion for the jump itself.
+  const scrollToSection = (element) => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    element.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  };
 
-    if (lenis) {
-      lenis.scrollTo(element, { offset: -88 });
-    } else {
-      const offset = 88;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+  // Coming from another page the section is not mounted yet. Wait for it
+  // frame by frame (up to ~1s) instead of guessing with a fixed 140ms timeout.
+  const scrollWhenReady = (sectionId, framesLeft = 60) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      scrollToSection(element);
+    } else if (framesLeft > 0) {
+      requestAnimationFrame(() => scrollWhenReady(sectionId, framesLeft - 1));
     }
   };
 
   const handleSectionNavigation = (sectionId) => {
-    if (!isLandingPage) {
-      navigate('/');
-      setTimeout(() => scrollToSection(sectionId), 140);
-      return;
-    }
-
-    scrollToSection(sectionId);
+    setIsMobileOpen(false);
+    if (!isLandingPage) navigate('/');
+    scrollWhenReady(sectionId);
   };
 
   const handleLogout = async () => {
@@ -68,12 +74,15 @@ export default function Navbar() {
     navigate('/', { replace: true });
   };
 
+  // Blur only once content scrolls under the bar, and transition colors only:
+  // the old transition-all animated backdrop-filter, re-blurring the whole bar
+  // every frame each time it crossed the threshold.
   const navShellClass = isScrolled
     ? 'bg-dark-bg/80 backdrop-blur-xl border-b border-white/10 shadow-lg'
-    : 'bg-dark-bg/0 backdrop-blur-sm border-b border-white/5 shadow-none';
+    : 'bg-dark-bg/0 border-b border-white/5 shadow-none';
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${navShellClass}`}>
+    <nav className={`fixed top-0 w-full z-50 transition-[background-color,border-color,box-shadow] duration-300 ${navShellClass}`}>
       <div className="flex justify-between items-center h-20 px-6 sm:px-12 lg:px-20 w-full mx-auto">
         
         {/* Left: Logo */}
@@ -97,7 +106,7 @@ export default function Navbar() {
               whileHover={{ y: -1 }}
             >
               {item.name}
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-secondary group-hover:w-full transition-all duration-300"></span>
+              <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 bg-gradient-to-r from-primary to-secondary transition-transform duration-300 group-hover:scale-x-100"></span>
             </motion.button>
           ))}
         </div>
@@ -108,7 +117,7 @@ export default function Navbar() {
             <>
               <motion.button
                 onClick={() => navigate('/dashboard')}
-                className="bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 px-6 rounded-lg transition-all duration-300 border border-white/10"
+                className="bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 px-6 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300 border border-white/10"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -117,7 +126,7 @@ export default function Navbar() {
               {!isLandingPage && (
                 <motion.button
                   onClick={handleLogout}
-                  className="bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300"
+                  className="bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-semibold py-2.5 px-4 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -128,7 +137,7 @@ export default function Navbar() {
           ) : (
             <motion.button
               onClick={() => navigate('/login')}
-              className="bg-white text-dark-bg hover:shadow-glow-primary font-bold py-2.5 px-6 rounded-lg transition-all duration-300"
+              className="bg-white text-dark-bg hover:shadow-glow-primary font-bold py-2.5 px-6 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -140,7 +149,7 @@ export default function Navbar() {
         {/* Mobile menu button */}
         <button
           onClick={() => setIsMobileOpen((prev) => !prev)}
-          className="lg:hidden p-2 rounded-md border border-white/10 text-white hover:bg-white/10 transition-all"
+          className="lg:hidden p-2 rounded-md border border-white/10 text-white hover:bg-white/10 transition-colors"
           aria-label="Toggle menu"
         >
           {isMobileOpen ? '✕' : '☰'}
