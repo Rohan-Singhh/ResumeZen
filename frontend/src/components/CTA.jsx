@@ -16,7 +16,7 @@ export default function CTA() {
 
       <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 relative z-10">
         <motion.div 
-          className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] p-10 md:p-20 text-center shadow-2xl relative overflow-hidden"
+          className="bg-white/5 border border-white/10 rounded-[3rem] p-10 md:p-20 text-center shadow-2xl relative overflow-hidden"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}

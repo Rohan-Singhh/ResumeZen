@@ -58,7 +58,7 @@ export default function Hero({ onShowSuccessStories }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8"
           >
             <SparklesIcon className="h-5 w-5 text-secondary" />
             <span className="text-sm font-medium tracking-wide text-gray-300">ResumeZen 2.0 is live</span>
@@ -106,7 +106,7 @@ export default function Hero({ onShowSuccessStories }) {
             </div>
             
             <motion.button 
-              className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 backdrop-blur-md px-10 py-4 font-bold text-lg text-white hover:bg-white/10 hover:border-white/20 transition-colors duration-300"
+              className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-10 py-4 font-bold text-lg text-white hover:bg-white/10 hover:border-white/20 transition-colors duration-300"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onShowSuccessStories}
@@ -162,7 +162,7 @@ export default function Hero({ onShowSuccessStories }) {
               
               {/* Overlay Mockup UI Elements to make it look like an app */}
               <div className="absolute inset-0 flex items-center justify-center p-8" ref={mockupRef}>
-                <div className="w-full max-w-4xl h-full max-h-[500px] bg-dark-bg/90 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl flex overflow-hidden relative">
+                <div className="w-full max-w-4xl h-full max-h-[500px] bg-dark-bg/90 rounded-2xl border border-white/20 shadow-2xl flex overflow-hidden relative">
                   {/* Sidebar mockup */}
                   <div className="w-64 border-r border-white/10 p-6 hidden md:block">
                     <div className="w-32 h-6 bg-white/10 rounded-md mb-10"></div>

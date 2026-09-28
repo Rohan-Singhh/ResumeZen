@@ -127,7 +127,7 @@ export default function Support() {
           {contactMethods.map((method, index) => (
             <motion.div
               key={method.id}
-              className={`relative bg-dark-card p-8 rounded-3xl border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300 group`}
+              className={`relative bg-dark-card p-8 rounded-3xl border border-white/10 hover:bg-white/5 transition-colors duration-300 group`}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
@@ -145,7 +145,7 @@ export default function Support() {
         </div>
 
         <motion.div
-          className="rounded-3xl overflow-hidden border border-white/10 bg-dark-card/50 backdrop-blur-xl shadow-2xl relative"
+          className="rounded-3xl overflow-hidden border border-white/10 bg-dark-card/50 shadow-2xl relative"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

@@ -151,7 +151,7 @@ export default function Pricing() {
             {plans.map((plan, index) => (
               <motion.div
                 key={plan.planId || index}
-                className={`relative bg-dark-card p-8 xl:p-12 rounded-3xl backdrop-blur-xl ${
+                className={`relative bg-dark-card p-8 xl:p-12 rounded-3xl ${
                   plan.isSpecial ? 'border-2 border-accent bg-accent/5 shadow-glow-accent/20' : 
                   plan.isPopular ? 'border-2 border-primary shadow-glow-primary/20' : 'border border-white/10'
                 }`}

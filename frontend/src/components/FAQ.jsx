@@ -64,7 +64,7 @@ export default function FAQ() {
               {faqs.map((faq, index) => (
                 <motion.div
                   key={faq.id}
-                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm"
+                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
                   initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
