@@ -37,7 +37,6 @@ export default function AuthGuard({ children }) {
       // Prevent infinite redirect loops during AnimatePresence exit animations
       // Check window.location directly because useLocation() is stale in exiting trees
       if (window.location.pathname !== targetUrl && window.location.pathname !== '/login' && window.location.pathname !== '/') {
-        console.log(`AuthGuard: Redirecting to ${targetUrl}`);
         navigate(targetUrl, { replace: true, state: { from: location } });
       }
     }
@@ -45,13 +44,10 @@ export default function AuthGuard({ children }) {
 
   // If authentication status is still being determined, show loading spinner
   if (loading && !authStatusChecked) {
-    console.log('AuthGuard: Loading state, waiting for auth check');
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="h-10 w-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-sm font-medium text-zinc-400">Authenticating...</p>
-        </div>
+      <div className="min-h-screen bg-surface-void flex flex-col items-center justify-center" role="status">
+        <div className="h-10 w-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-medium text-ink-muted">Signing you in…</p>
       </div>
     );
   }

@@ -38,9 +38,6 @@ function toneClasses(score) {
 
 export default function ResumeHealthRadar({ latestAnalysis }) {
   const categories = deriveCategories(latestAnalysis);
-  const overall = categories.length
-    ? Math.round(categories.reduce((s, c) => s + c.score, 0) / categories.length)
-    : 0;
 
   if (!latestAnalysis) {
     return (
@@ -51,18 +48,14 @@ export default function ResumeHealthRadar({ latestAnalysis }) {
     );
   }
 
-  const overallTone = toneClasses(overall);
-
+  // No headline number here: an average of these bars was yet another "overall"
+  // score competing with the hero's. This card is the breakdown only.
   return (
     <Card>
       <SectionHeader
         icon={HeartIcon}
         title="Resume Health"
-        right={
-          <span className={`font-display text-xl font-semibold tabular-nums ${overallTone.text}`}>
-            {overall}%
-          </span>
-        }
+        right={<span className="text-[11px] font-medium uppercase tracking-wider text-ink-faint">Breakdown</span>}
         className="mb-6"
       />
 

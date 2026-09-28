@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import {
@@ -12,8 +12,10 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
-import { getResumeHistory } from '../../services/resumeService';
+import { useResumeHistory } from '../../hooks/useResumeHistory';
+import { normalizeAnalysis, skillCount } from '../../utils/analysisSchema';
 import { timeAgo } from '../../utils/timeAgo';
+import Badge from '../../components/ui/Badge';
 
 export default function DashboardJobs() {
   const [jobs, setJobs] = useState([]);
@@ -22,29 +24,26 @@ export default function DashboardJobs() {
   const [viewMode, setViewMode] = useState('all'); // 'all' or 'ai'
   const [aiJobs, setAiJobs] = useState([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [hasResume, setHasResume] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
-  const [jobSources, setJobSources] = useState({ remotive: 0, arbeitnow: 0, themuse: 0 });
+
+  // Shared, cached history (same query the overview uses). The latest record is
+  // normalized so both current-schema and legacy records can drive AI matching;
+  // the old `history[0].analysis` check only matched pre-migration records.
+  const { data: history = [] } = useResumeHistory();
+  const userProfile = useMemo(() => normalizeAnalysis(history[0]), [history]);
+  const hasResume = Boolean(
+    userProfile &&
+    (skillCount(userProfile) > 0 || userProfile.summary || userProfile.workExperience.length > 0)
+  );
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchJobs = async () => {
       try {
         setLoading(true);
-        
-        // Fetch standard jobs
         const response = await axios.get('/api/jobs');
         if (response.data.success) {
           setJobs(response.data.jobs);
-          setJobSources(response.data.sources || {});
         } else {
           setError('Failed to load jobs');
-        }
-
-        // Fetch user resume to see if AI matching is possible
-        const history = await getResumeHistory();
-        if (history && history.length > 0 && history[0].analysis) {
-          setHasResume(true);
-          setUserProfile(history[0]);
         }
       } catch (err) {
         setError('Error fetching data. Please try again later.');
@@ -54,7 +53,7 @@ export default function DashboardJobs() {
       }
     };
 
-    fetchInitialData();
+    fetchJobs();
   }, []);
 
   const handleAIMatch = async () => {
@@ -86,34 +85,36 @@ export default function DashboardJobs() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl font-extrabold text-zinc-100 font-display tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-              <BriefcaseIcon className="h-6 w-6 text-emerald-400" />
-            </div>
-            Job Board
+          <h1 className="flex items-center gap-3 font-display text-3xl font-semibold tracking-tight text-ink">
+            <span className="rounded-lg border border-line bg-white/[0.03] p-2">
+              <BriefcaseIcon className="h-6 w-6 text-primary" />
+            </span>
+            Jobs
           </h1>
-          <p className="text-sm text-zinc-400 mt-2 font-light">
-            {jobs.length} tech jobs from {' '}
-            <span className="text-emerald-400 font-semibold">Remotive</span>, {' '}
-            <span className="text-blue-400 font-semibold">Arbeitnow</span>, and {' '}
-            <span className="text-primary font-semibold">The Muse</span>
+          <p className="mt-2 text-sm text-ink-muted">
+            {jobs.length} tech jobs from Remotive, Arbeitnow and The Muse.
+            {!hasResume && ' Analyze a resume to unlock AI matching.'}
           </p>
         </motion.div>
 
-        <div className="flex bg-[#131318] p-1.5 rounded-xl border border-white/5 shadow-inner self-start">
+        <div className="flex self-start rounded-xl border border-line bg-surface p-1" role="tablist" aria-label="Job view">
           <button
+            role="tab"
+            aria-selected={viewMode === 'all'}
             onClick={() => setViewMode('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-              viewMode === 'all' 
-                ? 'bg-white/10 text-white shadow-md' 
-                : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+              viewMode === 'all'
+                ? 'bg-white/[0.08] text-ink'
+                : 'text-ink-faint hover:bg-white/[0.04] hover:text-ink-muted'
             }`}
           >
-            All Jobs
+            All jobs
           </button>
-          
+
           {hasResume && (
             <button
+              role="tab"
+              aria-selected={viewMode === 'ai'}
               onClick={() => {
                 if (aiJobs.length === 0) {
                   handleAIMatch();
@@ -122,21 +123,21 @@ export default function DashboardJobs() {
                 }
               }}
               disabled={isAiLoading}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                viewMode === 'ai' 
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                viewMode === 'ai'
                   ? 'bg-primary text-white'
-                  : 'text-zinc-500 hover:text-primary hover:bg-primary/10'
+                  : 'text-ink-faint hover:bg-primary/10 hover:text-primary'
               }`}
             >
               <SparklesIcon className="h-4 w-4" />
-              {isAiLoading ? 'Matching...' : 'AI Match'}
+              {isAiLoading ? 'Matching…' : 'AI match'}
             </button>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-medium">
+        <div role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-400">
           {error}
         </div>
       )}
@@ -173,58 +174,53 @@ export default function DashboardJobs() {
           >
             {(viewMode === 'all' ? jobs : aiJobs).map((job, index) => {
               const isAiMatch = viewMode === 'ai';
-              
+
               return (
             <motion.div
               key={isAiMatch ? job.title + job.company : job.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-              className={`group relative bg-surface rounded-xl border flex flex-col transition-colors ${
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              // Capped: an uncapped index * 0.05 made the 60th card wait 3s
+              transition={{ delay: Math.min(index, 8) * 0.04, duration: 0.25 }}
+              className={`group relative flex flex-col rounded-xl border bg-surface transition-colors ${
                 isAiMatch ? 'border-primary/30 hover:border-primary/50' : 'border-line hover:border-line-strong'
               }`}
             >
 
               {isAiMatch && (
-                <div className="absolute -top-3 -right-3 h-12 w-12 rounded-full bg-surface-raised border border-primary/30 flex items-center justify-center z-20">
+                <div className="absolute -right-3 -top-3 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-primary/30 bg-surface-raised">
                   <div className="text-center">
-                    <span className="block text-xs font-bold text-primary leading-none">{job.matchScore}</span>
-                    <span className="block text-[8px] font-bold text-zinc-500 uppercase">Score</span>
+                    <span className="block text-xs font-semibold leading-none text-primary">{job.matchScore}</span>
+                    <span className="block text-[8px] font-semibold uppercase text-ink-faint">Match</span>
                   </div>
                 </div>
               )}
 
-              <div className="flex-1 relative z-10 p-6 pb-0">
-                <div className="flex justify-between items-start gap-4 mb-3">
-                  <h3 className={`text-lg font-bold font-display leading-tight transition-colors line-clamp-2 pr-6 ${
-                    isAiMatch ? 'text-primary-light group-hover:text-primary' : 'text-zinc-100 group-hover:text-emerald-400'
-                  }`}>
+              <div className="relative z-10 flex-1 p-6 pb-0">
+                <div className="mb-3 flex items-start justify-between gap-4">
+                  <h3 className="line-clamp-2 pr-6 font-display text-lg font-semibold leading-tight text-ink">
                     {job.title}
                   </h3>
-                  {job.remote && !isAiMatch && (
-                    <span className="flex-shrink-0 text-[10px] font-bold px-2 py-1 rounded bg-primary/10 text-primary border border-primary/20 uppercase tracking-widest">
-                      Remote
-                    </span>
-                  )}
+                  {job.remote && !isAiMatch && <Badge variant="accent" className="flex-shrink-0">Remote</Badge>}
                 </div>
 
-                <div className="flex flex-col gap-1.5 mb-5">
-                  <div className="flex items-center gap-2 text-sm text-zinc-300 font-medium">
-                    <BuildingOfficeIcon className="h-4 w-4 text-zinc-500" />
+                <div className="mb-5 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-ink-muted">
+                    <BuildingOfficeIcon className="h-4 w-4 text-ink-faint" />
                     {job.company}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <div className="flex items-center gap-2 text-xs text-ink-faint">
                     <MapPinIcon className="h-3.5 w-3.5" />
                     {job.location}
                   </div>
                   {job.salary && job.salary !== 'Not specified' && (
-                    <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
+                    <div className="flex items-center gap-2 text-xs font-medium text-ink-muted">
                       <TagIcon className="h-3.5 w-3.5" />
                       {job.salary}
                     </div>
                   )}
                   {!isAiMatch && (
-                    <div className="flex items-center gap-2 text-xs text-zinc-500">
+                    <div className="flex items-center gap-2 text-xs text-ink-faint">
                       <ClockIcon className="h-3.5 w-3.5" />
                       Posted {timeAgo(job.createdAt)}
                     </div>
@@ -232,47 +228,38 @@ export default function DashboardJobs() {
                 </div>
 
                 {isAiMatch ? (
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
-                      <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1 flex items-center gap-1">
-                        <CheckCircleIcon className="h-3 w-3" /> Why it matches
+                  <div className="mb-6 space-y-4">
+                    <div className="rounded-lg border border-primary/15 bg-primary/[0.05] p-3">
+                      <h4 className="mb-1 flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-primary">
+                        <CheckCircleIcon className="h-3.5 w-3.5" /> Why it matches
                       </h4>
-                      <p className="text-xs text-zinc-300 leading-relaxed">{job.reason}</p>
+                      <p className="text-xs leading-relaxed text-ink-muted">{job.reason}</p>
                     </div>
-                    
+
                     {job.missingSkills && job.missingSkills.length > 0 && (
                       <div>
-                        <h4 className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-2 flex items-center gap-1">
-                          <ExclamationTriangleIcon className="h-3 w-3" /> Missing Skills
+                        <h4 className="mb-2 flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-ink-faint">
+                          <ExclamationTriangleIcon className="h-3.5 w-3.5" /> Skills to build
                         </h4>
                         <div className="flex flex-wrap gap-1.5">
-                          {job.missingSkills.map((skill) => (
-                            <span key={skill} className="px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded text-[10px] font-medium text-amber-400">
-                              {skill}
-                            </span>
-                          ))}
+                          {job.missingSkills.map((skill) => <Badge key={skill} variant="amber">{skill}</Badge>)}
                         </div>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="text-xs text-zinc-400 leading-relaxed mb-6 line-clamp-3">
+                  <p className="mb-6 line-clamp-3 text-xs leading-relaxed text-ink-muted">
                     {job.snippet}
                   </p>
                 )}
               </div>
 
-              <div className="mt-auto relative z-10 p-6 pt-4 border-t border-white/[0.05]">
+              <div className="relative z-10 mt-auto border-t border-line p-6 pt-4">
                 {!isAiMatch && job.tags && job.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-5">
-                    {job.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/[0.03] border border-white/[0.05] text-[10px] text-zinc-400 font-medium">
-                        <TagIcon className="h-3 w-3" />
-                        {tag}
-                      </span>
-                    ))}
+                  <div className="mb-5 flex flex-wrap gap-2">
+                    {job.tags.slice(0, 3).map((tag) => <Badge key={tag}>{tag}</Badge>)}
                     {job.tags.length > 3 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-white/[0.02] border border-transparent text-[10px] text-zinc-500 font-medium">
+                      <span className="inline-flex items-center px-1 text-[11px] font-medium text-ink-faint">
                         +{job.tags.length - 3} more
                       </span>
                     )}
@@ -283,13 +270,13 @@ export default function DashboardJobs() {
                   href={job.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-bold transition-all ${
-                    isAiMatch 
-                      ? 'bg-primary/10 hover:bg-primary/20 text-primary-light hover:text-primary border-primary/20 hover:border-primary/40' 
-                      : 'bg-white/[0.04] hover:bg-emerald-500/10 text-zinc-300 hover:text-emerald-400 border-white/[0.08] hover:border-emerald-500/30'
+                  className={`flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-semibold transition-colors ${
+                    isAiMatch
+                      ? 'border-primary/20 bg-primary/10 text-primary-light hover:bg-primary/20'
+                      : 'border-line bg-white/[0.04] text-ink hover:bg-white/[0.08]'
                   }`}
                 >
-                  Apply Now
+                  Apply
                   <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                 </a>
               </div>

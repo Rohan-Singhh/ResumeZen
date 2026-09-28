@@ -98,7 +98,9 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.get('/api/plans/user');
       return response.data.userPlans || [];
     },
-    enabled: !!currentUser
+    // Only once the backend session exists — the optimistic user set during
+    // Google sign-in has no _id and no token, so fetching would just 401.
+    enabled: !!currentUser?._id
   });
 
   const { data: availablePlans = [] } = useQuery({

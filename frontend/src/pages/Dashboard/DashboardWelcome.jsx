@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { normalizeAnalysis } from '../../utils/analysisSchema';
-import PlanModal from '../../components/PlanModal';
 import DashboardCreditConfirmationPopup from './dashboardwelcome/DashboardCreditConfirmationPopup';
+import DashboardNoCreditPopup from './dashboardwelcome/DashboardNoCreditPopup';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
 import ResumeDetailModal from './ResumeDetailModal';
 import { SparklesIcon } from '@heroicons/react/24/outline';
@@ -20,33 +20,40 @@ import AiActionCenter from './overview/AiActionCenter';
 import ActivityTimeline from './overview/ActivityTimeline';
 import UploadZone from './overview/UploadZone';
 
+// Must match MAX_UPLOAD_BYTES in backend/routes/resumeRoutes.js — the two
+// previously disagreed (1MB here, 10MB there).
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+// The picker's accept=".pdf" does not apply to drag-and-drop, so check the
+// type here too. Returns a user-facing message, or null when the file is OK.
+const validateFile = (file) => {
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  if (!isPdf) return 'Only PDF files are supported. Export your resume as a PDF and try again.';
+  if (file.size > MAX_UPLOAD_BYTES) {
+    const mb = (file.size / (1024 * 1024)).toFixed(1);
+    return `This file is ${mb}MB. The limit is 5MB — try compressing the PDF or removing images.`;
+  }
+  return null;
+};
+
 export default function DashboardWelcome() {
-  const { currentUser, userPlans, fetchUserPlans, usePlanCredit } = useAuth();
+  const { currentUser, userPlans, fetchUserPlans } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   // Upload state
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadStep, setUploadStep] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Modal state
-  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [showCreditConfirmation, setShowCreditConfirmation] = useState(false);
+  const [showNoCreditPopup, setShowNoCreditPopup] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisFileDetails, setAnalysisFileDetails] = useState(null);
-  const [fileSizeError, setFileSizeError] = useState(false);
   const [selectedResume, setSelectedResume] = useState(null);
 
-  // Data state
-  const [activePlan, setActivePlan] = useState(null);
-  const { data: history = [], isLoading: historyLoading } = useResumeHistory();
+  const { data: history = [] } = useResumeHistory();
 
   // Plans are fetched by React Query in AuthContext; only cross-tab purchases
   // need an explicit refetch here.
@@ -58,24 +65,19 @@ export default function DashboardWelcome() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [fetchUserPlans]);
 
-  useEffect(() => {
-    if (userPlans?.length > 0) {
-      const now = new Date();
-      const valid = userPlans
-        .filter(p => p.isActive && p.planId && (!p.expiresAt || new Date(p.expiresAt) > now) && (p.planId.isUnlimited || p.creditsLeft > 0))
-        .sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt));
-      setActivePlan(valid[0] || null);
-    } else {
-      setActivePlan(null);
-    }
+  // Newest plan that is active, unexpired, and still has credits
+  const activePlan = useMemo(() => {
+    const now = new Date();
+    return (userPlans || [])
+      .filter(p => p.isActive && p.planId && (!p.expiresAt || new Date(p.expiresAt) > now) && (p.planId.isUnlimited || p.creditsLeft > 0))
+      .sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt))[0] || null;
   }, [userPlans]);
 
-  // Computed values
   const creditsText = activePlan
     ? activePlan.planId.isUnlimited ? '∞' : String(activePlan.creditsLeft)
     : '0';
 
-  const hasCredits = activePlan && (activePlan.planId.isUnlimited || activePlan.creditsLeft > 0);
+  const hasCredits = Boolean(activePlan && (activePlan.planId.isUnlimited || activePlan.creditsLeft > 0));
 
   // Derived analysis data. Normalize once here so every child receives the
   // canonical shape and none of them needs schema-version fallbacks.
@@ -83,25 +85,27 @@ export default function DashboardWelcome() {
   const latestAnalysis = analyses[0] || null;
   const previousAnalysis = analyses[1] || null;
 
-  // File handlers
-  // Must match MAX_UPLOAD_BYTES in backend/routes/resumeRoutes.js — the two
-  // previously disagreed (1MB here, 10MB there).
-  const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
-
-  const validateFile = (file) => {
-    if (file.size > MAX_UPLOAD_BYTES) { setFileSizeError(true); return false; }
-    return true;
+  const resetFileInput = () => {
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // ─── File handlers ───────────────────────────────────────
+
   const handleFileSelect = (file) => {
-    if (!validateFile(file)) return;
-    setSelectedFile(file);
-    setUploadSuccess(false);
-    setErrorMessage('');
-    if (!activePlan || !hasCredits) { 
-      navigate('/dashboard/plans');
-      return; 
+    const problem = validateFile(file);
+    if (problem) {
+      setErrorMessage(problem);
+      resetFileInput();
+      return;
     }
+    setErrorMessage('');
+    // Explain the missing plan instead of silently jumping to /plans
+    if (!hasCredits) {
+      setShowNoCreditPopup(true);
+      resetFileInput();
+      return;
+    }
+    setSelectedFile(file);
     setShowCreditConfirmation(true);
   };
 
@@ -109,50 +113,34 @@ export default function DashboardWelcome() {
     if (e.target.files?.[0]) handleFileSelect(e.target.files[0]);
   };
 
-  const handleUpload = async () => {
-    // Deprecated: We now use the unified analyze-upload in the modal
-    handleProceed();
+  // "Analyze this resume" on an already-selected file (e.g. after cancelling the
+  // confirmation). It used to open the analysis modal directly, which skipped
+  // the credit confirmation entirely.
+  const handleAnalyzeSelected = () => {
+    if (!hasCredits) { setShowNoCreditPopup(true); return; }
+    setShowCreditConfirmation(true);
   };
 
-  const confirmCreditUsage = () => { 
-    setShowCreditConfirmation(false); 
-    // Start the unified process immediately after confirmation
-    if (selectedFile) {
-      setAnalysisFileDetails({ rawFile: selectedFile, name: selectedFile.name });
-      setShowAnalysisModal(true);
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const handleProceed = () => {
-    if (!selectedFile) { if (fileInputRef.current) fileInputRef.current.click(); return; }
+  const confirmCreditUsage = () => {
+    setShowCreditConfirmation(false);
+    if (!selectedFile) return;
     setAnalysisFileDetails({ rawFile: selectedFile, name: selectedFile.name });
     setShowAnalysisModal(true);
     setSelectedFile(null);
-    setUploadedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    resetFileInput();
   };
 
-  const handleAnalysisClose = () => {
+  const closeAnalysis = () => {
     setShowAnalysisModal(false);
     setAnalysisFileDetails(null);
-    setSelectedFile(null);
-    setUploadedFile(null);
-    setUploadSuccess(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    // ResumeAnalysisModal invalidates the resumeHistory query on success, so
-    // there is no need to refetch history here.
+    resetFileInput();
+    // A credit was either spent or refunded — keep the counter honest either way.
+    // ResumeAnalysisModal invalidates the history query itself on success.
+    fetchUserPlans();
   };
 
   const handleViewReport = (analysisResponse) => {
-    setShowAnalysisModal(false);
-    setAnalysisFileDetails(null);
-    setSelectedFile(null);
-    setUploadedFile(null);
-    setUploadSuccess(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    fetchUserPlans();
+    closeAnalysis();
 
     // The freshly analyzed result is not in the history cache yet, so normalize
     // the raw structured payload and show it directly.
@@ -164,7 +152,6 @@ export default function DashboardWelcome() {
         createdAt: new Date().toISOString()
       });
     }
-    // React Query automatically handles refetching the history
   };
 
   const handleViewReportFromInsights = () => {
@@ -187,21 +174,12 @@ export default function DashboardWelcome() {
         <div className="flex flex-col">
           <UploadZone
             selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
-            isUploading={isUploading}
-            uploadProgress={uploadProgress}
-            uploadStep={uploadStep}
-            uploadSuccess={uploadSuccess}
-            uploadedFile={uploadedFile}
+            onClearFile={() => { setSelectedFile(null); resetFileInput(); }}
             errorMessage={errorMessage}
             isDragging={isDragging}
             setIsDragging={setIsDragging}
-            hasCredits={hasCredits}
-            isProcessing={isProcessing}
-            fileSizeError={fileSizeError}
             onFileSelect={handleFileSelect}
-            onUpload={handleUpload}
-            onProceed={handleProceed}
+            onAnalyze={handleAnalyzeSelected}
             fileInputRef={fileInputRef}
             onFileChange={handleFileChange}
           />
@@ -236,9 +214,7 @@ export default function DashboardWelcome() {
       <ResumeHealthRadar latestAnalysis={latestAnalysis} />
 
       {/* 5. Action Center */}
-      <div className="grid grid-cols-1 gap-5">
-        <AiActionCenter latestAnalysis={latestAnalysis} />
-      </div>
+      <AiActionCenter latestAnalysis={latestAnalysis} />
 
       {/* 6. Plan Banner */}
       {activePlan ? (
@@ -265,15 +241,30 @@ export default function DashboardWelcome() {
             <p className="text-xs text-ink-muted">Select a plan to start analyzing your resumes.</p>
           </div>
           <Button size="sm" onClick={() => navigate('/dashboard/plans')} className="whitespace-nowrap">
-            View pricing
+            View plans
           </Button>
         </Card>
       )}
 
       {/* Modals */}
-      <PlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} />
-      <DashboardCreditConfirmationPopup show={showCreditConfirmation} onClose={() => setShowCreditConfirmation(false)} onConfirm={confirmCreditUsage} activePlan={activePlan} />
-      <ResumeAnalysisModal fileDetails={analysisFileDetails} open={showAnalysisModal} onClose={handleAnalysisClose} onViewReport={handleViewReport} />
+      <DashboardNoCreditPopup
+        show={showNoCreditPopup}
+        onClose={() => setShowNoCreditPopup(false)}
+        onViewPlans={() => { setShowNoCreditPopup(false); navigate('/dashboard/plans'); }}
+        activePlan={activePlan}
+      />
+      <DashboardCreditConfirmationPopup
+        show={showCreditConfirmation}
+        onClose={() => setShowCreditConfirmation(false)}
+        onConfirm={confirmCreditUsage}
+        activePlan={activePlan}
+      />
+      <ResumeAnalysisModal
+        fileDetails={analysisFileDetails}
+        open={showAnalysisModal}
+        onClose={closeAnalysis}
+        onViewReport={handleViewReport}
+      />
       <ResumeDetailModal modalItem={selectedResume} onClose={() => setSelectedResume(null)} />
     </div>
   );

@@ -40,6 +40,10 @@ router.use(fileUpload({
  * POST /api/resume/analyze-upload
  */
 router.post('/analyze-upload', authMiddleware, async (req, res) => {
+  // Replaced with the real refund once a credit has been deducted, so the
+  // catch-all below can return the credit for unexpected errors too.
+  let refundCredit = async () => {};
+
   try {
     if (!req.files || !req.files.resume) {
       return res.status(400).json({ success: false, message: 'No resume file uploaded' });
@@ -96,15 +100,19 @@ router.post('/analyze-upload', authMiddleware, async (req, res) => {
 
     // Refund helper — every failure path below must go through this.
     // Atomic increment capped at the plan's original credit count so repeated
-    // failures cannot push credits above what was purchased.
+    // failures cannot push credits above what was purchased, and guarded so a
+    // failure that refunds and then throws is not refunded a second time.
+    let refunded = false;
     const refund = async (reason) => {
-      if (isUnlimited) return;
+      if (isUnlimited || refunded) return;
+      refunded = true;
       await UserPlan.updateOne(
         { _id: userPlan._id, userId, isActive: true, creditsLeft: { $lt: planCreditCap } },
         { $inc: { creditsLeft: 1 } }
       );
       console.log(`[analyze-upload] Refunded 1 credit for user ${userId}: ${reason}`);
     };
+    refundCredit = refund;
 
     // express-fileupload only populates req.body when the multipart form has
     // non-file text fields. The client may send just the file, so req.body can
@@ -174,6 +182,11 @@ router.post('/analyze-upload', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error('Analyze-Upload error:', error);
+    // e.g. analyzeExtraction throwing instead of returning success: false —
+    // previously the user lost the credit in this case.
+    await refundCredit('unexpected error').catch((refundError) => {
+      console.error('[analyze-upload] Refund failed:', refundError);
+    });
     return res.status(500).json({
       success: false,
       message: 'Error during analyze and upload',

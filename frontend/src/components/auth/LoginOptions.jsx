@@ -1,94 +1,84 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { auth, googleProvider } from '../../firebase';
-import { signInWithPopup, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup } from 'firebase/auth';
 import axios from 'axios';
 import { useAuth, beginInteractiveLogin, endInteractiveLogin } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useLoading } from '../../App';
+import { tapPress } from '../../utils/motion';
 
+// Firebase error codes → messages a user can act on. Codes not listed here
+// fall back to a generic message rather than leaking raw Firebase strings.
+const FIREBASE_ERRORS = {
+  'auth/popup-blocked': 'Your browser blocked the sign-in popup. Allow popups for this site and try again.',
+  'auth/account-exists-with-different-credential': 'An account with this email already exists with a different sign-in method.',
+  'auth/network-request-failed': 'Network error. Check your connection and try again.',
+  'auth/unauthorized-domain': "Sign-in isn't enabled on this web address. Please use the main ResumeZen site.",
+  'auth/too-many-requests': 'Too many attempts. Please wait a minute and try again.',
+  'auth/internal-error': 'Google sign-in hit an internal error. Please try again.',
+};
+
+// The user dismissed the popup themselves — not an error worth shouting about
+const SILENT_ERRORS = new Set(['auth/popup-closed-by-user', 'auth/cancelled-popup-request']);
+
+/**
+ * Google sign-in button. Errors are reported through `onError` only, so the
+ * Login page owns the single error banner (this component used to render its
+ * own copy too, showing every message twice).
+ */
 export default function LoginOptions({ onError, onSuccessNavigation }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-  const [authState, setAuthState] = useState({ isSignedIn: false, user: null });
-  // Keep reference to loading context for backward compatibility
   const { setLoading } = useLoading();
   const { login, setCurrentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Monitor auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setAuthState({
-        isSignedIn: !!user,
-        user: user
-      });
-      
-      if (user) {
-        console.log("User already signed in with Firebase:", user.email);
-      }
-    });
-    
-    // Cleanup subscription
-    return () => unsubscribe();
-  }, []);
-
-  // Handle Google Sign In
   const handleGoogleSignIn = useCallback(async () => {
-    // Prevent multiple submissions
     if (isLoading) return;
-    
+
     try {
       setIsLoading(true);
-      setLoading(true); // Global loading indicator
-      setError('');
-      
-      console.log("Initiating Google sign-in process...");
+      setLoading(true);
+      onError?.('');
 
       // This path owns the backend handshake; tell AuthContext to stand down so
       // its onAuthStateChanged listener doesn't fire a duplicate exchange.
       beginInteractiveLogin();
 
-      // Account-selection prompt is already configured on the provider
-      // (see firebase.js) — no need to re-set it here.
-
-      // Sign in with Google using Firebase
+      // Account-selection prompt is configured on the provider (see firebase.js)
       const result = await signInWithPopup(auth, googleProvider);
-      
-      // Get credential information
-      const credential = GoogleAuthProvider.credentialFromResult(result);
       const user = result.user;
-      
-      console.log("Google sign-in successful for:", user.email);
-      
-      // OPTIMISTIC UI Trick: We set a temporary user and navigate immediately!
-      // This saves 100-300ms of perceived latency while the backend syncs.
+
+      // Optimistic UI: show the dashboard immediately while the backend syncs.
       setCurrentUser({
         name: user.displayName || 'User',
         email: user.email,
-        _isOptimistic: true // internal flag just in case
+        _isOptimistic: true
       });
-      
+
       if (onSuccessNavigation) {
         onSuccessNavigation();
       } else {
         navigate('/dashboard', { replace: true });
       }
 
-      // Do the backend handshake asynchronously in the background
+      // Backend handshake in the background
       user.getIdToken().then(idToken => {
         return axios.post('/api/auth/google', { idToken });
       }).then(response => {
-        // Backend sync complete, update to the real database user
         login(response.data.user, response.data.token);
       }).catch(err => {
         console.error('Background backend sync failed:', err);
-        // If it critically fails, we log them out and redirect back
-        if (err.response?.status === 401 || err.response?.status === 403) {
-           setCurrentUser(null);
-           navigate('/login');
-        }
+        // Any failure — not just 401/403 — leaves an optimistic user with no
+        // backend token, so every dashboard request would fail silently. Roll
+        // the session back and say why on the login page.
+        const status = err.response?.status;
+        const message = status === 401 || status === 403
+          ? "We couldn't verify your Google account. Please try again."
+          : "You're signed in with Google, but we couldn't reach our servers. Please try again in a moment.";
+        setCurrentUser(null);
+        navigate('/login', { replace: true, state: { authError: message } });
+        auth.signOut().catch(() => {});
       }).finally(() => {
         endInteractiveLogin();
         setIsLoading(false);
@@ -99,65 +89,26 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
       endInteractiveLogin();
       setLoading(false);
       setIsLoading(false);
-      
+
+      if (SILENT_ERRORS.has(err.code)) return;
+
       console.error('Google sign in error:', err);
-      
-      // Handle Firebase errors with detailed messages
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('You closed the login popup. Please try again.');
-      } else if (err.code === 'auth/cancelled-popup-request') {
-        // This is normal when multiple popups are triggered, so we don't need to show an error
-        console.log('Popup request cancelled due to multiple requests');
-      } else if (err.code === 'auth/popup-blocked') {
-        setError('Login popup was blocked by your browser. Please enable popups for this site and try again.');
-      } else if (err.code === 'auth/account-exists-with-different-credential') {
-        setError('An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.');
-      } else if (err.code === 'auth/network-request-failed') {
-        setError('A network error occurred. Please check your internet connection and try again.');
-      } else if (err.code === 'auth/internal-error') {
-        setError('An internal error occurred. Please try again later.');
-      } else {
-        // For backend/other errors
-        setError(err.response?.data?.error || err.message || 'Authentication failed. Please try again.');
-        if (onError) onError(err.response?.data?.error || err.message || 'Authentication failed. Please try again.');
-      }
-      
-      // Track retry count for potential fallback logic
-      setRetryCount(prev => prev + 1);
+      onError?.(FIREBASE_ERRORS[err.code] || 'Sign-in failed. Please try again.');
     }
-  }, [isLoading, navigate, login, onSuccessNavigation, onError, setLoading]);
+  }, [isLoading, navigate, login, setCurrentUser, onSuccessNavigation, onError, setLoading]);
 
   return (
-    <div className="space-y-4">
-      {error && (
-        <div className="bg-red-50 p-3 rounded-lg border-l-4 border-red-500 mb-4">
-          <p className="text-red-700 text-sm">{error}</p>
-        </div>
-      )}
-      
-      {authState.isSignedIn && (
-        <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500 mb-4">
-          <p className="text-green-700 text-sm">
-            Already signed in with Google as {authState.user?.email}. 
-            Proceeding to dashboard...
-          </p>
-        </div>
-      )}
-      
-      <h2 className="text-xl font-semibold mb-6">Sign in</h2>
-      
-      {/* Google login button */}
+    <div className="space-y-5">
       <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`w-full flex items-center justify-center py-3 px-4 rounded-xl ${
-          isLoading ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
-        } border border-gray-300 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+        whileTap={isLoading ? undefined : tapPress}
         onClick={handleGoogleSignIn}
         disabled={isLoading}
+        className="flex w-full items-center justify-center gap-3 rounded-xl border border-line-strong bg-white/[0.06] px-4 py-3.5 text-sm font-semibold text-ink transition-colors hover:bg-white/[0.1] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-wait disabled:opacity-60"
       >
-        <span className="mr-3">
-          <svg width="20" height="20" viewBox="0 0 24 24">
+        {isLoading ? (
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" aria-hidden="true" />
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"
@@ -175,19 +126,13 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
               fill="#EA4335"
             />
           </svg>
-        </span>
-        <span className="text-sm font-medium">
-          {isLoading ? 'Signing in...' : 'Continue with Google'}
-        </span>
+        )}
+        <span>{isLoading ? 'Signing in…' : 'Continue with Google'}</span>
       </motion.button>
-      
-      {/* Terms */}
-      <p className="text-xs text-center text-gray-500 mt-6">
-        By signing in, you agree to our 
-        <a href="#" className="text-primary hover:underline mx-1">Terms of Service</a>
-        and
-        <a href="#" className="text-primary hover:underline mx-1">Privacy Policy</a>
+
+      <p className="text-center text-xs leading-relaxed text-ink-faint">
+        We use your Google name, email and profile photo to create your account.
       </p>
     </div>
   );
-} 
+}

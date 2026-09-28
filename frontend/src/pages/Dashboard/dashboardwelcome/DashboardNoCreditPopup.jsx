@@ -1,7 +1,7 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CreditCardIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import Modal from '../../../components/ui/Modal';
+import Button from '../../../components/ui/Button';
 
 /**
  * DashboardNoCreditPopup
@@ -12,63 +12,36 @@ import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
  * @param {Object} props.activePlan - The user's active plan
  */
 const DashboardNoCreditPopup = ({ show, onClose, onViewPlans, activePlan }) => {
-  if (typeof document === 'undefined') return null;
+  const message = !activePlan
+    ? "You don't have an active plan yet. Choose a plan to analyze your resume."
+    : "You've used all the credits on your current plan. Choose a plan to keep analyzing.";
 
-  return createPortal(
-  <AnimatePresence>
-    {show && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-zinc-900 border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl"
-          onClick={e => e.stopPropagation()}
+  return (
+    <Modal open={show} onClose={onClose} labelledBy="no-credit-title">
+      <div className="mb-4 flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10">
+            <CreditCardIcon className="h-5 w-5 text-amber-400" />
+          </span>
+          <h3 id="no-credit-title" className="font-display text-lg font-semibold text-ink">
+            A plan is needed
+          </h3>
+        </div>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="rounded-lg p-1 text-ink-faint transition-colors hover:bg-white/[0.05] hover:text-ink"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center">
-              <div className="bg-amber-500/10 p-2 rounded-xl mr-3 border border-amber-500/20">
-                <InformationCircleIcon className="h-6 w-6 text-amber-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-zinc-100">Credits Required</h3>
-            </div>
-            <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/5 transition-colors">
-              <XMarkIcon className="h-5 w-5 text-zinc-400 hover:text-zinc-200" />
-            </button>
-          </div>
-          <p className="text-zinc-300 mb-6 text-sm">
-            {!activePlan 
-              ? "You don't have an active plan. Please purchase a plan to analyze your resume."
-              : activePlan.creditsLeft === 0
-                ? "You've used all your available credits. Please upgrade your plan to continue using the resume analysis features."
-                : "You need at least 1 credit to analyze your resume. Please purchase a plan to continue."}
-          </p>
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg text-sm font-semibold transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onViewPlans}
-              className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold shadow-md shadow-purple-500/10 transition-colors"
-            >
-              View Plans
-            </button>
-          </div>
-        </motion.div>
-      </motion.div>
-    )}
-  </AnimatePresence>,
-  document.body
+          <XMarkIcon className="h-5 w-5" />
+        </button>
+      </div>
+      <p className="mb-6 text-sm leading-relaxed text-ink-muted">{message}</p>
+      <div className="flex justify-end gap-3">
+        <Button variant="ghost" onClick={onClose}>Not now</Button>
+        <Button onClick={onViewPlans}>View plans</Button>
+      </div>
+    </Modal>
   );
 };
 
-export default DashboardNoCreditPopup; 
+export default DashboardNoCreditPopup;
