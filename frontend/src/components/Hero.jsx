@@ -1,42 +1,41 @@
 import Glow, { GLOW } from './Glow';
-import { motion, useInView, useAnimation } from 'framer-motion';
+import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
 import { ArrowRightIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 
+const TARGET_SCORE = 98;
+
+// The scan area is h-40 (160px); the laser travels just past both edges
+const SCAN_FROM = -8;
+const SCAN_TO = 168;
+
 export default function Hero({ onShowSuccessStories }) {
   const navigate = useNavigate();
-  
+
   // Ref for the mockup container to trigger animations when in view
   const mockupRef = useRef(null);
   const isInView = useInView(mockupRef, { once: true, margin: "-100px" });
-  const [score, setScore] = useState(0);
+
+  // The score counts up through a motion value rendered straight into the DOM.
+  // The old setInterval called setScore every 20ms — ~100 re-renders of the
+  // whole hero in two seconds, right while the entrance animations ran — and
+  // its interval was never cleared on unmount.
+  const scoreValue = useMotionValue(0);
+  const scoreText = useTransform(scoreValue, (v) => `${Math.round(v)}%`);
+  const [scoreDone, setScoreDone] = useState(false);
 
   useEffect(() => {
-    if (isInView) {
-      let currentScore = 0;
-      const targetScore = 98;
-      const duration = 2000; // 2 seconds
-      const interval = 20;
-      const steps = duration / interval;
-      const increment = targetScore / steps;
-
-      // Start the counter after a slight delay so the laser can scan first
-      const timer = setTimeout(() => {
-        const counter = setInterval(() => {
-          currentScore += increment;
-          if (currentScore >= targetScore) {
-            setScore(targetScore);
-            clearInterval(counter);
-          } else {
-            setScore(Math.floor(currentScore));
-          }
-        }, interval);
-      }, 800);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isInView]);
+    if (!isInView) return undefined;
+    // Delay so the laser scans first
+    const controls = animate(scoreValue, TARGET_SCORE, {
+      delay: 0.8,
+      duration: 2,
+      ease: 'easeOut',
+      onComplete: () => setScoreDone(true),
+    });
+    return () => controls.stop();
+  }, [isInView, scoreValue]);
 
   return (
     <div id="home" className="relative min-h-screen overflow-hidden bg-dark-bg text-white pt-28 sm:pt-36">
@@ -71,7 +70,9 @@ export default function Hero({ onShowSuccessStories }) {
             transition={{ delay: 0.3, duration: 0.5 }}
           >
             ENGINEER YOUR <br className="hidden sm:block"/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-secondary animate-shimmer bg-[length:200%_auto]">
+            {/* Static gradient: the infinite background-position shimmer
+                repainted this 90px headline on every frame */}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-secondary">
               NEXT CAREER MOVE
             </span>
           </motion.h1>
@@ -154,10 +155,16 @@ export default function Hero({ onShowSuccessStories }) {
             
             {/* Main image / Mockup content */}
             <div className="relative w-full aspect-[16/9] lg:aspect-[21/9] bg-gradient-to-b from-[#18181b] to-dark-bg p-8 flex items-center justify-center overflow-hidden">
+              {/* grayscale (a static filter, rasterized once) instead of
+                  mix-blend-luminosity, which re-blends against everything
+                  behind it whenever the layer changes; 1600px is plenty for
+                  a half-opacity backdrop */}
               <img
-                src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
-                alt="ResumeZen Dashboard"
-                className="w-full h-full object-cover rounded-xl opacity-50 border border-white/10 mix-blend-luminosity"
+                src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=75"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover rounded-xl opacity-50 border border-white/10 grayscale"
               />
               
               {/* Overlay Mockup UI Elements to make it look like an app */}
@@ -181,29 +188,22 @@ export default function Hero({ onShowSuccessStories }) {
                     {/* Resume lines */}
                     <div className="space-y-6">
                       <div className="w-full h-40 bg-white/5 rounded-lg border border-white/10 p-6 relative overflow-hidden">
-                        {/* Animated Scanning Laser */}
+                        {/* Scanning laser. Moves with transform (compositor
+                            only) instead of animating `top`, which forced
+                            layout every frame, and makes three passes instead
+                            of looping forever. */}
                         <motion.div
-                          initial={{ top: "-10%" }}
-                          animate={isInView ? { top: "110%" } : { top: "-10%" }}
-                          transition={{ 
-                            duration: 2, 
-                            ease: "easeInOut", 
-                            repeat: Infinity,
-                            repeatType: "reverse"
-                          }}
-                          className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_rgba(139,92,246,0.8)] z-10"
+                          initial={{ y: SCAN_FROM }}
+                          animate={isInView ? { y: SCAN_TO } : { y: SCAN_FROM }}
+                          transition={{ duration: 2, ease: "easeInOut", repeat: 2, repeatType: "reverse" }}
+                          className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_rgba(139,92,246,0.8)] z-10"
                         />
-                        {/* Glowing scan line backdrop */}
+                        {/* Soft band trailing the laser — a gradient, not blur-xl */}
                         <motion.div
-                          initial={{ top: "-10%", opacity: 0 }}
-                          animate={isInView ? { top: "110%", opacity: [0, 0.2, 0] } : { top: "-10%", opacity: 0 }}
-                          transition={{ 
-                            duration: 2, 
-                            ease: "easeInOut", 
-                            repeat: Infinity,
-                            repeatType: "reverse"
-                          }}
-                          className="absolute left-0 right-0 h-20 -mt-10 bg-primary/20 blur-xl z-0"
+                          initial={{ y: SCAN_FROM, opacity: 0 }}
+                          animate={isInView ? { y: SCAN_TO, opacity: [0, 1, 0] } : { y: SCAN_FROM, opacity: 0 }}
+                          transition={{ duration: 2, ease: "easeInOut", repeat: 2, repeatType: "reverse" }}
+                          className="absolute top-0 left-0 right-0 h-20 -mt-10 bg-gradient-to-b from-transparent via-primary/20 to-transparent z-0"
                         />
                         
                         <div className="w-1/3 h-5 bg-white/20 rounded-md mb-6"></div>
@@ -225,20 +225,20 @@ export default function Hero({ onShowSuccessStories }) {
                           transition={{ delay: 1, duration: 1.5 }}
                         >
                            <div className="text-5xl font-extrabold text-white mb-2 tracking-tight drop-shadow-md">
-                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                               {score}%
-                             </span>
+                             <motion.span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent tabular-nums">
+                               {scoreText}
+                             </motion.span>
                            </div>
                            <div className="text-sm font-bold tracking-wider text-primary-light uppercase">ATS Match</div>
-                           
-                           {/* Success particles */}
-                           {score === 98 && (
-                             <motion.div 
+
+                           {/* Success mark once the count finishes */}
+                           {scoreDone && (
+                             <motion.div
                                initial={{ opacity: 0, scale: 0.5 }}
                                animate={{ opacity: 1, scale: 1 }}
                                className="absolute top-2 right-3"
                              >
-                               <SparklesIcon className="w-5 h-5 text-accent animate-pulse" />
+                               <SparklesIcon className="w-5 h-5 text-accent" />
                              </motion.div>
                            )}
                         </motion.div>
