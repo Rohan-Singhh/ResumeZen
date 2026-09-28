@@ -18,14 +18,17 @@ const pageVariants = {
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [error, setError] = useState('');
+  // LoginOptions sends users back here with a reason when the backend
+  // handshake fails after Google sign-in
+  const [error, setError] = useState(location.state?.authError || '');
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const loginBoxRef = useRef(null);
   const navigatingRef = useRef(false);
   const { setLoading } = useLoading();
   const { currentUser } = useAuth();
 
-  const { from } = location.state || { from: { pathname: '/dashboard' } };
+  // state may carry only authError, so default `from` independently
+  const from = location.state?.from || { pathname: '/dashboard' };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {

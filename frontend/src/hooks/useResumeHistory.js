@@ -8,6 +8,7 @@ export function useResumeHistory() {
   return useQuery({
     queryKey: ['resumeHistory', currentUser?._id],
     queryFn: getResumeHistory,
-    enabled: !!currentUser, // Only fetch when user is logged in
+    // Only with a real backend session; the optimistic sign-in user has no _id
+    enabled: !!currentUser?._id,
   });
 }

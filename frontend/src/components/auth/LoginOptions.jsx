@@ -69,10 +69,16 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
         login(response.data.user, response.data.token);
       }).catch(err => {
         console.error('Background backend sync failed:', err);
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          setCurrentUser(null);
-          navigate('/login');
-        }
+        // Any failure — not just 401/403 — leaves an optimistic user with no
+        // backend token, so every dashboard request would fail silently. Roll
+        // the session back and say why on the login page.
+        const status = err.response?.status;
+        const message = status === 401 || status === 403
+          ? "We couldn't verify your Google account. Please try again."
+          : "You're signed in with Google, but we couldn't reach our servers. Please try again in a moment.";
+        setCurrentUser(null);
+        navigate('/login', { replace: true, state: { authError: message } });
+        auth.signOut().catch(() => {});
       }).finally(() => {
         endInteractiveLogin();
         setIsLoading(false);
