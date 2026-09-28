@@ -1,378 +1,201 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import { analyzeUploadResume } from '../../services/resumeService';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../context/AuthContext';
 import {
   CheckCircleIcon,
-  XMarkIcon,
-  DocumentMagnifyingGlassIcon,
-  DocumentTextIcon,
-  CpuChipIcon,
-  ChartBarIcon,
-  SparklesIcon,
-  FaceFrownIcon,
+  CheckIcon,
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
+import Modal from '../../components/ui/Modal';
+import Button from '../../components/ui/Button';
 
+// Rough stage timings. The request is a single call, so these are estimates
+// that keep the wait legible, not live server progress.
 const STEPS = [
-  { label: 'Upload Resume', icon: DocumentMagnifyingGlassIcon, color: 'blue' },
-  { label: 'Extract Text (OCR)', icon: DocumentTextIcon, color: 'indigo' },
-  { label: 'AI Analysis', icon: CpuChipIcon, color: 'violet' },
-  { label: 'Calculate ATS Score', icon: ChartBarIcon, color: 'teal' },
-  { label: 'Generate Report', icon: SparklesIcon, color: 'emerald' },
+  { label: 'Uploading resume', at: 0 },
+  { label: 'Reading text from PDF', at: 1500 },
+  { label: 'Analyzing with AI', at: 3500 },
+  { label: 'Scoring ATS match', at: 6000 },
+  { label: 'Writing your report', at: 8000 },
 ];
 
-const COLOR_MAP = {
-  blue: { ring: 'border-blue-500', bg: 'bg-blue-500', text: 'text-blue-400', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.4)]' },
-  indigo: { ring: 'border-indigo-500', bg: 'bg-indigo-500', text: 'text-indigo-400', glow: 'shadow-[0_0_20px_rgba(99,102,241,0.4)]' },
-  violet: { ring: 'border-violet-500', bg: 'bg-violet-500', text: 'text-violet-400', glow: 'shadow-[0_0_20px_rgba(139,92,246,0.4)]' },
-  teal: { ring: 'border-teal-500', bg: 'bg-teal-500', text: 'text-teal-400', glow: 'shadow-[0_0_20px_rgba(20,184,166,0.4)]' },
-  emerald: { ring: 'border-emerald-500', bg: 'bg-emerald-500', text: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(16,185,129,0.4)]' },
-};
-
-// Simple, clean loading phrases
-const LOADING_PHRASES = [
-  "Uploading your resume...",
-  "Extracting text from PDF...",
-  "Analyzing with AI...",
-  "Calculating ATS score...",
-  "Checking for improvements...",
-  "Almost done...",
-  "Finalizing report...",
-];
+/** Turn an analyze-upload failure into something a user can act on. */
+function describeError(err) {
+  if (!err?.response) {
+    return "We couldn't reach the server. Check your connection and try again.";
+  }
+  const { status, data } = err.response;
+  if (status === 403) return "You don't have any credits left. Choose a plan to keep analyzing.";
+  if (status === 429) return 'Too many requests right now. Please wait a minute and try again.';
+  if (status === 400) return data?.message || "This file couldn't be processed. Try a different PDF.";
+  if (status === 422 && /read text/i.test(data?.message || '')) {
+    return "We couldn't read any text from this PDF. If it's a scanned image, export a text-based PDF and try again. No credit was used.";
+  }
+  if (status === 422) return "The analysis couldn't be completed. No credit was used — please try again.";
+  return 'Something went wrong on our side. No credit was used — please try again in a minute.';
+}
 
 export default function ResumeAnalysisModal({ fileDetails, open, onClose, onViewReport }) {
   const queryClient = useQueryClient();
-  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
-  const [vibeIndex, setVibeIndex] = useState(0);
-  const [savedAnalysisData, setSavedAnalysisData] = useState(null);
 
-  // Rotate vibes text
-  useEffect(() => {
-    if (!loading) return;
-    const interval = setInterval(() => {
-      setVibeIndex(prev => (prev + 1) % LOADING_PHRASES.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [loading]);
+  // Each run gets an id. Closing the modal mid-analysis lets the request finish
+  // in the background; a late response must not leak into the next run's UI.
+  const runIdRef = useRef(0);
+
+  // One request per file. StrictMode (dev) runs effects twice, which used to
+  // send two uploads and spend two credits; re-runs now await the same promise.
+  const requestRef = useRef({ file: null, promise: null });
 
   useEffect(() => {
-    if (open && fileDetails) {
-      setLoading(true);
-      setError(null);
-      setResult(null);
-      setProgress(0);
-      setCurrentStep(0);
-
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 95) return 95;
-          // Ease toward 95: bigger steps early, smaller as it fills. Deterministic
-          // (no PRNG) so it reads as steady progress, not jitter.
-          return prev + Math.max(1, (95 - prev) * 0.08);
-        });
-      }, 350);
-
-      const stepIntervals = [
-        setTimeout(() => setCurrentStep(1), 1500),
-        setTimeout(() => setCurrentStep(2), 3500),
-        setTimeout(() => setCurrentStep(3), 6000),
-        setTimeout(() => setCurrentStep(4), 8000),
-      ];
-
-      (async () => {
-        try {
-          // No model override — the backend's DEFAULT_MODEL (aiAnalysisService.js)
-          // is the single source of truth for which model to use.
-          const res = await analyzeUploadResume(fileDetails.rawFile);
-          if (res?.success && res?.data?.analysis?.structured) {
-            setProgress(100);
-            setCurrentStep(4);
-            // Store the full response so we can pass it to the detail modal
-            setSavedAnalysisData(res);
-            
-            // Invalidate React Query cache so the history updates instantly
-            queryClient.invalidateQueries({ queryKey: ['resumeHistory', currentUser?._id] });
-
-            setTimeout(() => {
-              setResult(res.data.analysis.structured);
-              setLoading(false);
-            }, 600);
-          } else {
-            setError(res?.error || 'Failed to analyze resume.');
-            setLoading(false);
-          }
-        } catch (err) {
-          setError(
-            err?.response?.status === 403
-              ? 'Not enough credits. Please upgrade your plan.'
-              : err.message || 'Failed to analyze resume.'
-          );
-          setLoading(false);
-        } finally {
-          clearInterval(progressInterval);
-          stepIntervals.forEach(clearTimeout);
-        }
-      })();
-    }
-
-    if (!open) {
+    if (!open || !fileDetails) {
+      runIdRef.current += 1;
       setLoading(false);
       setError(null);
       setResult(null);
       setProgress(0);
       setCurrentStep(0);
-      setSavedAnalysisData(null);
+      return undefined;
     }
-  }, [open, fileDetails]);
 
-  if (typeof document === 'undefined') return null;
+    const runId = ++runIdRef.current;
+    const isCurrent = () => runId === runIdRef.current;
 
-  const activeColor = COLOR_MAP[STEPS[currentStep]?.color || 'blue'];
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    setProgress(0);
+    setCurrentStep(0);
 
-  return createPortal(
-    <AnimatePresence>
-      {open && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-        onClick={!loading ? onClose : undefined}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 30 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 22 }}
-          className="relative bg-[#111116] border border-white/10 rounded-3xl max-w-md w-full mx-auto overflow-hidden shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Top gradient border */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-teal-500" />
+    // Ease toward 95%: bigger steps early, smaller as it fills
+    const progressInterval = setInterval(() => {
+      setProgress(prev => (prev >= 95 ? 95 : prev + Math.max(1, (95 - prev) * 0.08)));
+    }, 350);
+    const stepTimers = STEPS.slice(1).map((step, i) =>
+      setTimeout(() => setCurrentStep(i + 1), step.at)
+    );
+    const stopTimers = () => {
+      clearInterval(progressInterval);
+      stepTimers.forEach(clearTimeout);
+    };
 
-          {loading ? (
-            <div className="relative p-6 sm:p-8 overflow-hidden">
-              {/* Ambient glow behind the ring */}
-              <div className={`absolute top-8 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full blur-[60px] ${activeColor.bg} opacity-20 pointer-events-none transition-colors duration-700`} />
+    (async () => {
+      try {
+        // No model override — the backend's DEFAULT_MODEL (aiAnalysisService.js)
+        // is the single source of truth for which model to use.
+        if (requestRef.current.file !== fileDetails) {
+          requestRef.current = { file: fileDetails, promise: analyzeUploadResume(fileDetails.rawFile) };
+        }
+        const res = await requestRef.current.promise;
 
-              <div className="relative z-10 flex flex-col items-center">
-                {/* Central animated ring */}
-                <div className="mb-6">
-                  <div className="relative h-24 w-24">
-                    {/* Outer pulsing ring */}
-                    <motion.div
-                      className={`absolute inset-0 rounded-full border-2 ${activeColor.ring} opacity-30`}
-                      animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.1, 0.3] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                    {/* Background track */}
-                    <div className="absolute inset-0 rounded-full border-[3px] border-white/5" />
-                    {/* Spinning progress arc */}
-                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 112 112">
-                      <circle
-                        cx="56" cy="56" r="52"
-                        fill="none"
-                        stroke="url(#progressGradient)"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeDasharray={`${progress * 3.27} ${327 - progress * 3.27}`}
-                        className="transition-all duration-500 ease-out"
-                      />
-                      <defs>
-                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#3b82f6" />
-                          <stop offset="50%" stopColor="#6366f1" />
-                          <stop offset="100%" stopColor="#14b8a6" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <motion.span
-                        key={Math.round(progress)}
-                        initial={{ scale: 1.2, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="text-xl font-extrabold text-white font-display tabular-nums leading-none"
-                      >
-                        {Math.round(progress)}%
-                      </motion.span>
-                      <span className="text-[8px] font-semibold text-zinc-500 uppercase tracking-widest mt-1">
-                        Processing
-                      </span>
-                    </div>
-                  </div>
-                </div>
+        // Refresh history and credits whether or not the modal is still open,
+        // so a run left in the background still shows up on the dashboard.
+        queryClient.invalidateQueries({ queryKey: ['resumeHistory'] });
+        queryClient.invalidateQueries({ queryKey: ['userPlans'] });
 
-                {/* Heading */}
-                <h3 className="text-lg font-extrabold text-white text-center mb-1 font-display tracking-tight">
-                  Analyzing Resume
-                </h3>
-                {/* Rotating vibes text */}
-                <AnimatePresence mode="wait">
-                  <motion.p
-                    key={vibeIndex}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-xs text-zinc-400 text-center mb-6 min-h-[18px] font-medium px-2 truncate max-w-full"
-                  >
-                    {LOADING_PHRASES[vibeIndex]}
-                  </motion.p>
-                </AnimatePresence>
+        if (!isCurrent()) return;
+        if (res?.success && res?.data?.analysis?.structured) {
+          setProgress(100);
+          setCurrentStep(STEPS.length - 1);
+          setResult(res);
+        } else {
+          setError(res?.message || 'The analysis could not be completed. Please try again.');
+        }
+      } catch (err) {
+        queryClient.invalidateQueries({ queryKey: ['userPlans'] });
+        if (isCurrent()) setError(describeError(err));
+      } finally {
+        stopTimers();
+        if (isCurrent()) setLoading(false);
+      }
+    })();
 
-                {/* Steps list */}
-                <div className="space-y-2 w-full">
-                  {STEPS.map((step, i) => {
-                    const isActive = i === currentStep;
-                    const isDone = i < currentStep;
-                    const color = COLOR_MAP[step.color];
-                    const StepIcon = step.icon;
+    return stopTimers;
+  }, [open, fileDetails, queryClient]);
 
-                    return (
-                      <motion.div
-                        key={step.label}
-                        initial={{ opacity: 0, x: -15 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.08 }}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-500 min-w-0 ${isActive
-                            ? `bg-white/5 border border-white/10 ${color.glow}`
-                            : isDone
-                              ? 'opacity-60'
-                              : 'opacity-30'
-                          }`}
-                      >
-                        {/* Step icon circle */}
-                        <div className="relative flex-shrink-0">
-                          <div
-                            className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all duration-500 ${isDone
-                                ? 'bg-emerald-500/20 border border-emerald-500/30'
-                                : isActive
-                                  ? `bg-white/10 border border-white/20`
-                                  : 'bg-white/5 border border-white/5'
-                              }`}
-                          >
-                            {isDone ? (
-                              <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-400" />
-                            ) : (
-                              <StepIcon className={`h-3.5 w-3.5 ${isActive ? color.text : 'text-zinc-600'}`} />
-                            )}
-                          </div>
-                          {/* Active pulse dot */}
-                          {isActive && (
-                            <motion.div
-                              className={`absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ${color.bg}`}
-                              animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
-                            />
-                          )}
-                        </div>
+  const title = loading ? 'Analyzing your resume' : error ? "Analysis didn't finish" : 'Your report is ready';
 
-                        {/* Step label */}
-                        <span
-                          className={`text-xs font-semibold truncate min-w-0 transition-colors duration-500 ${isActive ? 'text-zinc-100' : isDone ? 'text-zinc-400 line-through' : 'text-zinc-600'
-                            }`}
-                        >
-                          {step.label}
-                        </span>
-
-                        {/* Done / active indicator */}
-                        <div className="ml-auto flex-shrink-0">
-                          {isDone && (
-                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Done</span>
-                          )}
-                          {isActive && (
-                            <motion.div
-                              className={`h-1.5 w-6 rounded-full ${color.bg} opacity-60`}
-                              animate={{ opacity: [0.3, 0.8, 0.3] }}
-                              transition={{ duration: 1.2, repeat: Infinity }}
-                            />
-                          )}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-
-                {/* Bottom progress bar */}
-                <div className="mt-5 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-teal-500"
-                    style={{ width: `${progress}%` }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                  />
-                </div>
-              </div>
+  return (
+    <Modal open={open} onClose={onClose} labelledBy="analysis-modal-title" zIndex="z-[60]">
+      {loading ? (
+        <div>
+          <div className="mb-6 flex items-center gap-4">
+            <div className="relative h-14 w-14 flex-shrink-0">
+              <svg className="h-full w-full -rotate-90" viewBox="0 0 56 56" aria-hidden="true">
+                <circle cx="28" cy="28" r="24" fill="none" strokeWidth="4" className="stroke-white/[0.06]" />
+                <circle
+                  cx="28" cy="28" r="24" fill="none" strokeWidth="4" strokeLinecap="round"
+                  strokeDasharray={`${progress * 1.508} 151`}
+                  className="stroke-primary transition-[stroke-dasharray] duration-300 ease-out"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center font-display text-xs font-semibold tabular-nums text-ink">
+                {Math.round(progress)}%
+              </span>
             </div>
-          ) : error ? (
-            /* ── Error State ── */
-            <div className="p-8 sm:p-10 text-center relative">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-red-500/10 rounded-full blur-[80px] pointer-events-none" />
-              <div className="relative z-10">
-                <div className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.25)] border border-red-500/30 bg-red-500/10 mb-5">
-                  <FaceFrownIcon className="h-12 w-12 text-red-400" />
-                </div>
-                <h3 className="text-xl font-extrabold text-white mb-2 font-display">
-                  Analysis Failed
-                </h3>
-                <p className="text-sm text-zinc-400 mb-6 leading-relaxed max-w-xs mx-auto">{error}</p>
-                <button
-                  onClick={onClose}
-                  className="w-full bg-white/10 hover:bg-white/15 text-zinc-200 text-sm font-bold px-5 py-3 rounded-xl transition-all duration-200 border border-white/10 hover:border-white/20"
-                >
-                  Dismiss
-                </button>
-              </div>
+            <div className="min-w-0">
+              <h3 id="analysis-modal-title" className="font-display text-lg font-semibold text-ink">{title}</h3>
+              <p className="truncate text-sm text-ink-muted" aria-live="polite">{STEPS[currentStep].label}…</p>
             </div>
-          ) : result ? (
-            /* ── Success State ── */
-            <div className="p-8 sm:p-10 text-center relative">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none" />
-              <div className="relative z-10">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
-                  className="h-20 w-20 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-5 relative"
-                >
-                  <motion.div
-                    className="absolute inset-0 bg-emerald-500/15 rounded-full"
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <CheckCircleIcon className="h-10 w-10 text-emerald-400" />
-                </motion.div>
-                <h3 className="text-xl font-extrabold text-white mb-2 font-display">
-                  Analysis Complete
-                </h3>
-                <p className="text-sm text-zinc-400 mb-6 font-medium">
-                  Your resume report has been generated successfully.
-                </p>
-                <button
-                  onClick={() => {
-                    if (onViewReport && savedAnalysisData) {
-                      onViewReport(savedAnalysisData);
-                    } else {
-                      onClose();
-                    }
-                  }}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold px-5 py-3 rounded-xl transition-all duration-200 shadow-[0_0_20px_rgba(79,70,229,0.3)]"
-                >
-                  View Report →
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </motion.div>
-      </motion.div>
-      )}
-    </AnimatePresence>,
-    document.body
+          </div>
+
+          <ol className="mb-6 space-y-1">
+            {STEPS.map((step, i) => {
+              const isDone = i < currentStep;
+              const isActive = i === currentStep;
+              return (
+                <li key={step.label} className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+                  <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border ${
+                    isDone ? 'border-primary/30 bg-primary/15' : isActive ? 'border-primary' : 'border-line'
+                  }`}>
+                    {isDone && <CheckIcon className="h-3 w-3 text-primary" />}
+                    {isActive && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                  </span>
+                  <span className={`text-sm ${isActive ? 'font-medium text-ink' : isDone ? 'text-ink-muted' : 'text-ink-faint'}`}>
+                    {step.label}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+
+          <div className="flex items-center justify-between gap-4 border-t border-line pt-4">
+            <p className="text-xs leading-relaxed text-ink-faint">
+              Usually under a minute. You can close this — the report will appear in your activity when it's ready.
+            </p>
+            <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0">
+              Run in background
+            </Button>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="text-center">
+          <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
+            <ExclamationCircleIcon className="h-6 w-6 text-red-400" />
+          </span>
+          <h3 id="analysis-modal-title" className="mb-2 font-display text-lg font-semibold text-ink">{title}</h3>
+          <p className="mx-auto mb-6 max-w-sm text-sm leading-relaxed text-ink-muted">{error}</p>
+          <Button variant="secondary" onClick={onClose} className="w-full">Close</Button>
+        </div>
+      ) : result ? (
+        <div className="text-center">
+          <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
+            <CheckCircleIcon className="h-6 w-6 text-emerald-400" />
+          </span>
+          <h3 id="analysis-modal-title" className="mb-2 font-display text-lg font-semibold text-ink">{title}</h3>
+          <p className="mb-6 text-sm text-ink-muted">
+            Your score, recruiter feedback and keyword gaps are ready to review.
+          </p>
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={onClose} className="flex-1">Close</Button>
+            <Button onClick={() => onViewReport?.(result)} className="flex-1">View report</Button>
+          </div>
+        </div>
+      ) : null}
+    </Modal>
   );
 }
