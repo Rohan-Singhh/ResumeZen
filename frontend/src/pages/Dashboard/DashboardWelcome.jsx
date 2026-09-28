@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { normalizeAnalysis } from '../../utils/analysisSchema';
 import PlanModal from '../../components/PlanModal';
 import DashboardCreditConfirmationPopup from './dashboardwelcome/DashboardCreditConfirmationPopup';
+import DashboardNoCreditPopup from './dashboardwelcome/DashboardNoCreditPopup';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
 import ResumeDetailModal from './ResumeDetailModal';
 import { SparklesIcon } from '@heroicons/react/24/outline';
@@ -39,6 +40,7 @@ export default function DashboardWelcome() {
   // Modal state
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [showCreditConfirmation, setShowCreditConfirmation] = useState(false);
+  const [showNoCreditPopup, setShowNoCreditPopup] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisFileDetails, setAnalysisFileDetails] = useState(null);
   const [selectedResume, setSelectedResume] = useState(null);
@@ -106,13 +108,15 @@ export default function DashboardWelcome() {
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
+    setErrorMessage('');
+    // Explain the missing plan instead of silently jumping to /plans
+    if (!hasCredits) {
+      setShowNoCreditPopup(true);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     setSelectedFile(file);
     setUploadSuccess(false);
-    setErrorMessage('');
-    if (!activePlan || !hasCredits) { 
-      navigate('/dashboard/plans');
-      return; 
-    }
     setShowCreditConfirmation(true);
   };
 
@@ -120,9 +124,12 @@ export default function DashboardWelcome() {
     if (e.target.files?.[0]) handleFileSelect(e.target.files[0]);
   };
 
-  const handleUpload = async () => {
-    // Deprecated: We now use the unified analyze-upload in the modal
-    handleProceed();
+  // "Analyze this resume" on an already-selected file (e.g. after cancelling the
+  // confirmation). It used to open the analysis modal directly, which skipped
+  // the credit confirmation entirely.
+  const handleUpload = () => {
+    if (!hasCredits) { setShowNoCreditPopup(true); return; }
+    setShowCreditConfirmation(true);
   };
 
   const confirmCreditUsage = () => { 
@@ -282,6 +289,12 @@ export default function DashboardWelcome() {
 
       {/* Modals */}
       <PlanModal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} />
+      <DashboardNoCreditPopup
+        show={showNoCreditPopup}
+        onClose={() => setShowNoCreditPopup(false)}
+        onViewPlans={() => { setShowNoCreditPopup(false); navigate('/dashboard/plans'); }}
+        activePlan={activePlan}
+      />
       <DashboardCreditConfirmationPopup show={showCreditConfirmation} onClose={() => setShowCreditConfirmation(false)} onConfirm={confirmCreditUsage} activePlan={activePlan} />
       <ResumeAnalysisModal fileDetails={analysisFileDetails} open={showAnalysisModal} onClose={handleAnalysisClose} onViewReport={handleViewReport} />
       <ResumeDetailModal modalItem={selectedResume} onClose={() => setSelectedResume(null)} />
