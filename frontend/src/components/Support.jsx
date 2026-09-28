@@ -165,7 +165,7 @@ export default function Support() {
                   Have a specific question? Fill out this form and we'll get back to you as soon as possible.
                 </p>
                 <div className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-green-400">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+                  <span className="h-2 w-2 rounded-full bg-green-400" />
                   Live Support Queue
                 </div>
                 
@@ -270,9 +270,12 @@ export default function Support() {
                   className="w-full px-4 py-3 text-white bg-dark-bg border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors duration-200 placeholder:text-gray-600 outline-none resize-none"
                 ></textarea>
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-dark-bg border border-white/5">
+                  {/* scaleX, not width: this runs on every keystroke */}
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-secondary"
-                    animate={{ width: `${progress}%` }}
+                    className="h-full w-full rounded-full bg-gradient-to-r from-primary via-accent to-secondary"
+                    style={{ originX: 0 }}
+                    initial={false}
+                    animate={{ scaleX: progress / 100 }}
                     transition={{ type: 'spring', stiffness: 120, damping: 20 }}
                   />
                 </div>

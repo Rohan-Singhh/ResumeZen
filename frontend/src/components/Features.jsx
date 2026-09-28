@@ -48,12 +48,15 @@ const features = [
     bgClass: "bg-gradient-to-br from-accent/10 via-accent/5 to-transparent",
     visual: (
       <div className="absolute right-0 bottom-0 w-full h-32 flex items-end justify-center px-8 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+        {/* Bars grow with scaleY from the baseline instead of animating
+            height (a layout change every frame), and only once */}
         <div className="flex items-end gap-2 h-full w-full pt-8 border-b border-white/10">
-          <motion.div initial={{height: "20%"}} whileInView={{height: "40%"}} transition={{duration: 1}} className="flex-1 bg-gradient-to-t from-white/10 to-transparent rounded-t-sm"></motion.div>
-          <motion.div initial={{height: "30%"}} whileInView={{height: "60%"}} transition={{duration: 1, delay: 0.2}} className="flex-1 bg-gradient-to-t from-white/20 to-transparent rounded-t-sm"></motion.div>
-          <motion.div initial={{height: "40%"}} whileInView={{height: "85%"}} transition={{duration: 1, delay: 0.4}} className="flex-1 bg-gradient-to-t from-accent/50 to-transparent rounded-t-sm border-t border-accent relative">
+          <motion.div initial={{ scaleY: 0.5 }} whileInView={{ scaleY: 1 }} viewport={{ once: true }} transition={{ duration: 1 }} className="flex-1 h-[40%] origin-bottom bg-gradient-to-t from-white/10 to-transparent rounded-t-sm"></motion.div>
+          <motion.div initial={{ scaleY: 0.5 }} whileInView={{ scaleY: 1 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.2 }} className="flex-1 h-[60%] origin-bottom bg-gradient-to-t from-white/20 to-transparent rounded-t-sm"></motion.div>
+          <div className="relative flex-1 h-[85%]">
+            <motion.div initial={{ scaleY: 0.47 }} whileInView={{ scaleY: 1 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.4 }} className="absolute inset-0 origin-bottom bg-gradient-to-t from-accent/50 to-transparent rounded-t-sm border-t border-accent"></motion.div>
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-mono text-accent bg-accent/10 px-1 rounded">+340%</div>
-          </motion.div>
+          </div>
         </div>
       </div>
     )
