@@ -15,6 +15,7 @@ import {
   BriefcaseIcon
 } from '@heroicons/react/24/outline';
 import SupportWidget from '../../components/SupportWidget';
+import Logo from '../../components/Logo';
 
 function Avatar({ user, size = 'h-7 w-7' }) {
   return (
@@ -69,12 +70,9 @@ function TopNav() {
               <button
                 onClick={() => navigate('/dashboard')}
                 aria-label="ResumeZen overview"
-                className="flex items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                className="flex items-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/30 bg-surface-raised">
-                  <span className="font-display text-sm font-bold tracking-tighter text-ink">RZ</span>
-                </span>
-                <span className="font-display text-lg font-semibold tracking-tight text-ink">ResumeZen</span>
+                <Logo size="sm" />
               </button>
               
               {/* Desktop Navigation Links */}

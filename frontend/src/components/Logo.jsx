@@ -38,9 +38,9 @@ export function LogoMark({ size = 32, className = '' }) {
 }
 
 const SIZES = {
-  sm: { mark: 24, text: 'text-base', gap: 'gap-2' },
+  sm: { mark: 28, text: 'text-lg', gap: 'gap-2' },
   md: { mark: 32, text: 'text-xl', gap: 'gap-2.5' },
-  lg: { mark: 40, text: 'text-2xl', gap: 'gap-3' },
+  lg: { mark: 36, text: 'text-2xl', gap: 'gap-3' },
 };
 
 /**
