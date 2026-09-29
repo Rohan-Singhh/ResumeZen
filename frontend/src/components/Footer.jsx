@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Logo from './Logo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -23,11 +24,8 @@ export default function Footer() {
           
           {/* Brand Column */}
           <div className="lg:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-6 group inline-flex">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center shadow-glow-primary/20 group-hover:shadow-glow-primary/40 transition-shadow">
-                <span className="text-white font-bold font-display text-sm">RZ</span>
-              </div>
-              <span className="font-bold text-white font-display text-xl tracking-tight">ResumeZen</span>
+            <Link to="/" aria-label="ResumeZen home" className="mb-6 inline-flex rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+              <Logo size="md" />
             </Link>
             <p className="text-sm text-gray-400 font-light leading-relaxed mb-6">
               The world's most advanced AI resume builder. Beat the ATS, highlight your impact, and get hired faster at top tech companies.

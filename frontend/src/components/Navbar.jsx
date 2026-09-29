@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Logo from './Logo';
 
 const navLinks = [
   { name: 'Features', id: 'features' },
@@ -86,15 +87,16 @@ export default function Navbar() {
       <div className="flex justify-between items-center h-20 px-6 sm:px-12 lg:px-20 w-full mx-auto">
         
         {/* Left: Logo */}
-        <motion.div
-          className="flex-shrink-0 cursor-pointer"
+        <motion.button
+          type="button"
+          aria-label="ResumeZen home"
+          className="flex-shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           onClick={() => handleSectionNavigation('home')}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
         >
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight font-display text-white">
-            Resume<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Zen</span>
-          </span>
-        </motion.div>
+          <Logo size="lg" />
+        </motion.button>
 
         {/* Center: Navigation Links */}
         <div className="hidden lg:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">

@@ -98,15 +98,17 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
   }, [isLoading, navigate, login, setCurrentUser, onSuccessNavigation, onError, setLoading]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      {/* The one action on the page, so it gets the one high-contrast surface
+          (Google's light button style) instead of blending into the dark UI */}
       <motion.button
         whileTap={isLoading ? undefined : tapPress}
         onClick={handleGoogleSignIn}
         disabled={isLoading}
-        className="flex w-full items-center justify-center gap-3 rounded-xl border border-line-strong bg-white/[0.06] px-4 py-3.5 text-sm font-semibold text-ink transition-colors hover:bg-white/[0.1] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-wait disabled:opacity-60"
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-white px-4 text-[15px] font-semibold text-zinc-900 shadow-[0_10px_30px_-12px_rgba(124,108,246,0.55)] transition-colors hover:bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-void disabled:cursor-wait disabled:opacity-70"
       >
         {isLoading ? (
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" aria-hidden="true" />
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" aria-hidden="true" />
         ) : (
           <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -131,7 +133,7 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
       </motion.button>
 
       <p className="text-center text-xs leading-relaxed text-ink-faint">
-        We use your Google name, email and profile photo to create your account.
+        New here? Signing in creates your account. We only use your Google name, email and photo.
       </p>
     </div>
   );
