@@ -1,7 +1,9 @@
-import Glow, { GLOW } from './Glow';
 import { motion } from 'framer-motion';
-import { StarIcon } from '@heroicons/react/24/solid';
-import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
+import { StarIcon } from '@heroicons/react/20/solid';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import SectionHeading from './ui/SectionHeading';
+import { reveal } from '../utils/motion';
 
 const reviews = [
   {
@@ -78,102 +80,68 @@ const reviews = [
   },
 ];
 
+function Rating({ value }) {
+  return (
+    <div className="flex gap-0.5" role="img" aria-label={`${value} out of 5`}>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <StarIcon key={i} className={`h-3.5 w-3.5 ${i < value ? 'text-warn' : 'text-ink/15'}`} aria-hidden="true" />
+      ))}
+    </div>
+  );
+}
+
 export default function Reviews() {
   return (
-    <section id="reviews" className="bg-dark-bg py-24 sm:py-32 border-t border-white/5 relative">
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <Glow className="top-0 right-0 w-[800px] h-[800px]" color={GLOW.secondary} strength={0.06} />
-      </div>
+    <section id="reviews" className="section border-t border-line">
+      <div className="shell">
+        <SectionHeading
+          index="04"
+          eyebrow="Reviews"
+          title={<>What changed after <em className="t-em">the rewrite.</em></>}
+          lead="People who marked up their resume, fixed what was flagged, and sent it again."
+          aside={
+            <Link to="/success-stories" className="group inline-flex items-center gap-1.5 text-sm font-medium text-ink hover:text-primary-light">
+              Read the longer stories
+              <ArrowRightIcon className="h-4 w-4 transition-transform duration-base ease-out group-hover:translate-x-0.5" />
+            </Link>
+          }
+        />
 
-      <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 lg:mb-20 gap-8">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-2xl"
-          >
-            <span className="inline-block text-sm font-bold uppercase tracking-[0.2em] text-primary mb-6 bg-primary/10 border border-primary/20 px-6 py-2 rounded-full">
-              Wall of Love
-            </span>
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-white font-display">
-              Don't Just Take <br className="hidden md:block"/> Our Word For It.
-            </h2>
-          </motion.div>
-          
-          <motion.div
-             initial={{ opacity: 0, x: 30 }}
-             whileInView={{ opacity: 1, x: 0 }}
-             viewport={{ once: true }}
-             transition={{ duration: 0.5, delay: 0.2 }}
-             className="text-left md:text-right"
-          >
-             <p className="text-xl leading-8 text-gray-400 font-light max-w-lg">
-                Real stories from Gen Z professionals and grads who hacked the ATS and landed their dream roles.
-             </p>
-          </motion.div>
-        </div>
-
-        {/* Masonry-style Grid */}
-        <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+        {/* Masonry via CSS columns: uneven quote lengths pack without gaps */}
+        <div className="gap-5 [column-fill:_balance] sm:columns-2 lg:columns-3">
           {reviews.map((review, index) => (
-            <motion.article
+            <motion.figure
               key={review.id}
-              // Hover lift lives in framer-motion with the entrance. The old CSS
-              // `transition-all hover:-translate-y-2` fought framer's inline
-              // transform: it smeared the entrance and the hover never applied.
-              className="break-inside-avoid flex flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-8 transition-colors duration-300 hover:bg-white/10 hover:border-white/20 group"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -6, transition: { type: 'spring', stiffness: 320, damping: 26 } }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ delay: (index % 3) * 0.15, duration: 0.5 }}
+              {...reveal((index % 3) * 0.08)}
+              className="group mb-5 break-inside-avoid rounded-lg border border-line bg-surface p-6 shadow-e1 transition-colors duration-base hover:border-line-strong sm:p-7"
             >
-              <div>
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <StarIcon key={i} className={`h-5 w-5 ${i < review.rating ? 'text-accent' : 'text-gray-600'}`} />
-                    ))}
-                  </div>
-                  <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary-light uppercase tracking-wider">{review.plan}</span>
-                </div>
-
-                <p className="text-lg leading-relaxed text-gray-300 font-light group-hover:text-white transition-colors duration-300">
-                  "{review.content}"
-                </p>
-
-                <div className="mt-6 flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500">
-                  <div className="flex items-center gap-1.5 bg-dark-bg/50 px-3 py-1.5 rounded-full">
-                    <MapPinIcon className="h-4 w-4 text-secondary" />
-                    <span>{review.location}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-dark-bg/50 px-3 py-1.5 rounded-full">
-                    <ClockIcon className="h-4 w-4 text-secondary" />
-                    <span>{review.timeline}</span>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between gap-3">
+                <Rating value={review.rating} />
+                <span className="t-meta">{review.timeline}</span>
               </div>
 
-              <div className="mt-8 flex items-center gap-4 border-t border-white/10 pt-6">
-                {/* Sized, lazy and async-decoded: six third-party avatars no
-                    longer shift layout or decode on the main thread mid-scroll */}
+              <blockquote className="mt-5 font-display text-[1.125rem] font-[360] leading-[1.5] tracking-[-0.01em] text-ink" style={{ fontVariationSettings: "'SOFT' 40" }}>
+                “{review.content}”
+              </blockquote>
+
+              <figcaption className="mt-6 flex items-center gap-3 border-t border-line pt-5">
+                {/* Sized, lazy and async-decoded: third-party avatars never
+                    shift layout or decode on the main thread mid-scroll */}
                 <img
-                  className="h-14 w-14 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-colors duration-300"
+                  className="h-10 w-10 rounded-full object-cover grayscale transition-[filter] duration-slow group-hover:grayscale-0"
                   src={review.image}
-                  alt={review.name}
-                  width={56}
-                  height={56}
+                  alt=""
+                  width={40}
+                  height={40}
                   loading="lazy"
                   decoding="async"
                 />
-                <div>
-                  <h3 className="font-bold text-white text-lg">{review.name}</h3>
-                  <p className="text-sm text-primary-light font-medium">{review.role}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-ink">{review.name}</p>
+                  <p className="truncate text-[0.8125rem] text-ink-faint">{review.role} · {review.location}</p>
                 </div>
-              </div>
-            </motion.article>
+              </figcaption>
+            </motion.figure>
           ))}
         </div>
       </div>
