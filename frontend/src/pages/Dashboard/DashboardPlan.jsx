@@ -1,74 +1,34 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ExclamationCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
-import {
-  CheckCircleIcon,
-  XMarkIcon,
-  SparklesIcon,
-  ShieldCheckIcon,
-  ExclamationCircleIcon,
-  CheckIcon,
-} from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
-import Modal from '../../components/ui/Modal';
+import Modal, { ModalHeader } from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import { staggerContainer, staggerItem } from '../../utils/motion';
-
-// --- Activation status dialog ---
-const PurchaseNotifier = ({ status, errorMsg, onClose }) => (
-  <Modal
-    open={status !== 'idle'}
-    onClose={onClose}
-    dismissible={status !== 'loading'}
-    labelledBy="purchase-status-title"
-    maxWidth="max-w-sm"
-    className="flex flex-col items-center p-8 text-center"
-    padded={false}
-  >
-    {status === 'loading' && (
-      <>
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <h3 id="purchase-status-title" className="mt-6 font-display text-lg font-semibold text-ink">Activating your plan</h3>
-        <p className="mt-1.5 text-sm text-ink-muted">This only takes a moment…</p>
-      </>
-    )}
-
-    {status === 'success' && (
-      <>
-        <span className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
-          <CheckCircleIcon className="h-8 w-8 text-emerald-400" />
-        </span>
-        <h3 id="purchase-status-title" className="mt-6 font-display text-lg font-semibold text-ink">Plan activated</h3>
-        <p className="mt-1.5 text-sm text-ink-muted">Your credits are ready to use.</p>
-      </>
-    )}
-
-    {status === 'error' && (
-      <>
-        <span className="flex h-14 w-14 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
-          <ExclamationCircleIcon className="h-8 w-8 text-red-400" />
-        </span>
-        <h3 id="purchase-status-title" className="mt-6 font-display text-lg font-semibold text-ink">Couldn't activate plan</h3>
-        <p className="mt-1.5 text-sm text-red-400/90">{errorMsg}</p>
-      </>
-    )}
-  </Modal>
-);
-
-const formatPrice = (price, currency = 'INR') => (currency === 'INR' ? `₹${price}` : `$${price}`);
+import Card from '../../components/ui/Card';
+import EmptyState from '../../components/ui/EmptyState';
+import PageHeader from '../../components/ui/PageHeader';
+import SectionHeader from '../../components/ui/SectionHeader';
+import PlanCard, { PlanCardSkeleton } from '../../components/PlanCard';
+import { useToast } from '../../components/ui/Toast';
+import { ease, staggerContainer, staggerItem } from '../../utils/motion';
 
 // Credit packs are one-time; only time-boxed plans get a period suffix
 const formatPeriod = (plan) => (plan.durationInDays ? plan.period : 'one-time');
 
+const formatDate = (value) =>
+  new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
 export default function DashboardPlan() {
   const { userPlans, getAvailablePlans, purchasePlan, fetchUserPlans } = useAuth();
+  const toast = useToast();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
-  // 'idle' | 'loading' | 'success' | 'error'
-  const [notifierState, setNotifierState] = useState('idle');
-  const [errorMsg, setErrorMsg] = useState('');
+  // The plan being activated (its button shows progress), and the last failure
+  const [pendingId, setPendingId] = useState(null);
+  const [purchaseError, setPurchaseError] = useState('');
 
   const [showSubscriptionWarning, setShowSubscriptionWarning] = useState(false);
   const [activePlanInfo, setActivePlanInfo] = useState(null);
@@ -83,8 +43,8 @@ export default function DashboardPlan() {
     if (userPlans?.length > 0) hasActiveSubscription();
   }, [userPlans]);
 
-  // Show the real catalogue or an honest error. The old hard-coded fallback
-  // plans could show prices and features that no longer match the backend.
+  // Show the real catalogue or an honest error. A hard-coded fallback could
+  // show prices and features that no longer match the backend.
   const fetchPlans = async () => {
     try {
       setLoading(true);
@@ -94,11 +54,11 @@ export default function DashboardPlan() {
         setPlans(result.plans);
       } else {
         setPlans([]);
-        setLoadError("We couldn't load plans right now.");
+        setLoadError("The plans didn't load");
       }
     } catch {
       setPlans([]);
-      setLoadError("We couldn't load plans right now.");
+      setLoadError("The plans didn't load");
     } finally {
       setLoading(false);
     }
@@ -113,7 +73,7 @@ export default function DashboardPlan() {
     if (subs.length > 0) {
       setActivePlanInfo({
         name: subs[0].planId?.name || 'Subscription Plan',
-        expiresAt: new Date(subs[0].expiresAt).toLocaleDateString(),
+        expiresAt: formatDate(subs[0].expiresAt),
         durationInDays: subs[0].planId?.durationInDays || 90
       });
       return true;
@@ -125,146 +85,145 @@ export default function DashboardPlan() {
     if (!plan?._id) return;
     if (hasActiveSubscription()) { setShowSubscriptionWarning(true); return; }
 
-    try {
-      setNotifierState('loading');
+    setPendingId(plan._id);
+    setPurchaseError('');
 
+    try {
       const result = await purchasePlan(plan._id);
 
       if (result.success) {
-        setNotifierState('success');
         await fetchUserPlans(true);
         localStorage.setItem('planPurchased', Date.now().toString());
-        setTimeout(() => setNotifierState('idle'), 3000); // Auto dismiss
+        toast(`${plan.name} is active. Your credits are ready.`);
       } else if (result.error?.includes('active subscription') || result.error?.includes('already subscribed') || result.error?.includes('existing plan')) {
         await fetchUserPlans(true);
-        setNotifierState('idle');
         setShowSubscriptionWarning(true);
       } else {
-        setErrorMsg(result.error || 'Something went wrong. Please try again.');
-        setNotifierState('error');
-        setTimeout(() => setNotifierState('idle'), 4000);
+        setPurchaseError(result.error || 'Something went wrong. Please try again.');
       }
     } catch {
-      setErrorMsg('Something went wrong. Please try again.');
-      setNotifierState('error');
-      setTimeout(() => setNotifierState('idle'), 4000);
+      setPurchaseError('Something went wrong. Please try again.');
+    } finally {
+      setPendingId(null);
     }
   };
 
   return (
-    <div className="space-y-8 pb-20">
-      <PurchaseNotifier status={notifierState} errorMsg={errorMsg} onClose={() => setNotifierState('idle')} />
+    <div>
+      <PageHeader
+        title="Plans"
+        description="Each analysis uses one credit. Buy what matches how often you are sending resumes out."
+      />
 
-      {/* Header */}
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">Plans</h1>
-        <p className="mt-1.5 text-sm text-ink-muted">Choose the plan that fits how often you analyze resumes.</p>
-      </div>
-
-      {/* Current plans */}
+      {/* What you have */}
       {userPlans?.length > 0 && (
-        <section className="rounded-xl border border-line bg-surface p-5 sm:p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-white/[0.03]">
-              <ShieldCheckIcon className="h-5 w-5 text-primary" />
-            </span>
-            <h2 className="font-display text-base font-semibold text-ink">Your plans</h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <Card className="mb-8">
+          <SectionHeader title="Your plans" className="mb-4" />
+          <ul className="divide-y divide-line border-t border-line">
             {userPlans.map((up) => {
-              const usedUp = !up.planId?.isUnlimited && (up.creditsLeft || 0) <= 0;
+              const unlimited = Boolean(up.planId?.isUnlimited);
+              const left = up.creditsLeft || 0;
+              const total = up.planId?.credits ?? 0;
+              const usedUp = !unlimited && left <= 0;
               return (
-                <div key={up._id || up.planId?._id} className="flex flex-col justify-between gap-3 rounded-lg border border-line bg-white/[0.02] p-4 sm:flex-row sm:items-center">
-                  <div>
-                    <p className="font-display text-base font-semibold text-ink">{up.planId?.name || 'Unknown plan'}</p>
-                    <p className="text-sm text-ink-muted">
-                      {up.planId?.isUnlimited ? 'Unlimited analyses' : `${up.creditsLeft || 0} of ${up.planId?.credits ?? '—'} checks left`}
+                <li key={up._id || up.planId?._id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className={`text-sm font-medium ${usedUp ? 'text-ink-muted' : 'text-ink'}`}>{up.planId?.name || 'Unknown plan'}</p>
+                    <p className="mt-0.5 text-[0.8125rem] text-ink-faint">
+                      {unlimited ? 'Unlimited analyses' : `${left} of ${total || '—'} checks left`}
                     </p>
                   </div>
-                  {usedUp ? (
-                    <Badge>Used up</Badge>
-                  ) : up.expiresAt ? (
-                    <Badge variant="emerald">Active until {new Date(up.expiresAt).toLocaleDateString()}</Badge>
-                  ) : (
-                    <Badge variant="accent">No expiry</Badge>
-                  )}
-                </div>
+                  <div className="flex items-center gap-4">
+                    {!unlimited && total > 0 && (
+                      <div className="h-1 w-28 overflow-hidden rounded-full bg-ink/10" aria-hidden="true">
+                        <div className="h-full rounded-full bg-ink/70" style={{ width: `${Math.min(100, (left / total) * 100)}%` }} />
+                      </div>
+                    )}
+                    {usedUp ? (
+                      <Badge>Used up</Badge>
+                    ) : up.expiresAt ? (
+                      <Badge variant="good">Active until {formatDate(up.expiresAt)}</Badge>
+                    ) : (
+                      <Badge variant="good">Active</Badge>
+                    )}
+                  </div>
+                </li>
               );
             })}
-          </div>
-        </section>
+          </ul>
+        </Card>
       )}
 
-      {/* Pricing grid */}
+      <AnimatePresence>
+        {purchaseError && (
+          <motion.div
+            role="alert"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: ease.out }}
+            className="overflow-hidden"
+          >
+            <div className="mb-5 flex items-start gap-2.5 rounded-md border border-bad/25 bg-bad/10 px-4 py-3">
+              <ExclamationCircleIcon className="mt-px h-5 w-5 flex-shrink-0 text-bad" />
+              <div className="text-sm leading-relaxed">
+                <p className="font-medium text-bad">The plan wasn&apos;t activated</p>
+                <p className="text-bad/85">{purchaseError}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* What you can buy */}
       {loading ? (
-        <div className="flex justify-center py-32">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3" role="status" aria-label="Loading plans">
+          {[0, 1, 2].map((i) => <PlanCardSkeleton key={i} />)}
         </div>
       ) : loadError ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-line bg-surface py-16 text-center">
-          <ExclamationCircleIcon className="h-8 w-8 text-ink-faint" />
-          <div>
-            <p className="font-display text-base font-semibold text-ink">{loadError}</p>
-            <p className="mt-1 text-sm text-ink-muted">Check your connection and try again.</p>
-          </div>
-          <Button variant="secondary" onClick={fetchPlans}>Retry</Button>
-        </div>
+        <Card padded={false}>
+          <EmptyState
+            icon={ExclamationCircleIcon}
+            title={loadError}
+            message="This is usually a connection hiccup. Your existing credits are not affected."
+            action={<Button variant="secondary" onClick={fetchPlans}>Try again</Button>}
+            className="py-20"
+          />
+        </Card>
       ) : (
         <motion.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="grid grid-cols-1 gap-5 lg:grid-cols-3"
+          className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:items-stretch"
         >
           {plans.map((plan) => {
-            const highlighted = plan.isPopular;
+            const featured = Boolean(plan.isPopular);
             return (
-              <motion.div
+              <PlanCard
                 key={plan._id}
                 variants={staggerItem}
-                className={`relative flex flex-col rounded-xl border bg-surface p-7 transition-colors ${
-                  highlighted ? 'border-primary/40' : 'border-line hover:border-line-strong'
-                }`}
-              >
-                {highlighted && (
-                  <span className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white">
-                    Most popular
-                  </span>
-                )}
-
-                <div className="flex-1">
-                  <h3 className="mb-1 font-display text-lg font-semibold text-ink">{plan.name}</h3>
-                  <div className="mb-6">
-                    <span className="font-display text-4xl font-semibold tracking-tight text-ink">{formatPrice(plan.price, plan.currency)}</span>
-                    <span className="ml-1.5 text-sm text-ink-faint">/ {formatPeriod(plan)}</span>
-                  </div>
-
-                  <ul className="mb-8 space-y-3 border-t border-line pt-6">
-                    <li className="flex items-start gap-3">
-                      <SparklesIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-                      <span className="text-sm font-semibold text-ink">
-                        {plan.isUnlimited ? 'Unlimited checks' : `${plan.credits} resume ${plan.credits === 1 ? 'check' : 'checks'}`}
-                      </span>
-                    </li>
-                    {plan.features?.map((f) => (
-                      <li key={f} className="flex items-start gap-3">
-                        <CheckIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-ink-faint" />
-                        <span className="text-sm leading-relaxed text-ink-muted">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <Button
-                  variant={highlighted ? 'primary' : 'secondary'}
-                  onClick={() => handlePurchase(plan)}
-                  disabled={notifierState !== 'idle'}
-                  className="w-full py-3"
-                >
-                  Select plan
-                </Button>
-              </motion.div>
+                name={plan.name}
+                price={plan.price}
+                currency={plan.currency}
+                period={formatPeriod(plan)}
+                headline={plan.isUnlimited ? 'Unlimited checks' : `${plan.credits} resume ${plan.credits === 1 ? 'check' : 'checks'}`}
+                features={plan.features}
+                featured={featured}
+                tag={featured ? 'Popular' : plan.isUnlimited ? 'Unlimited' : null}
+                action={
+                  <Button
+                    variant={featured ? 'ink' : 'secondary'}
+                    size="lg"
+                    onClick={() => handlePurchase(plan)}
+                    loading={pendingId === plan._id}
+                    disabled={pendingId !== null && pendingId !== plan._id}
+                    className="w-full"
+                  >
+                    Choose {plan.name}
+                  </Button>
+                }
+              />
             );
           })}
         </motion.div>
@@ -272,23 +231,16 @@ export default function DashboardPlan() {
 
       {/* Existing unlimited plan */}
       <Modal open={showSubscriptionWarning} onClose={() => setShowSubscriptionWarning(false)} labelledBy="sub-warning-title">
-        <div className="mb-4 flex items-start justify-between">
-          <h3 id="sub-warning-title" className="font-display text-lg font-semibold text-ink">You already have unlimited access</h3>
-          <button
-            onClick={() => setShowSubscriptionWarning(false)}
-            aria-label="Close"
-            className="rounded-lg p-1 text-ink-faint transition-colors hover:bg-white/[0.05] hover:text-ink"
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
-        </div>
-        <p className="mb-6 text-sm leading-relaxed text-ink-muted">
-          Your <span className="font-semibold text-ink">{activePlanInfo?.name}</span> plan is active until{' '}
-          {activePlanInfo?.expiresAt}, so you don't need another plan until then.
+        <ModalHeader id="sub-warning-title" icon={ShieldCheckIcon} tone="good" onClose={() => setShowSubscriptionWarning(false)}>
+          You already have unlimited
+        </ModalHeader>
+        <p className="t-body mb-6">
+          Your <span className="font-medium text-ink">{activePlanInfo?.name}</span> plan is active until{' '}
+          {activePlanInfo?.expiresAt}, so there is nothing to buy until then.
         </p>
-        <Button variant="secondary" onClick={() => setShowSubscriptionWarning(false)} className="w-full">
-          Got it
-        </Button>
+        <div className="flex justify-end">
+          <Button variant="secondary" onClick={() => setShowSubscriptionWarning(false)} className="w-full sm:w-auto">Got it</Button>
+        </div>
       </Modal>
     </div>
   );

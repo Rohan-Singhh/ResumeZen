@@ -1,39 +1,38 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { hoverLift, tapPress } from '../../utils/motion';
+import { hoverLift } from '../../utils/motion';
 
 /**
- * Card — the single surface primitive for the dashboard.
+ * Card — the single surface primitive.
  *
- * Neutral-enterprise surface: flat near-black fill, one crisp border, no glow,
- * no decorative blur blob. Rendered as motion.div so callers can pass entrance
- * variants (initial/animate/variants) straight through; `hover` adds a spring
- * lift + border-lighten for clickable cards.
+ * A flat ink fill, one hairline, a lit top edge. No glow, no blur. Rendered as
+ * motion.div so callers can pass entrance variants straight through.
  *
  * Props:
- *   hover    — spring hover-lift + border-lighten (for clickable cards)
+ *   hover    — lifts and brightens its border on hover (clickable cards)
  *   padded   — apply default padding (default true)
+ *   tone     — default | raised (one step lighter, for nested or featured cards)
  *   className— extra classes, appended last so callers can override
  *   ...rest  — forwarded to motion.div (including any motion props)
  */
-export default function Card({
-  hover = false,
-  padded = true,
-  className = '',
-  children,
-  ...rest
-}) {
-  const hoverProps = hover
-    ? { whileHover: hoverLift, whileTap: tapPress }
-    : {};
+const TONES = {
+  default: 'bg-surface',
+  raised: 'bg-surface-raised',
+};
 
+const Card = React.forwardRef(function Card(
+  { hover = false, padded = true, tone = 'default', className = '', children, ...rest },
+  ref
+) {
   return (
     <motion.div
-      {...hoverProps}
+      ref={ref}
+      whileHover={hover ? hoverLift : undefined}
       className={[
-        'rounded-xl border border-line bg-surface',
+        'rounded-lg border border-line shadow-e1',
+        TONES[tone] || TONES.default,
         padded ? 'p-5 sm:p-6' : '',
-        hover ? 'transition-colors hover:border-line-strong' : '',
+        hover ? 'transition-colors duration-base hover:border-line-strong' : '',
         className,
       ].filter(Boolean).join(' ')}
       {...rest}
@@ -41,4 +40,6 @@ export default function Card({
       {children}
     </motion.div>
   );
-}
+});
+
+export default Card;

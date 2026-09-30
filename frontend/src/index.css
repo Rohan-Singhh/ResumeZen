@@ -2,128 +2,257 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+   ResumeZen — "Ink & Paper"
+   Raw values live in tailwind.config.js. This file holds what Tailwind
+   can't express as a token: base element styles, the type scale, and a few
+   textures.
+   ───────────────────────────────────────────────────────────── */
+
 :root {
-  font-family: 'Outfit', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
   color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Primary accent — single source, mirrors tailwind `primary` */
-  --color-primary: #7c6cf6;
-  --color-primary-dark: #5b4bd4;
-  --color-primary-light: #a99cf9;
+  /* Height of the fixed marketing navbar; sections offset anchors by it */
+  --nav-h: 72px;
 }
 
-/* Smooth in-page anchor scrolling (navbar + footer links) */
-html {
-  scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
+@layer base {
   html {
-    scroll-behavior: auto;
+    scroll-behavior: smooth;
+    background-color: theme('colors.surface.void');
+    /* Scroll-linked animations measure their targets against the scroller,
+       which needs to be a positioned box */
+    position: relative;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background-color: theme('colors.surface.void');
+    color: theme('colors.ink.DEFAULT');
+    font-family: theme('fontFamily.sans');
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background-color: rgba(224, 71, 44, 0.38);
+    color: theme('colors.ink.DEFAULT');
+  }
+
+  /* One focus treatment for every interactive element. Components don't
+     carry their own ring classes. */
+  :focus-visible {
+    outline: 2px solid theme('colors.ink.DEFAULT');
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Smooth color/shadow changes on interactive elements. Deliberately NOT
+     `transition: all`: framer-motion drives `transform` on buttons every frame
+     (whileHover / whileTap / entrance), and a CSS transition on transform makes
+     each of those frames ease toward its target — hovers and entrances lag and
+     wobble instead of tracking the spring. */
+  a, button, input, select, textarea, [role="button"], [role="tab"] {
+    transition-property: color, background-color, border-color, box-shadow, opacity;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  /* Land landing-page sections below the fixed navbar, for both the navbar
+     buttons (scrollIntoView) and plain #anchor links in the footer. */
+  section[id], #home {
+    scroll-margin-top: calc(var(--nav-h) + 8px);
+  }
+
+  /* Thin, warm scrollbars everywhere */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(239, 233, 220, 0.14) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(239, 233, 220, 0.12);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(239, 233, 220, 0.24);
+    border: 3px solid transparent;
+    background-clip: padding-box;
   }
 }
 
-/* Land landing-page sections below the fixed 80px navbar, for both the navbar
-   buttons (scrollIntoView) and plain #anchor links in the footer. */
-#home,
-#features,
-#how-it-works,
-#pricing,
-#reviews,
-#faq,
-#support {
-  scroll-margin-top: 88px;
+@layer components {
+  /* ── Layout ───────────────────────────────────────────── */
+  .shell {
+    @apply mx-auto w-full max-w-shell px-5 sm:px-8 lg:px-10;
+  }
+  .section {
+    @apply relative py-20 sm:py-28 lg:py-32;
+  }
+
+  /* ── Type scale ───────────────────────────────────────────
+     Display + headings: Fraunces, light weights, tight tracking.
+     UI + body: Geist. Labels + data: Geist Mono. */
+  .t-display,
+  .t-h1,
+  .t-h2,
+  .t-h3,
+  .t-num {
+    font-family: theme('fontFamily.display');
+    font-optical-sizing: auto;
+    font-variation-settings: 'SOFT' 40;
+    font-weight: 400;
+    color: theme('colors.ink.DEFAULT');
+    text-wrap: balance;
+  }
+  .t-display {
+    font-size: clamp(2.85rem, 7.4vw, 6.25rem);
+    line-height: 0.96;
+    letter-spacing: -0.04em;
+    font-weight: 350;
+  }
+  .t-h1 {
+    font-size: clamp(2.2rem, 4.6vw, 3.75rem);
+    line-height: 1.02;
+    letter-spacing: -0.032em;
+    font-weight: 350;
+  }
+  .t-h2 {
+    font-size: clamp(1.7rem, 2.6vw, 2.25rem);
+    line-height: 1.1;
+    letter-spacing: -0.024em;
+  }
+  .t-h3 {
+    font-size: 1.375rem;
+    line-height: 1.2;
+    letter-spacing: -0.018em;
+  }
+  /* Large numerals: scores, prices */
+  .t-num {
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  /* Italic emphasis inside a serif heading — replaces gradient text */
+  .t-em {
+    font-style: italic;
+    font-variation-settings: 'SOFT' 100;
+    color: theme('colors.primary.light');
+  }
+
+  /* Panel / card titles inside the app */
+  .t-title {
+    font-family: theme('fontFamily.sans');
+    font-size: 0.9375rem;
+    line-height: 1.35;
+    font-weight: 550;
+    letter-spacing: -0.006em;
+    color: theme('colors.ink.DEFAULT');
+  }
+  .t-lead {
+    font-size: clamp(1.0625rem, 1.35vw, 1.25rem);
+    line-height: 1.55;
+    color: theme('colors.ink.muted');
+    text-wrap: pretty;
+  }
+  .t-body {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: theme('colors.ink.muted');
+    text-wrap: pretty;
+  }
+  .t-small {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: theme('colors.ink.muted');
+  }
+  /* Eyebrows, column labels, field captions */
+  .t-label {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.6875rem;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: theme('colors.ink.faint');
+  }
+  /* Timestamps, counts, file sizes */
+  .t-meta {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.75rem;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+    color: theme('colors.ink.faint');
+  }
+
+  /* ── Skeleton ─────────────────────────────────────────────
+     The sweep is a translated pseudo-element: transform only, so a page of
+     placeholders costs compositing, not paint. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: theme('borderRadius.DEFAULT');
+    background-color: rgba(239, 233, 220, 0.06);
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(239, 233, 220, 0.07), transparent);
+    animation: sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  /* Ruled hairline that fades at both ends — section dividers */
+  .rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(239, 233, 220, 0.14) 18%, rgba(239, 233, 220, 0.14) 82%, transparent);
+  }
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: #09090b;
-  color: #f8fafc;
-}
+@layer utilities {
+  /* Faint paper fibre over the whole app. A small pre-rasterised noise tile
+     repeated at plain opacity: no blend mode, no filter on a large area. */
+  .grain::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0.055;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 0.97  0 0 0 0 0.9  0 0 0 0.9 -0.2'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
 
-/* Smooth transitions for navigation */
-.page-transition-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
+  /* Same fibre, darker, for paper sheets */
+  .paper-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.28  0 0 0 0 0.18  0 0 0 0.5 -0.17'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+  }
 
-/* Smooth color/shadow changes on interactive elements. Deliberately NOT
-   `transition: all`: framer-motion drives `transform` on buttons every frame
-   (whileHover / whileTap / entrance), and a CSS transition on transform makes
-   each of those frames ease toward its target — hovers and entrances lag and
-   wobble instead of tracking the spring. */
-a, button, input, select, textarea {
-  transition-property: color, background-color, border-color, box-shadow, opacity;
-  transition-duration: 0.2s;
-  transition-timing-function: ease-in-out;
-}
-
-/* Utility classes for primary colors */
-.text-primary {
-  color: var(--color-primary);
-}
-
-.text-primary-dark {
-  color: var(--color-primary-dark);
-}
-
-.text-primary-light {
-  color: var(--color-primary-light);
-}
-
-.bg-primary {
-  background-color: var(--color-primary);
-}
-
-.bg-primary-dark {
-  background-color: var(--color-primary-dark);
-}
-
-.bg-primary-light {
-  background-color: var(--color-primary-light);
-}
-
-.border-primary {
-  border-color: var(--color-primary);
-}
-
-.hover\:bg-primary-dark:hover {
-  background-color: var(--color-primary-dark);
-}
-
-.focus\:ring-primary:focus {
-  --tw-ring-color: var(--color-primary);
-}
-
-.from-primary {
-  --tw-gradient-from: var(--color-primary);
-}
-
-.bg-primary\/10 {
-  background-color: rgba(124, 108, 246, 0.1);
-}
-
-/* Dashboard specific styles */
-.dashboard-sidebar {
-  transition: width 0.3s ease-in-out;
-}
-
-.dashboard-content {
-  transition: margin-left 0.3s ease-in-out;
-}
-
-/* Smooth loading transitions */
-.loading-fade-in {
-  animation: fadeIn 0.5s ease-in-out;
+  /* Hide a scrollbar on horizontally scrolling rows (tabs, chips) */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @keyframes fadeIn {
@@ -131,254 +260,13 @@ a, button, input, select, textarea {
   to { opacity: 1; }
 }
 
-/* Prevent FOUC (Flash of Unstyled Content) */
-.no-fouc {
-  visibility: visible;
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-
-.fouc {
-  visibility: hidden;
-  opacity: 0;
-}
-
-/* Phone Input Custom Styles */
-.react-tel-input .form-control {
-  @apply w-full h-14 px-12 rounded-xl border-0 bg-white text-gray-900 text-lg transition-all duration-300;
-  box-shadow: 0 0 0 1px rgb(229 231 235);
-}
-
-.react-tel-input .form-control:hover {
-  box-shadow: 0 0 0 1px rgb(209 213 219);
-}
-
-.react-tel-input .form-control:focus {
-  @apply outline-none shadow-none;
-}
-
-.react-tel-input .selected-flag {
-  @apply bg-white rounded-l-xl border-0 transition-colors duration-200;
-  width: 45px;
-}
-
-.react-tel-input .selected-flag:hover,
-.react-tel-input .selected-flag:focus {
-  @apply bg-gray-50;
-}
-
-.react-tel-input .country-list {
-  @apply bg-white text-gray-900 shadow-lg border-0 rounded-xl overflow-hidden;
-  margin-top: 8px;
-}
-
-.react-tel-input .country-list .search {
-  @apply sticky top-0 z-10 m-0 p-3;
-  background: white;
-}
-
-.react-tel-input .country-list .search-box {
-  @apply w-full px-3 py-2 text-base border border-gray-200 rounded-lg;
-  background: white;
-}
-
-.react-tel-input .country-list .country {
-  @apply px-4 py-2 transition-colors duration-200;
-}
-
-.react-tel-input .country-list .country:hover,
-.react-tel-input .country-list .country.highlight {
-  @apply bg-gray-50;
-}
-
-.react-tel-input .country-list .country-name {
-  @apply text-sm text-gray-700;
-}
-
-.react-tel-input .country-list .dial-code {
-  @apply text-sm text-gray-500;
-}
-
-.phone-input-container {
-  @apply w-full;
-}
-
-.phone-input-container .flag-dropdown {
-  @apply border-0;
-}
-
-/* Emoji flag support */
-.country-flag {
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-/* Additional react-phone-input-2 styles */
-.react-tel-input .form-control {
-  @apply bg-white text-gray-900 border-gray-200;
-  color: #000 !important;
-  height: 56px !important;
-  width: 100% !important;
-  font-size: 16px !important;
-  padding-left: 70px !important;
-}
-
-.react-tel-input .selected-flag {
-  @apply bg-white;
-  background-color: white !important;
-  width: 60px !important;
-  padding: 0 0 0 15px !important;
-}
-
-.react-tel-input .flag-dropdown {
-  background-color: white !important;
-  border-right: 1px solid #e5e7eb !important;
-}
-
-.react-tel-input .country-list {
-  @apply bg-white text-gray-900;
-  width: 300px !important;
-}
-
-.react-tel-input .country-list .country {
-  display: flex !important;
-  align-items: center !important;
-  padding: 12px 10px !important;
-}
-
-.react-tel-input .country-list .country .country-name {
-  margin-left: 10px !important;
-  font-size: 14px !important;
-}
-
-.react-tel-input .country-list .country .dial-code {
-  color: #6b7280 !important;
-  font-size: 13px !important;
-}
-
-.react-tel-input .country-list .country.highlight,
-.react-tel-input .country-list .country:hover {
-  @apply bg-gray-50;
-}
-
-.react-tel-input .flag-dropdown.open .selected-flag {
-  @apply bg-gray-50;
-  background-color: #f9fafb !important;
-}
-
-.react-tel-input .selected-flag:hover,
-.react-tel-input .selected-flag:focus {
-  @apply bg-gray-50;
-  background-color: #f9fafb !important;
-}
-
-.react-tel-input .selected-flag .flag {
-  transform: scale(1.2);
-  margin-right: 8px !important;
-}
-
-.react-tel-input .selected-flag .arrow {
-  left: 38px !important;
-}
-
-/* Add special handling for logout */
-.logout-in-progress * {
-  animation: none !important;
-  transition: none !important;
-}
-
-/* Make sure loading overlay is hidden during logout */
-.logout-in-progress #loading-overlay,
-.logout-in-progress .loading-element,
-.logout-in-progress .overlay {
-  display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Obsidian Studio — design token layer
-   One accent (indigo-violet), warm ivory type, near-black void.
-   Everything below is consumed by Login + Dashboard surfaces.
-   ───────────────────────────────────────────────────────────── */
-:root {
-  --ink-void: #08080c;
-  --ink-surface: rgba(255, 255, 255, 0.04);
-  --ink-border: rgba(255, 255, 255, 0.09);
-  --ivory: #f4f2ec;
-  --ink-muted: #a1a1ae;
-  --accent: #7c6cf6;
-  --accent-deep: #5b4bd4;
-}
-
-@layer utilities {
-  /* Frosted glass surface — layered translucency with a faint top-lit sheen */
-  .glass-panel {
-    background: linear-gradient(
-      160deg,
-      rgba(255, 255, 255, 0.055),
-      rgba(255, 255, 255, 0.015) 55%,
-      rgba(124, 108, 246, 0.03)
-    );
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    border: 1px solid var(--ink-border);
-    box-shadow:
-      0 24px 60px -24px rgba(0, 0, 0, 0.65),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-
-  /* Physical hover lift — cards rise toward the user */
-  .lift {
-    transition:
-      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-      border-color 0.3s ease;
-    will-change: transform;
-  }
-  .lift:hover {
-    transform: translateY(-4px);
-    border-color: rgba(124, 108, 246, 0.28);
-    box-shadow:
-      0 30px 60px -18px rgba(0, 0, 0, 0.6),
-      0 0 0 1px rgba(124, 108, 246, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  }
-}
-
-/* Film grain — procedural SVG turbulence tile, blended over the scene.
-   This is what separates "photographed" from "generated". */
-.grain-overlay {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
-  background-size: 160px 160px;
-  mix-blend-mode: overlay;
-  opacity: 0.05;
-}
-
-/* Tasteful scrollbars for the dashboard main pane */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  border: 3px solid transparent;
-  background-clip: padding-box;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 108, 246, 0.35);
-  border: 3px solid transparent;
-  background-clip: padding-box;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .lift,
-  .lift:hover {
-    transition: none;
-    transform: none;
+  html {
+    scroll-behavior: auto;
+  }
+  .skeleton::after,
+  .animate-drift,
+  .animate-sweep {
+    animation: none;
   }
 }

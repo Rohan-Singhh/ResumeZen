@@ -1,16 +1,25 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import {
-  CheckCircleIcon, UserCircleIcon, LinkIcon, BriefcaseIcon,
-  ShieldCheckIcon, IdentificationIcon, CameraIcon, TrashIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
-import Modal from '../../components/ui/Modal';
+import {
+  CameraIcon,
+  TrashIcon,
+  ExclamationCircleIcon,
+  ExclamationTriangleIcon,
+  ArrowRightStartOnRectangleIcon,
+} from '@heroicons/react/24/outline';
+import { useAuth } from '../../context/AuthContext';
+import Modal, { ModalHeader } from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
+import Avatar from '../../components/ui/Avatar';
+import Spinner from '../../components/ui/Spinner';
+import PageHeader from '../../components/ui/PageHeader';
+import Field, { Input, Textarea } from '../../components/ui/Field';
+import { useToast } from '../../components/ui/Toast';
+import { ease, springSoft, duration } from '../../utils/motion';
 
-// Form shape derived from the user record — also what Cancel resets to
+// Form shape derived from the user record — also what Discard resets to
 const toForm = (user) => ({
   fullName: user?.name || '',
   email: user?.email || '',
@@ -24,19 +33,47 @@ const toForm = (user) => ({
   avatarUrl: user?.avatarUrl || ''
 });
 
+const isValidPhone = (value) => /^\+?\d*$/.test(value);
+const isValidUrl = (value) => {
+  if (!value) return true;
+  try { new URL(value); return true; } catch { return false; }
+};
+const isValidGradYear = (value) => /^[\d\syearsxperience/]*$/i.test(value);
+
+const URL_FIELDS = ['linkedin', 'github', 'website'];
+
+/**
+ * One settings group: what it is on the left, the controls on the right.
+ * Stacks on narrow screens.
+ */
+function Group({ title, description, children }) {
+  return (
+    <section className="grid grid-cols-1 gap-x-12 gap-y-5 border-t border-line py-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+      <div>
+        <h2 className="t-title">{title}</h2>
+        {description && <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-faint">{description}</p>}
+      </div>
+      <div className="min-w-0 max-w-2xl">{children}</div>
+    </section>
+  );
+}
+
 export default function DashboardProfileEdit() {
   const { currentUser, setCurrentUser, updateProfile, logout } = useAuth();
-  const [formData, setFormData] = useState(() => toForm(currentUser));
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const toast = useToast();
 
-  const [toastMessage, setToastMessage] = useState('');
+  const [formData, setFormData] = useState(() => toForm(currentUser));
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const [error, setError] = useState('');
 
   const fileInputRef = useRef(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     if (currentUser) setFormData(toForm(currentUser));
@@ -44,49 +81,65 @@ export default function DashboardProfileEdit() {
 
   const savedForm = useMemo(() => toForm(currentUser), [currentUser]);
   const isDirty = JSON.stringify(formData) !== JSON.stringify(savedForm);
+  const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
 
-  // The Cancel button used to do nothing at all
-  const handleCancel = () => {
+  const handleDiscard = () => {
     setFormData(savedForm);
+    setFieldErrors({});
     setError('');
   };
 
-  const isValidPhone = (value) => /^\+?\d*$/.test(value);
-  const isValidUrl = (value) => {
-    if (!value) return true;
-    try { new URL(value); return true; } catch { return false; }
-  };
-  const isValidGradYear = (value) => /^[\d\syearsxperience\/]*$/i.test(value);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    // Characters that can never be valid are simply not accepted
     if (name === 'mobileNumber' && !isValidPhone(value)) return;
     if (name === 'graduationYear' && !isValidGradYear(value)) return;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear a field's error as soon as the user edits it again
+    if (fieldErrors[name]) setFieldErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const trimOnBlur = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value.trim() }));
+  };
+
+  const validateUrlOnBlur = (e) => {
+    const { name, value } = e.target;
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: isValidUrl(value) ? '' : 'Enter a full address, starting with https://',
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Re-check the links: a field can be submitted without ever being blurred
+    const urlErrors = Object.fromEntries(
+      URL_FIELDS.map((name) => [name, isValidUrl(formData[name]) ? '' : 'Enter a full address, starting with https://'])
+    );
+    if (Object.values(urlErrors).some(Boolean)) {
+      setFieldErrors(prev => ({ ...prev, ...urlErrors }));
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
     try {
       const result = await updateProfile(formData);
       if (result.success) {
-        setSubmitSuccess(true);
-        setTimeout(() => setSubmitSuccess(false), 3000);
+        setJustSaved(true);
+        toast('Changes saved');
+        setTimeout(() => setJustSaved(false), 1600);
       } else {
-        setError(result.error || 'Failed to update profile');
+        setError(result.error || "Your changes weren't saved. Please try again.");
       }
     } catch {
-      setError('Failed to update profile. Please try again.');
+      setError("Your changes weren't saved. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const showToast = (message) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(''), 3000);
   };
 
   const handleAvatarUpload = async (e) => {
@@ -94,13 +147,13 @@ export default function DashboardProfileEdit() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      setError('Image must be less than 2MB');
+      setError('That image is over 2 MB. Choose a smaller one.');
       return;
     }
 
     setAvatarUploading(true);
     setError('');
-    
+
     try {
       const formDataUpload = new FormData();
       formDataUpload.append('avatar', file);
@@ -114,236 +167,183 @@ export default function DashboardProfileEdit() {
         if (setCurrentUser) {
           setCurrentUser(prev => ({ ...prev, avatarUrl: response.data.avatarUrl }));
         }
-        showToast('Avatar updated successfully!');
+        toast('Photo updated');
       }
     } catch (err) {
       console.error(err);
-      setError('Failed to upload avatar. Please try again.');
+      setError("The photo didn't upload. Please try again.");
     } finally {
       setAvatarUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleDeleteAccount = () => {
-    setShowDeleteModal(true);
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate('/', { replace: true });
+    } catch {
+      setIsLoggingOut(false);
+    }
   };
 
   const confirmDelete = async () => {
     setIsDeleting(true);
     try {
-      // The backend now securely deletes both MongoDB data and the Firebase user
+      // The backend deletes both the MongoDB data and the Firebase user
       await axios.delete('/api/profile');
       logout();
     } catch (err) {
       console.error(err);
-      setError('Failed to delete account completely. Please contact support.');
+      setError("Your account couldn't be deleted completely. Please contact support.");
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
   };
 
-  const inputClass = "w-full bg-white/5 border border-line rounded-lg px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-primary focus:bg-white/10 focus:ring-2 focus:ring-primary/20 outline-none transition-colors";
-  const labelClass = "block text-xs font-medium text-ink-muted mb-2 uppercase tracking-wider";
+  const bind = (name) => ({ name, value: formData[name], onChange: handleInputChange });
 
   return (
-    <div className="space-y-8 w-full">
-      {/* Header */}
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">Profile</h1>
-        <p className="mt-1.5 text-sm text-ink-muted">Manage your personal information, career details, and web links.</p>
-      </div>
+    <div>
+      <PageHeader title="Profile" description="Your details, links and account." />
 
-      {/* Alerts */}
       <AnimatePresence>
         {error && (
-          <motion.div role="alert" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm font-medium text-red-400">
-            {error}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {toastMessage && (
           <motion.div
-            role="status"
-            initial={{ opacity: 0, y: 24, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: 24, x: '-50%' }}
-            className="fixed bottom-10 left-1/2 z-50 rounded-full border border-line bg-surface-raised px-6 py-3 text-sm font-medium text-ink shadow-2xl"
+            role="alert"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: ease.out }}
+            className="overflow-hidden"
           >
-            {toastMessage}
+            <div className="mb-6 flex items-start gap-2.5 rounded-md border border-bad/25 bg-bad/10 px-4 py-3">
+              <ExclamationCircleIcon className="mt-px h-5 w-5 flex-shrink-0 text-bad" />
+              <p className="text-sm leading-relaxed text-bad">{error}</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Form */}
-      <motion.form 
-        onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="bg-surface border border-line rounded-xl overflow-hidden relative w-full"
-      >
-
-        {/* --- GENERAL SECTION --- */}
-        <div className="p-6 sm:p-10 relative z-10 border-b border-white/5">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5">
-            <IdentificationIcon className="h-5 w-5 text-ink-muted" />
-            <h3 className="font-display text-lg font-semibold text-ink">General information</h3>
+      <form onSubmit={handleSubmit} noValidate>
+        <Group title="Photo" description="Shown in the sidebar. A square image of at least 300 px works best.">
+          <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              aria-label="Change profile photo"
+              className="group relative flex-shrink-0 rounded-full"
+            >
+              <Avatar user={{ name: formData.fullName, avatarUrl: formData.avatarUrl }} size="h-20 w-20" text="text-2xl" />
+              <span className={`absolute inset-0 flex items-center justify-center rounded-full bg-surface-sunken/75 text-ink transition-opacity duration-base ${avatarUploading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'}`}>
+                {avatarUploading ? <Spinner size={20} /> : <CameraIcon className="h-5 w-5" />}
+              </span>
+            </button>
+            <div>
+              <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} loading={avatarUploading}>
+                Upload photo
+              </Button>
+              <p className="t-meta mt-2.5">PNG, JPG or WebP · up to 2 MB</p>
+            </div>
           </div>
+        </Group>
 
-          <div className="mb-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/png, image/jpeg, image/webp" className="hidden" />
-            <div className="relative group shrink-0">
-              <div className="h-24 w-24 rounded-full bg-surface-raised border border-line overflow-hidden flex items-center justify-center">
-                {formData.avatarUrl ? (
-                  <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <UserCircleIcon className="h-16 w-16 text-ink-faint" />
-                )}
+        <Group title="Personal" description="How you appear on your account.">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Full name">
+              {(p) => <Input {...p} {...bind('fullName')} type="text" autoComplete="name" onBlur={trimOnBlur} placeholder="Your name" />}
+            </Field>
+            <Field label="Phone">
+              {(p) => <Input {...p} {...bind('mobileNumber')} type="tel" inputMode="tel" autoComplete="tel" placeholder="+919876543210" />}
+            </Field>
+            <Field label="Email" hint="Comes from your Google account and can't be changed here." className="sm:col-span-2">
+              {(p) => <Input {...p} type="email" value={formData.email} disabled readOnly />}
+            </Field>
+          </div>
+        </Group>
+
+        <Group title="Work" description="Used to greet you and to frame job matches.">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Current role">
+              {(p) => <Input {...p} {...bind('occupation')} type="text" autoComplete="organization-title" onBlur={trimOnBlur} placeholder="Backend Engineer" />}
+            </Field>
+            <Field label="Experience or graduation year" hint="For example “5 years” or “2022”.">
+              {(p) => <Input {...p} {...bind('graduationYear')} type="text" placeholder="3 years" />}
+            </Field>
+          </div>
+        </Group>
+
+        <Group title="Links" description="Full addresses, starting with https://">
+          <div className="grid gap-5">
+            <Field label="LinkedIn" error={fieldErrors.linkedin}>
+              {(p) => <Input {...p} {...bind('linkedin')} type="url" inputMode="url" onBlur={validateUrlOnBlur} placeholder="https://linkedin.com/in/you" />}
+            </Field>
+            <Field label="GitHub" error={fieldErrors.github}>
+              {(p) => <Input {...p} {...bind('github')} type="url" inputMode="url" onBlur={validateUrlOnBlur} placeholder="https://github.com/you" />}
+            </Field>
+            <Field label="Portfolio or website" error={fieldErrors.website}>
+              {(p) => <Input {...p} {...bind('website')} type="url" inputMode="url" onBlur={validateUrlOnBlur} placeholder="https://yoursite.com" />}
+            </Field>
+          </div>
+        </Group>
+
+        <Group title="About" description="A few lines on what you do and what you are looking for.">
+          <Field label="Bio">
+            {(p) => <Textarea {...p} {...bind('bio')} rows={4} onBlur={trimOnBlur} placeholder="Payments engineer, three years in. Looking for a platform role." />}
+          </Field>
+        </Group>
+
+        {/* Save bar: only there when there is something to save, and it stays
+            in reach however long the form is */}
+        <AnimatePresence>
+          {isDirty && (
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0, transition: springSoft }}
+              exit={{ opacity: 0, y: 16, transition: { duration: duration.base, ease: ease.in } }}
+              className="pointer-events-none sticky bottom-[5.25rem] z-20 flex justify-center pb-1 lg:bottom-6"
+            >
+              <div className="pointer-events-auto flex w-full max-w-xl items-center gap-3 rounded-lg border border-line-strong bg-surface-overlay py-2.5 pl-4 pr-2.5 shadow-e3">
+                <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-warn" aria-hidden="true" />
+                <p className="min-w-0 flex-1 truncate text-sm text-ink" role="status">
+                  {hasFieldErrors ? 'Fix the highlighted fields to save' : 'Unsaved changes'}
+                </p>
+                <Button type="button" variant="ghost" size="sm" onClick={handleDiscard} disabled={isSubmitting}>Discard</Button>
+                <Button type="submit" size="sm" loading={isSubmitting} success={justSaved} disabled={hasFieldErrors}>Save changes</Button>
               </div>
-              <button 
-                type="button" 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={avatarUploading}
-                className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer disabled:opacity-100"
-              >
-                {avatarUploading ? (
-                  <div className="h-6 w-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <CameraIcon className="h-6 w-6 text-white mb-1" />
-                    <span className="text-[10px] text-white font-medium uppercase tracking-wider">Change</span>
-                  </>
-                )}
-              </button>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-ink mb-1">Profile photo</h4>
-              <p className="text-xs text-ink-faint mb-3 max-w-sm">We recommend an image of at least 300x300. Max size 2MB.</p>
-              <button 
-                type="button" 
-                onClick={() => fileInputRef.current?.click()} 
-                disabled={avatarUploading}
-                className="text-xs font-semibold text-primary hover:text-primary-light transition-colors px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 hover:bg-primary/20 disabled:opacity-50"
-              >
-                {avatarUploading ? 'Uploading...' : 'Upload Photo'}
-              </button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-              <label htmlFor="fullName" className={labelClass}>Full Name</label>
-              <input type="text" id="fullName" name="fullName" value={formData.fullName} onChange={handleInputChange} onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))} className={inputClass} placeholder="John Doe" />
-            </div>
-            <div>
-              <label htmlFor="email" className={labelClass}>Email Address</label>
-              <input type="email" id="email" name="email" value={formData.email} className={`${inputClass} text-ink-faint cursor-not-allowed bg-black/20`} disabled />
-            </div>
-            <div>
-              <label htmlFor="mobileNumber" className={labelClass}>Phone Number</label>
-              <input type="text" id="mobileNumber" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} className={inputClass} placeholder="+91 98765 43210" />
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </form>
 
-        {/* --- PROFESSIONAL SECTION --- */}
-        <div className="p-6 sm:p-10 relative z-10 border-b border-white/5">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5">
-            <BriefcaseIcon className="h-5 w-5 text-ink-muted" />
-            <h3 className="font-display text-lg font-semibold text-ink">Professional background</h3>
+      <Group title="Account" description="You sign in with Google; there is no password to manage.">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-ink">Signed in as</p>
+            <p className="truncate text-[0.8125rem] text-ink-muted">{currentUser?.email}</p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-            <div>
-              <label htmlFor="occupation" className={labelClass}>Current Role / Occupation</label>
-              <input type="text" id="occupation" name="occupation" value={formData.occupation} onChange={handleInputChange} onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))} className={inputClass} placeholder="e.g. Senior Software Engineer" />
-            </div>
-            <div>
-              <label htmlFor="graduationYear" className={labelClass}>Experience / Graduation</label>
-              <input type="text" id="graduationYear" name="graduationYear" value={formData.graduationYear} onChange={handleInputChange} onBlur={e => { if (!isValidGradYear(e.target.value)) setError('Invalid format'); else setError(''); }} className={inputClass} placeholder="e.g. 5 years OR 2022" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 mb-6 pt-6 border-t border-white/5">
-            <LinkIcon className="h-5 w-5 text-ink-muted" />
-            <h4 className="font-display text-base font-semibold text-ink">Web links</h4>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-            <div>
-              <label htmlFor="linkedin" className={labelClass}>LinkedIn</label>
-              <input type="url" id="linkedin" name="linkedin" value={formData.linkedin} onChange={handleInputChange} onBlur={e => { if (!isValidUrl(e.target.value)) setError('Invalid LinkedIn URL'); else setError(''); }} className={inputClass} placeholder="https://linkedin.com/in/..." />
-            </div>
-            <div>
-              <label htmlFor="github" className={labelClass}>GitHub</label>
-              <input type="url" id="github" name="github" value={formData.github} onChange={handleInputChange} onBlur={e => { if (!isValidUrl(e.target.value)) setError('Invalid GitHub URL'); else setError(''); }} className={inputClass} placeholder="https://github.com/..." />
-            </div>
-            <div>
-              <label htmlFor="website" className={labelClass}>Portfolio / Website</label>
-              <input type="url" id="website" name="website" value={formData.website} onChange={handleInputChange} onBlur={e => { if (!isValidUrl(e.target.value)) setError('Invalid URL'); else setError(''); }} className={inputClass} placeholder="https://yourwebsite.com" />
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-white/5">
-            <label htmlFor="bio" className={labelClass}>Professional Bio</label>
-            <textarea id="bio" name="bio" value={formData.bio} onChange={handleInputChange} onBlur={e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value.trim() }))} rows="4" className={`${inputClass} resize-y min-h-[100px]`} placeholder="Tell us a little bit about yourself and your career goals..." />
-          </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 border-t border-line bg-black/20 p-5">
-          {/* Inline confirmation instead of the old full-screen overlay */}
-          <AnimatePresence>
-            {submitSuccess && (
-              <motion.span
-                role="status"
-                initial={{ opacity: 0, x: 6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                className="mr-auto flex items-center gap-1.5 text-sm font-medium text-emerald-400"
-              >
-                <CheckCircleIcon className="h-4 w-4" /> Changes saved
-              </motion.span>
-            )}
-          </AnimatePresence>
-          <Button type="button" variant="ghost" onClick={handleCancel} disabled={!isDirty || isSubmitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={!isDirty || isSubmitting} className="min-w-[130px]">
-            {isSubmitting ? (
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-            ) : (
-              'Save changes'
-            )}
+          <Button variant="secondary" onClick={handleLogout} loading={isLoggingOut} className="flex-shrink-0 self-start sm:self-auto">
+            <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
+            Log out
           </Button>
         </div>
-      </motion.form>
+      </Group>
 
-      {/* --- SECURITY & DANGER ZONE SECTION --- */}
-      <section className="w-full rounded-xl border border-red-500/20 bg-surface p-6 sm:p-8">
-        <div className="mb-5 flex items-center gap-3">
-          <ShieldCheckIcon className="h-5 w-5 text-red-400" />
-          <h3 className="font-display text-lg font-semibold text-ink">Danger zone</h3>
-        </div>
-
-        <div className="flex flex-col items-start justify-between gap-5 border-t border-line pt-5 sm:flex-row sm:items-center">
-          <div>
-            <h4 className="text-sm font-semibold text-red-400">Delete account</h4>
-            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink-muted">
-              Permanently removes your account, uploaded resumes and every analysis. This can't be undone.
-            </p>
-          </div>
-          <Button variant="danger" onClick={handleDeleteAccount} disabled={isDeleting} className="flex-shrink-0">
+      <Group title="Delete account" description="This can't be undone.">
+        <div className="flex flex-col gap-4 rounded-lg border border-bad/20 bg-bad/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-relaxed text-ink-muted">
+            Permanently removes your account, every uploaded resume and every report.
+          </p>
+          <Button variant="danger" onClick={() => setShowDeleteModal(true)} disabled={isDeleting} className="flex-shrink-0 self-start sm:self-auto">
             <TrashIcon className="h-4 w-4" />
             Delete account
           </Button>
         </div>
-      </section>
+      </Group>
 
-      {/* Delete account confirmation */}
       <Modal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -351,25 +351,18 @@ export default function DashboardProfileEdit() {
         labelledBy="delete-account-title"
         maxWidth="max-w-sm"
       >
-        <div className="mb-4 flex items-center gap-3">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10">
-            <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
-          </span>
-          <h3 id="delete-account-title" className="font-display text-lg font-semibold text-ink">Delete account?</h3>
-        </div>
-        <p className="mb-6 text-sm leading-relaxed text-ink-muted">
-          This permanently deletes your account, resumes, and analysis history. This action cannot be undone.
+        <ModalHeader id="delete-account-title" icon={ExclamationTriangleIcon} tone="bad">
+          Delete your account?
+        </ModalHeader>
+        <p className="t-body mb-6">
+          Your account, resumes and reports will be deleted for good. This can&apos;t be undone.
         </p>
-        <div className="flex gap-3">
+        <div className="flex flex-col-reverse gap-2.5 sm:flex-row">
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)} disabled={isDeleting} className="flex-1">
-            Cancel
+            Keep my account
           </Button>
-          <Button variant="danger" onClick={confirmDelete} disabled={isDeleting} className="flex-1">
-            {isDeleting ? (
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-red-500/30 border-t-red-500" />
-            ) : (
-              'Delete account'
-            )}
+          <Button variant="danger" onClick={confirmDelete} loading={isDeleting} className="flex-1">
+            Delete account
           </Button>
         </div>
       </Modal>

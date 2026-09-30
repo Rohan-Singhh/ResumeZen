@@ -1,3 +1,11 @@
+/**
+ * ResumeZen design tokens — "Ink & Paper".
+ *
+ * A warm ink-dark studio, resumes as paper, and one vermilion accent that
+ * always means "a mark on your resume" (the seal, the red pen). Tokens are
+ * semantic: components reference roles (surface, ink, line, paper, good/warn/
+ * bad), never raw hues.
+ */
 export default {
   content: [
     "./index.html",
@@ -6,138 +14,110 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Outfit', 'Inter', 'sans-serif'],
-        display: ['Space Grotesk', 'Outfit', 'sans-serif'],
+        sans: ['Geist', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // Red-pen margin notes inside illustrations only
+        hand: ['Caveat', 'cursive'],
       },
+
       colors: {
-        // Single accent (indigo-violet) — one accent, used sparingly.
-        primary: '#7c6cf6',
-        'primary-dark': '#5b4bd4',
-        'primary-light': '#a99cf9',
-        secondary: '#06b6d4', // Cyan (legacy, marketing pages only)
-        'secondary-dark': '#0891b2',
-        accent: '#f472b6', // Pink (legacy, marketing pages only)
-
-        // Neutral-enterprise surface + text ramp (dashboard).
-        // Near-black surfaces, crisp translucent borders, warm-neutral text.
+        // Backgrounds, darkest to lightest
         surface: {
-          void: '#08080b',   // page background
-          DEFAULT: '#0f0f14', // card
-          raised: '#16161d',  // raised / hover card
+          sunken: '#080706',  // wells: inputs, code, inset tracks
+          void: '#0B0A09',    // page
+          DEFAULT: '#131210', // card
+          raised: '#1B1916',  // hover / raised card / dialog
+          overlay: '#24211D', // popovers, menus, toasts
         },
+        // Hairlines (warm white at low alpha so they sit on any surface)
         line: {
-          DEFAULT: 'rgba(255,255,255,0.08)', // default border
-          strong: 'rgba(255,255,255,0.14)',  // emphasized border
+          DEFAULT: 'rgba(239,233,220,0.09)',
+          strong: 'rgba(239,233,220,0.17)',
         },
+        // Text on ink surfaces
         ink: {
-          DEFAULT: '#f4f4f6', // primary text
-          muted: '#a1a1aa',   // secondary text
-          faint: '#71717a',   // tertiary text
+          DEFAULT: '#EFE9DC',
+          muted: '#ABA497',
+          faint: '#8A8478',
         },
-
-        // Dark Mode Base Colors
-        dark: {
-          bg: '#09090b', // Zinc 950
-          card: '#18181b', // Zinc 900
-          border: '#27272a', // Zinc 800
+        // The resume itself, and anything that should read as a physical sheet
+        paper: {
+          DEFAULT: '#F1EBDD',
+          bright: '#FBF7EE',
+          dim: '#E2DAC8',
+          ink: '#1B1916',
+          muted: '#5E584E',
+          line: 'rgba(27,25,22,0.14)',
         },
-
-        blue: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+        // Vermilion: the seal and the red pen. Marks, never decoration.
+        primary: {
+          DEFAULT: '#E0472C',
+          dark: '#BE3920',
+          light: '#F27A5E',
         },
-        green: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-        },
-        red: {
-          50: '#fef2f2',
-          500: '#ef4444',
-          600: '#dc2626',
-        },
-        amber: {
-          500: '#f59e0b',
-        },
-        purple: {
-          500: '#a855f7',
-        },
-        gray: {
-          50: '#f9fafb',
-          100: '#f3f4f6',
-          200: '#e5e7eb',
-          300: '#d1d5db',
-          400: '#9ca3af',
-          500: '#6b7280',
-          600: '#4b5563',
-          700: '#374151',
-          800: '#1f2937',
-          900: '#111827',
-        },
+        // Status tones
+        good: '#74B88F', // jade
+        warn: '#DBA748', // ochre
+        bad: '#EE6A5B',  // soft red, lighter than the seal so the two never read as one
       },
+
+      // Controls 8 · cards 12 · panels 16 · feature blocks 24 · paper sheets 3
+      borderRadius: {
+        sheet: '3px',
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+        '2xl': '24px',
+      },
+
+      // Elevation on a dark UI is mostly a lit top edge plus a deep, tight shadow
       boxShadow: {
-        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-        'DEFAULT': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        'glow-primary': '0 0 20px rgba(139, 92, 246, 0.5)',
-        'glow-secondary': '0 0 20px rgba(6, 182, 212, 0.5)',
-        'glow-accent': '0 0 20px rgba(244, 114, 182, 0.5)',
+        e1: 'inset 0 1px 0 rgba(255,250,240,0.04), 0 1px 2px rgba(0,0,0,0.4)',
+        e2: 'inset 0 1px 0 rgba(255,250,240,0.05), 0 12px 28px -14px rgba(0,0,0,0.7)',
+        e3: 'inset 0 1px 0 rgba(255,250,240,0.06), 0 32px 80px -24px rgba(0,0,0,0.85), 0 8px 24px -12px rgba(0,0,0,0.6)',
+        sheet: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.35), 0 28px 60px -28px rgba(0,0,0,0.9)',
+        'button': 'inset 0 1px 0 rgba(255,255,255,0.55), 0 1px 2px rgba(0,0,0,0.4)',
       },
-      transitionProperty: {
-        'width': 'width',
-        'height': 'height',
-        'spacing': 'margin, padding',
+
+      transitionDuration: {
+        fast: '120ms',
+        base: '200ms',
+        slow: '400ms',
       },
+      transitionTimingFunction: {
+        out: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        standard: 'cubic-bezier(0.2, 0, 0, 1)',
+        in: 'cubic-bezier(0.4, 0, 1, 1)',
+      },
+
       keyframes: {
-        shimmer: {
-          '0%': { backgroundPosition: '200% 0' },
-          '100%': { backgroundPosition: '0% 0' },
+        sweep: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
         fadeIn: {
-          '0%': { opacity: '0', transform: 'translateY(-10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
-        blob: {
-          '0%': { transform: 'translate(0px, 0px) scale(1)' },
-          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-          '100%': { transform: 'translate(0px, 0px) scale(1)' },
-        }
+        drift: {
+          '0%': { transform: 'translate3d(0,0,0)' },
+          '100%': { transform: 'translate3d(-50%,0,0)' },
+        },
       },
       animation: {
-        shimmer: 'shimmer 1.5s infinite linear',
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'blob': 'blob 7s infinite',
-      }
+        sweep: 'sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+        'fade-in': 'fadeIn 0.3s ease-out both',
+        drift: 'drift 90s linear infinite',
+      },
+
+      maxWidth: {
+        shell: '1200px',
+        prose: '62ch',
+      },
     },
   },
-  safelist: [
-    'border-blue-500',
-    'border-green-500',
-    'border-purple-500',
-    'border-amber-500',
-    'bg-blue-100',
-    'bg-green-100',
-    'bg-purple-100',
-    'bg-amber-100',
-    'text-blue-600',
-    'text-green-600',
-    'text-purple-600',
-    'text-amber-600',
-    'text-green-500',
-    'text-red-500',
-    'text-gray-500',
-  ],
   plugins: [],
 }

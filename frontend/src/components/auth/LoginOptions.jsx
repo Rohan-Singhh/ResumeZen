@@ -7,6 +7,7 @@ import { useAuth, beginInteractiveLogin, endInteractiveLogin } from '../../conte
 import { useNavigate } from 'react-router-dom';
 import { useLoading } from '../../App';
 import { tapPress } from '../../utils/motion';
+import Spinner from '../ui/Spinner';
 
 // Firebase error codes → messages a user can act on. Codes not listed here
 // fall back to a generic message rather than leaking raw Firebase strings.
@@ -99,16 +100,16 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
 
   return (
     <div className="space-y-4">
-      {/* The one action on the page, so it gets the one high-contrast surface
-          (Google's light button style) instead of blending into the dark UI */}
+      {/* The one action on the page, so it gets the one paper surface */}
       <motion.button
+        type="button"
         whileTap={isLoading ? undefined : tapPress}
         onClick={handleGoogleSignIn}
         disabled={isLoading}
-        className="flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-white px-4 text-[15px] font-semibold text-zinc-900 shadow-[0_10px_30px_-12px_rgba(124,108,246,0.55)] transition-colors hover:bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-void disabled:cursor-wait disabled:opacity-70"
+        className="flex h-[3.25rem] w-full items-center justify-center gap-3 rounded-md bg-paper px-4 text-[0.9375rem] font-medium text-paper-ink shadow-button hover:bg-paper-bright disabled:cursor-wait disabled:opacity-70"
       >
         {isLoading ? (
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" aria-hidden="true" />
+          <Spinner size={18} />
         ) : (
           <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -132,7 +133,7 @@ export default function LoginOptions({ onError, onSuccessNavigation }) {
         <span>{isLoading ? 'Signing in…' : 'Continue with Google'}</span>
       </motion.button>
 
-      <p className="text-center text-xs leading-relaxed text-ink-faint">
+      <p className="text-[0.8125rem] leading-relaxed text-ink-faint">
         New here? Signing in creates your account. We only use your Google name, email and photo.
       </p>
     </div>
