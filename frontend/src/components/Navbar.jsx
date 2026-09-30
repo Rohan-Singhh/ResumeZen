@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Bars2Icon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import Logo from './Logo';
+import Button from './ui/Button';
+import { duration, ease, spring } from '../utils/motion';
+import { scrollToSection } from '../utils/scrollToSection';
 
 const navLinks = [
-  { name: 'Features', id: 'features' },
-  { name: 'How It Works', id: 'how-it-works' },
+  { name: 'The report', id: 'features' },
+  { name: 'How it works', id: 'how-it-works' },
   { name: 'Pricing', id: 'pricing' },
   { name: 'Reviews', id: 'reviews' },
-  { name: 'FAQ', id: 'faq' }
+  { name: 'FAQ', id: 'faq' },
 ];
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [activeId, setActiveId] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
@@ -27,7 +32,7 @@ export default function Navbar() {
     let frame = 0;
     const update = () => {
       frame = 0;
-      const scrolled = window.scrollY > 20;
+      const scrolled = window.scrollY > 24;
       setIsScrolled((prev) => (prev === scrolled ? prev : scrolled));
     };
     const onScroll = () => {
@@ -42,32 +47,45 @@ export default function Navbar() {
     };
   }, []);
 
+  // Scroll-spy: mark the section that currently owns the middle of the screen.
+  // An observer, not scroll math, so it costs nothing while scrolling.
+  useEffect(() => {
+    if (!isLandingPage) return undefined;
+    // Every section with an id, including ones with no nav link (hero,
+    // support): crossing into those clears the marker instead of leaving it
+    // on whichever link was last.
+    const sections = Array.from(document.querySelectorAll('main section[id]'));
+    if (sections.length === 0) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveId(entry.target.id);
+        });
+      },
+      { rootMargin: '-45% 0px -50% 0px' }
+    );
+    sections.forEach((s) => observer.observe(s));
+
+    return () => observer.disconnect();
+  }, [isLandingPage]);
+
   useEffect(() => {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
-  // Sections carry scroll-margin-top (index.css) for the fixed bar, so the
-  // browser handles the offset; honor reduced motion for the jump itself.
-  const scrollToSection = (element) => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    element.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-  };
-
-  // Coming from another page the section is not mounted yet. Wait for it
-  // frame by frame (up to ~1s) instead of guessing with a fixed 140ms timeout.
-  const scrollWhenReady = (sectionId, framesLeft = 60) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      scrollToSection(element);
-    } else if (framesLeft > 0) {
-      requestAnimationFrame(() => scrollWhenReady(sectionId, framesLeft - 1));
-    }
-  };
+  // The mobile menu is a full-screen sheet; the page behind must not scroll
+  useEffect(() => {
+    if (!isMobileOpen) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [isMobileOpen]);
 
   const handleSectionNavigation = (sectionId) => {
     setIsMobileOpen(false);
     if (!isLandingPage) navigate('/');
-    scrollWhenReady(sectionId);
+    scrollToSection(sectionId);
   };
 
   const handleLogout = async () => {
@@ -76,141 +94,137 @@ export default function Navbar() {
   };
 
   // Blur only once content scrolls under the bar, and transition colors only:
-  // the old transition-all animated backdrop-filter, re-blurring the whole bar
-  // every frame each time it crossed the threshold.
-  const navShellClass = isScrolled
-    ? 'bg-dark-bg/80 backdrop-blur-xl border-b border-white/10 shadow-lg'
-    : 'bg-dark-bg/0 border-b border-white/5 shadow-none';
+  // animating backdrop-filter re-blurs the whole bar every frame.
+  const shell = isScrolled || isMobileOpen
+    ? 'border-line bg-surface-void/85 backdrop-blur-md'
+    : 'border-transparent bg-transparent';
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-[background-color,border-color,box-shadow] duration-300 ${navShellClass}`}>
-      <div className="flex justify-between items-center h-20 px-6 sm:px-12 lg:px-20 w-full mx-auto">
-        
-        {/* Left: Logo */}
-        <motion.button
-          type="button"
-          aria-label="ResumeZen home"
-          className="flex-shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          onClick={() => handleSectionNavigation('home')}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          <Logo size="lg" />
-        </motion.button>
+    <>
+      <nav
+        aria-label="Primary"
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color] duration-slow ${shell}`}
+      >
+        <div className="shell flex h-[var(--nav-h)] items-center justify-between">
+          <motion.button
+            type="button"
+            aria-label="ResumeZen home"
+            className="-ml-1 flex-shrink-0 rounded-md p-1"
+            onClick={() => handleSectionNavigation('home')}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Logo size="md" />
+          </motion.button>
 
-        {/* Center: Navigation Links */}
-        <div className="hidden lg:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
-          {navLinks.map((item) => (
-            <motion.button
-              key={item.name}
-              onClick={() => handleSectionNavigation(item.id)}
-              className="text-sm font-medium text-gray-300 hover:text-white transition-colors relative group"
-              whileHover={{ y: -1 }}
-            >
-              {item.name}
-              <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 bg-gradient-to-r from-primary to-secondary transition-transform duration-300 group-hover:scale-x-100"></span>
-            </motion.button>
-          ))}
-        </div>
-
-        {/* Right: CTA Buttons */}
-        <div className="hidden lg:flex items-center gap-4">
-          {currentUser ? (
-            <>
-              <motion.button
-                onClick={() => navigate('/dashboard')}
-                className="bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 px-6 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300 border border-white/10"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Dashboard
-              </motion.button>
-              {!isLandingPage && (
-                <motion.button
-                  onClick={handleLogout}
-                  className="bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-semibold py-2.5 px-4 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+          {/* Desktop links */}
+          <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
+            {navLinks.map((item) => {
+              const active = activeId === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleSectionNavigation(item.id)}
+                  aria-current={active ? 'true' : undefined}
+                  className={`relative rounded-md px-3 py-2 text-sm ${active ? 'text-ink' : 'text-ink-muted hover:text-ink'}`}
                 >
-                  Logout
-                </motion.button>
-              )}
-            </>
-          ) : (
-            <motion.button
-              onClick={() => navigate('/login')}
-              className="bg-white text-dark-bg hover:shadow-glow-primary font-bold py-2.5 px-6 rounded-lg transition-[color,background-color,border-color,box-shadow] duration-300"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Get Started
-            </motion.button>
-          )}
+                  {item.name}
+                  {active && (
+                    <motion.span
+                      layoutId="nav-active-dot"
+                      className="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary"
+                      transition={spring}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Desktop actions */}
+          <div className="hidden items-center gap-2 lg:flex">
+            {currentUser ? (
+              <>
+                {!isLandingPage && (
+                  <Button variant="ghost" size="sm" onClick={handleLogout}>Log out</Button>
+                )}
+                <Button size="sm" onClick={() => navigate('/dashboard')}>
+                  Open dashboard <ArrowRightIcon className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Sign in</Button>
+                <Button size="sm" onClick={() => navigate('/login')}>Get your report</Button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile toggle */}
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen((prev) => !prev)}
+            className="-mr-2 flex h-10 w-10 items-center justify-center rounded-md text-ink lg:hidden"
+            aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMobileOpen}
+          >
+            {isMobileOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars2Icon className="h-6 w-6" />}
+          </button>
         </div>
+      </nav>
 
-        {/* Mobile menu button */}
-        <button
-          onClick={() => setIsMobileOpen((prev) => !prev)}
-          className="lg:hidden p-2 rounded-md border border-white/10 text-white hover:bg-white/10 transition-colors"
-          aria-label="Toggle menu"
-        >
-          {isMobileOpen ? '✕' : '☰'}
-        </button>
-      </div>
-
-      {/* Mobile Menu */}
+      {/* Mobile menu: a full sheet with the links set large, not a cramped dropdown */}
       <AnimatePresence>
         {isMobileOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden overflow-hidden bg-dark-bg/95 border-b border-white/10 backdrop-blur-xl"
+            className="fixed inset-0 z-40 flex flex-col bg-surface-void px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(var(--nav-h)+1.5rem)] lg:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: duration.base }}
           >
-            <div className="px-6 py-4 flex flex-col gap-4">
-              {navLinks.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => handleSectionNavigation(item.id)}
-                  className="text-left py-2 font-medium text-gray-300 hover:text-white transition-colors text-lg"
+            <ul className="flex-1">
+              {navLinks.map((item, i) => (
+                <motion.li
+                  key={item.id}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: 0.04 + i * 0.045, ease: ease.out }}
+                  className="border-b border-line"
                 >
-                  {item.name}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSectionNavigation(item.id)}
+                    className="flex w-full items-center justify-between py-4 text-left font-display text-[1.75rem] leading-tight tracking-[-0.02em] text-ink"
+                  >
+                    {item.name}
+                    <span className="t-meta">0{i + 1}</span>
+                  </button>
+                </motion.li>
               ))}
+            </ul>
 
-              <div className="h-px bg-white/10 my-2"></div>
-
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.3, ease: ease.out }}
+              className="flex flex-col gap-2.5"
+            >
               {currentUser ? (
                 <>
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-center"
-                  >
-                    Dashboard
-                  </button>
-                  {!isLandingPage && (
-                    <button
-                      onClick={handleLogout}
-                      className="bg-transparent border border-white/20 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-center"
-                    >
-                      Logout
-                    </button>
-                  )}
+                  <Button size="lg" onClick={() => navigate('/dashboard')}>Open dashboard</Button>
+                  {!isLandingPage && <Button variant="secondary" size="lg" onClick={handleLogout}>Log out</Button>}
                 </>
               ) : (
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => navigate('/login')}
-                    className="bg-white text-dark-bg font-bold py-3 px-4 rounded-lg transition duration-300 text-center"
-                  >
-                    Get Started
-                  </button>
-                </div>
+                <>
+                  <Button size="lg" onClick={() => navigate('/login')}>Get your report</Button>
+                  <Button variant="secondary" size="lg" onClick={() => navigate('/login')}>Sign in</Button>
+                </>
               )}
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 }
