@@ -4,6 +4,8 @@ import { useState, createContext, useContext, useEffect, useCallback, useRef, la
 import Landing from './pages/Landing';
 import AuthGuard from './components/auth/AuthGuard';
 import PageTransition from './components/PageTransition';
+import Spinner from './components/ui/Spinner';
+import { ToastProvider } from './components/ui/Toast';
 
 // Landing is the entry point for logged-out visitors and stays eager. Everything
 // else is split out so a first-time visitor does not download the whole
@@ -21,6 +23,7 @@ const DashboardProfileEdit = lazy(() => import('./pages/Dashboard/DashboardProfi
 const DashboardPlan = lazy(() => import('./pages/Dashboard/DashboardPlan'));
 const Studio = lazy(() => import('./pages/Dashboard/Studio'));
 const DashboardJobs = lazy(() => import('./pages/Dashboard/DashboardJobs'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Warm the chunks a landing visitor is most likely to open next, once the
 // browser is idle, so "Get started" doesn't stall on a network round trip.
@@ -38,8 +41,10 @@ function preloadLikelyRoutes() {
 // arrives quickly shows no spinner flash at all.
 function RouteFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-void">
-      <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent [animation:spin_1s_linear_infinite,fadeIn_0.2s_ease-out_0.4s_both]" />
+    <div className="flex min-h-screen items-center justify-center bg-surface-void text-ink-muted" role="status" aria-label="Loading">
+      <div className="[animation:fadeIn_0.2s_ease-out_0.4s_both]">
+        <Spinner size={28} />
+      </div>
     </div>
   );
 }
@@ -133,7 +138,6 @@ function AnimatedRoutes() {
       
       // Set a new timeout to force end loading after 10 seconds
       loadingTimeoutRef.current = setTimeout(() => {
-        console.log('Forced loading state off after timeout');
         setLoading(false);
       }, 10000);
     } else {
@@ -162,13 +166,12 @@ function AnimatedRoutes() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center z-[100]"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-surface-void/90 backdrop-blur-[3px]"
+            role="status"
           >
-            <div className="flex flex-col items-center">
-              <div className="h-12 w-12 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
-              {loadingMessage && (
-                <p className="mt-4 text-sm font-medium text-zinc-400">{loadingMessage}</p>
-              )}
+            <div className="flex flex-col items-center gap-4 text-ink-muted">
+              <Spinner size={32} />
+              {loadingMessage && <p className="text-sm font-medium">{loadingMessage}</p>}
             </div>
           </motion.div>
         )}
@@ -198,6 +201,8 @@ function AnimatedRoutes() {
             <Route path="studio" element={withSuspense(<Studio />)} />
             <Route path="jobs" element={withSuspense(<DashboardJobs />)} />
           </Route>
+
+          <Route path="*" element={<PageTransition>{withSuspense(<NotFound />)}</PageTransition>} />
         </Routes>
       </AnimatePresence>
     </>
@@ -211,7 +216,9 @@ export default function App() {
     <MotionConfig reducedMotion="user">
       <Router>
         <LoadingProvider>
-          <AnimatedRoutes />
+          <ToastProvider>
+            <AnimatedRoutes />
+          </ToastProvider>
         </LoadingProvider>
       </Router>
     </MotionConfig>
