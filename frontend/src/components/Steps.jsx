@@ -1,117 +1,77 @@
-import Glow, { GLOW } from './Glow';
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import {
-  UserPlusIcon,
-  DocumentArrowUpIcon,
-  CreditCardIcon,
-  ChartBarIcon,
-  CheckBadgeIcon
-} from '@heroicons/react/24/outline';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import SectionHeading from './ui/SectionHeading';
+import Button from './ui/Button';
+import { reveal } from '../utils/motion';
 
 const steps = [
   {
-    id: 1,
-    title: "Create Account",
-    description: "Sign up or login to your ResumeZen account in seconds.",
-    icon: UserPlusIcon
+    title: 'Sign in with Google',
+    description: 'No form and no password. Signing in is what creates your account.',
   },
   {
-    id: 2,
-    title: "Upload Resume",
-    description: "Upload your resume in PDF or DOC format for analysis.",
-    icon: DocumentArrowUpIcon
+    title: 'Pick a plan',
+    description: 'A single check or a pack. Each analysis uses one credit, refunded if it fails.',
   },
   {
-    id: 3,
-    title: "Choose Plan",
-    description: "Select a plan that suits your needs and make the payment.",
-    icon: CreditCardIcon
+    title: 'Upload your PDF',
+    description: 'The resume you would actually send, up to 5 MB. Drag it in or choose a file.',
   },
   {
-    id: 4,
-    title: "AI Analysis",
-    description: "Our AI model analyzes your resume for ATS optimization.",
-    icon: ChartBarIcon
+    title: 'Read the report',
+    description: 'Score, recruiter notes, missing keywords and matching roles, in about a minute.',
   },
-  {
-    id: 5,
-    title: "Get Results",
-    description: "Receive your real-time ATS score and improvement tips.",
-    icon: CheckBadgeIcon
-  }
 ];
 
 export default function Steps() {
   const navigate = useNavigate();
+  const trackRef = useRef(null);
+
+  // The brush line draws itself across the steps as the row moves up the
+  // screen: scroll position in, scaleX out. No per-frame layout.
+  const { scrollYProgress } = useScroll({ target: trackRef, offset: ['start 85%', 'start 35%'] });
+  const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <section id="how-it-works" className="py-24 sm:py-32 bg-dark-bg border-t border-white/5 relative overflow-hidden">
-      {/* Decorative Glow */}
-      <Glow className="right-0 bottom-0 w-[600px] h-[600px]" color={GLOW.secondary} strength={0.1} />
+    <section id="how-it-works" className="section border-t border-line">
+      <div className="shell">
+        <SectionHeading
+          index="02"
+          eyebrow="How it works"
+          title={<>Four steps. <em className="t-em">One of them</em> is reading.</>}
+          lead="There is nothing to set up and nothing to learn. If you have a PDF, you are most of the way there."
+        />
 
-      <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-16 relative z-10">
-        <div className="text-left md:text-center mb-16 lg:mb-24">
-          <span className="inline-block text-sm font-bold uppercase tracking-[0.2em] text-secondary mb-6 bg-secondary/10 border border-secondary/20 px-6 py-2 rounded-full">
-            Process
-          </span>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white font-display tracking-tight">
-            How It <span className="text-secondary">Works</span> 🚀
-          </h2>
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl md:mx-auto font-light">
-            Get your ATS score in minutes with our simple 5-step process. No waiting, no BS.
-          </p>
+        <div ref={trackRef} className="relative">
+          {/* Track + the line that fills it (wide screens) */}
+          <div aria-hidden="true" className="absolute left-0 right-0 top-[1.375rem] hidden h-px bg-line lg:block" />
+          <motion.div
+            aria-hidden="true"
+            style={{ scaleX: lineScale }}
+            className="absolute left-0 right-0 top-[calc(1.375rem-0.5px)] hidden h-[2px] origin-left rounded-full bg-primary lg:block"
+          />
+
+          <ol className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step, i) => (
+              <motion.li key={step.title} {...reveal(i * 0.08)} className="relative">
+                <span className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-surface-void font-mono text-[0.8125rem] text-ink">
+                  0{i + 1}
+                </span>
+                <h3 className="t-h3 mt-6">{step.title}</h3>
+                <p className="t-body mt-2.5 max-w-[18rem]">{step.description}</p>
+              </motion.li>
+            ))}
+          </ol>
         </div>
-        
-        <div className="relative">
-          {/* Connecting line for desktop */}
-          <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/10 -translate-y-1/2 hidden xl:block"></div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 xl:gap-4">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              return (
-                <motion.div
-                  key={index}
-                  className="relative bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors duration-300 group"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ delay: index * 0.15, type: "spring", stiffness: 100 }}
-                >
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-br from-primary to-accent text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-glow-primary z-10">
-                    {step.id}
-                  </div>
-                  <div className="text-center pt-4">
-                    <div className="flex justify-center mb-6">
-                      <div className="p-4 rounded-2xl bg-white/5 group-hover:scale-110 transition-transform duration-300">
-                        <Icon className="h-10 w-10 text-secondary" />
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold mb-3 text-white font-display">{step.title}</h3>
-                    <p className="text-gray-400 font-light">{step.description}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-        
-        <motion.div 
-          className="mt-20 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.8 }}
-        >
-          <motion.button
-            onClick={() => navigate('/login')}
-            className="bg-white text-dark-bg hover:shadow-glow-secondary font-bold py-4 px-10 rounded-full text-lg transition-[color,background-color,border-color,box-shadow] duration-300"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Get Started Now
-          </motion.button>
+
+        <motion.div {...reveal(0.1)} className="mt-14 flex flex-col items-start gap-4 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="t-body">Signing in is free. Look around the dashboard before you buy anything.</p>
+          <Button onClick={() => navigate('/login')} className="group flex-shrink-0">
+            Start with step one
+            <ArrowRightIcon className="h-4 w-4 transition-transform duration-base ease-out group-hover:translate-x-0.5" />
+          </Button>
         </motion.div>
       </div>
     </section>
