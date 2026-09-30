@@ -17,11 +17,9 @@ export default function Landing() {
 
   // Clear any logout flags when landing page mounts
   useEffect(() => {
-    // If we're coming from logout, ensure all flags are cleared
     if (location.state?.fromLogout || sessionStorage.getItem('logoutInProgress') === 'true') {
-      console.log('Clearing logout flags on landing page');
       sessionStorage.removeItem('logoutInProgress');
-      
+
       // Replace the current history entry to remove the fromLogout state
       if (location.state?.fromLogout) {
         navigate('/', { replace: true, state: {} });
@@ -29,22 +27,20 @@ export default function Landing() {
     }
   }, [location, navigate]);
 
-  const handleShowSuccessStories = () => {
-    navigate('/success-stories');
-  };
-
   return (
-    <main className="bg-dark-bg text-white selection:bg-primary/30">
+    <>
       <Navbar />
-      <Hero onShowSuccessStories={handleShowSuccessStories} />
-      <Features />
-      <Steps />
-      <Pricing />
-      <Reviews />
-      <FAQ />
-      <Support />
-      <CTA />
+      <main className="bg-surface-void text-ink">
+        <Hero />
+        <Features />
+        <Steps />
+        <Pricing />
+        <Reviews />
+        <FAQ />
+        <Support />
+        <CTA />
+      </main>
       <Footer />
-    </main>
+    </>
   );
 }
