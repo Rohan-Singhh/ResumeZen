@@ -1,26 +1,19 @@
 import React from 'react';
 
 /**
- * SectionHeader — icon-in-tinted-box + title, with an optional right slot.
- *
- * Unifies the panel headers that were hand-repeated with slightly different
- * padding/radius across every dashboard widget.
+ * SectionHeader — the title row of a dashboard panel.
  *
  * Props:
- *   icon   — heroicon component (optional)
  *   title  — string
- *   right  — node rendered flush-right (optional)
+ *   hint   — short supporting text under the title (optional)
+ *   right  — node rendered flush-right: a count, a link, an action (optional)
  */
-export default function SectionHeader({ icon: Icon, title, right, className = '' }) {
+export default function SectionHeader({ title, hint, right, className = '' }) {
   return (
-    <div className={['flex items-center justify-between gap-3', className].filter(Boolean).join(' ')}>
-      <div className="flex items-center gap-2.5 min-w-0">
-        {Icon && (
-          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-line bg-primary/10">
-            <Icon className="h-4 w-4 text-primary" />
-          </span>
-        )}
-        <h3 className="truncate font-display text-base font-semibold text-ink">{title}</h3>
+    <div className={['flex items-start justify-between gap-4', className].filter(Boolean).join(' ')}>
+      <div className="min-w-0">
+        <h3 className="t-title truncate">{title}</h3>
+        {hint && <p className="mt-1 text-[0.8125rem] leading-snug text-ink-faint">{hint}</p>}
       </div>
       {right != null && <div className="flex-shrink-0">{right}</div>}
     </div>
