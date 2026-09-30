@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLoading } from '../../App';
+import Spinner from '../ui/Spinner';
 
 /**
  * AuthGuard Component
@@ -45,9 +46,9 @@ export default function AuthGuard({ children }) {
   // If authentication status is still being determined, show loading spinner
   if (loading && !authStatusChecked) {
     return (
-      <div className="min-h-screen bg-surface-void flex flex-col items-center justify-center" role="status">
-        <div className="h-10 w-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-medium text-ink-muted">Signing you in…</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface-void text-ink-muted" role="status">
+        <Spinner size={28} />
+        <p className="t-label">Signing you in</p>
       </div>
     );
   }
