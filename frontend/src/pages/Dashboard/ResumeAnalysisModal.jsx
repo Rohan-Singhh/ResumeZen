@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { analyzeUploadResume } from '../../services/resumeService';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  CheckCircleIcon,
-  CheckIcon,
-  ExclamationCircleIcon,
-} from '@heroicons/react/24/outline';
-import Modal from '../../components/ui/Modal';
+import { motion } from 'framer-motion';
+import { CheckIcon } from '@heroicons/react/20/solid';
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import Modal, { ModalHeader } from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
+import Spinner from '../../components/ui/Spinner';
+import Enso from '../../components/graphics/Enso';
+import Seal from '../../components/graphics/Seal';
+import { normalizeAnalysis } from '../../utils/analysisSchema';
+import { verdictFor } from '../../components/report/verdict';
+import { ease } from '../../utils/motion';
 
 // Rough stage timings. The request is a single call, so these are estimates
 // that keep the wait legible, not live server progress.
@@ -117,43 +121,46 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
     return stopTimers;
   }, [open, fileDetails, queryClient]);
 
-  const title = loading ? 'Analyzing your resume' : error ? "Analysis didn't finish" : 'Your report is ready';
+  // The finished report, read the same way the rest of the dashboard reads it
+  const analysis = result ? normalizeAnalysis(result.data.analysis.structured) : null;
+  const verdict = verdictFor(analysis);
 
   return (
     <Modal open={open} onClose={onClose} labelledBy="analysis-modal-title" zIndex="z-[60]">
       {loading ? (
-        <div>
-          <div className="mb-6 flex items-center gap-4">
-            <div className="relative h-14 w-14 flex-shrink-0">
-              <svg className="h-full w-full -rotate-90" viewBox="0 0 56 56" aria-hidden="true">
-                <circle cx="28" cy="28" r="24" fill="none" strokeWidth="4" className="stroke-white/[0.06]" />
-                <circle
-                  cx="28" cy="28" r="24" fill="none" strokeWidth="4" strokeLinecap="round"
-                  strokeDasharray={`${progress * 1.508} 151`}
-                  className="stroke-primary transition-[stroke-dasharray] duration-300 ease-out"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center font-display text-xs font-semibold tabular-nums text-ink">
-                {Math.round(progress)}%
-              </span>
-            </div>
+        <div className="pt-2 sm:pt-0">
+          <div className="flex items-center gap-5">
+            {/* The circle fills as the read progresses */}
+            <Enso value={progress} size={76} tone="paper" weight={7} animated={false}>
+              <span className="t-meta text-ink">{Math.round(progress)}%</span>
+            </Enso>
             <div className="min-w-0">
-              <h3 id="analysis-modal-title" className="font-display text-lg font-semibold text-ink">{title}</h3>
-              <p className="truncate text-sm text-ink-muted" aria-live="polite">{STEPS[currentStep].label}…</p>
+              <h3 id="analysis-modal-title" className="t-h3">Reading your resume</h3>
+              <p className="mt-1 truncate text-sm text-ink-muted">{fileDetails?.name}</p>
             </div>
           </div>
 
-          <ol className="mb-6 space-y-1">
+          <ol className="my-6 space-y-0.5 border-y border-line py-4" aria-live="polite">
             {STEPS.map((step, i) => {
               const isDone = i < currentStep;
               const isActive = i === currentStep;
               return (
-                <li key={step.label} className="flex items-center gap-3 rounded-lg px-2 py-1.5">
-                  <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border ${
-                    isDone ? 'border-primary/30 bg-primary/15' : isActive ? 'border-primary' : 'border-line'
-                  }`}>
-                    {isDone && <CheckIcon className="h-3 w-3 text-primary" />}
-                    {isActive && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                <li key={step.label} className="flex items-center gap-3 py-1.5">
+                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center">
+                    {isDone ? (
+                      <motion.span
+                        initial={{ scale: 0.4, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.25, ease: ease.out }}
+                        className="flex h-[1.125rem] w-[1.125rem] items-center justify-center rounded-full bg-good text-surface"
+                      >
+                        <CheckIcon className="h-3 w-3" />
+                      </motion.span>
+                    ) : isActive ? (
+                      <Spinner size={16} className="text-ink" />
+                    ) : (
+                      <span className="h-1.5 w-1.5 rounded-full bg-ink/20" />
+                    )}
                   </span>
                   <span className={`text-sm ${isActive ? 'font-medium text-ink' : isDone ? 'text-ink-muted' : 'text-ink-faint'}`}>
                     {step.label}
@@ -163,36 +170,45 @@ export default function ResumeAnalysisModal({ fileDetails, open, onClose, onView
             })}
           </ol>
 
-          <div className="flex items-center justify-between gap-4 border-t border-line pt-4">
-            <p className="text-xs leading-relaxed text-ink-faint">
-              Usually under a minute. You can close this — the report will appear in your activity when it's ready.
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[0.8125rem] leading-relaxed text-ink-faint">
+              Usually under a minute. You can close this; the report will appear on your overview.
             </p>
-            <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0">
+            <Button variant="secondary" size="sm" onClick={onClose} className="flex-shrink-0">
               Run in background
             </Button>
           </div>
         </div>
       ) : error ? (
-        <div className="text-center">
-          <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
-            <ExclamationCircleIcon className="h-6 w-6 text-red-400" />
-          </span>
-          <h3 id="analysis-modal-title" className="mb-2 font-display text-lg font-semibold text-ink">{title}</h3>
-          <p className="mx-auto mb-6 max-w-sm text-sm leading-relaxed text-ink-muted">{error}</p>
-          <Button variant="secondary" onClick={onClose} className="w-full">Close</Button>
+        <div>
+          <ModalHeader id="analysis-modal-title" icon={ExclamationCircleIcon} tone="bad" onClose={onClose}>
+            The analysis didn&apos;t finish
+          </ModalHeader>
+          <p className="t-body mb-6">{error}</p>
+          <div className="flex justify-end">
+            <Button variant="secondary" onClick={onClose} className="w-full sm:w-auto">Close</Button>
+          </div>
         </div>
-      ) : result ? (
-        <div className="text-center">
-          <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
-            <CheckCircleIcon className="h-6 w-6 text-emerald-400" />
-          </span>
-          <h3 id="analysis-modal-title" className="mb-2 font-display text-lg font-semibold text-ink">{title}</h3>
-          <p className="mb-6 text-sm text-ink-muted">
-            Your score, recruiter feedback and keyword gaps are ready to review.
+      ) : analysis ? (
+        <div className="pt-2 text-center sm:pt-0">
+          <p className="t-label">Report ready</p>
+          <Enso value={analysis.overallScore} size={132} className="mx-auto mt-5" />
+          {verdict && (
+            <div className="mt-5">
+              <Seal tone={verdict.tone} animated delay={1.1} tilt={-4}>{verdict.short}</Seal>
+            </div>
+          )}
+          <h3 id="analysis-modal-title" className="t-h3 mt-5">
+            {analysis.issues.length > 0
+              ? `${analysis.issues.length} ${analysis.issues.length === 1 ? 'thing' : 'things'} worth fixing`
+              : 'Nothing flagged'}
+          </h3>
+          <p className="t-body mx-auto mt-1.5 max-w-xs">
+            Your score, the recruiter&apos;s notes and the keywords you&apos;re missing are ready to read.
           </p>
-          <div className="flex gap-3">
-            <Button variant="ghost" onClick={onClose} className="flex-1">Close</Button>
-            <Button onClick={() => onViewReport?.(result)} className="flex-1">View report</Button>
+          <div className="mt-7 flex flex-col-reverse gap-2.5 sm:flex-row">
+            <Button variant="ghost" onClick={onClose} className="flex-1">Later</Button>
+            <Button onClick={() => onViewReport?.(result)} className="flex-1">Read the report</Button>
           </div>
         </div>
       ) : null}
