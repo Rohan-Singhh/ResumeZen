@@ -1,14 +1,10 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { HeartIcon } from '@heroicons/react/24/outline';
 import { skillCount } from '../../../utils/analysisSchema';
 import Card from '../../../components/ui/Card';
 import SectionHeader from '../../../components/ui/SectionHeader';
-import EmptyState from '../../../components/ui/EmptyState';
+import Meter from '../../../components/report/Meter';
 
 function deriveCategories(analysis) {
-  if (!analysis) return [];
-
   const { contactInformation: contact, workExperience: work, education: edu } = analysis;
 
   const contactFields = [contact.email, contact.phone, contact.location, contact.linkedin].filter(Boolean);
@@ -19,66 +15,31 @@ function deriveCategories(analysis) {
   const eduScore = Math.min(100, edu.length * 50);
 
   return [
-    { label: 'ATS Compatibility', score: analysis.atsScore ?? 0 },
-    { label: 'Contact Completeness', score: contactScore },
-    { label: 'Skills Depth', score: skillsScore },
-    { label: 'Experience Quality', score: expScore },
+    { label: 'ATS compatibility', score: analysis.atsScore ?? 0 },
+    { label: 'Contact details', score: contactScore },
+    { label: 'Skills coverage', score: skillsScore },
+    { label: 'Experience', score: expScore },
     { label: 'Education', score: eduScore },
-    { label: 'Technical Depth', score: analysis.technicalDepth?.score ?? 0 },
-    { label: 'Impact & Ownership', score: analysis.impactAndOwnership?.score ?? 0 },
+    { label: 'Technical depth', score: analysis.technicalDepth?.score ?? 0 },
+    { label: 'Impact & ownership', score: analysis.impactAndOwnership?.score ?? 0 },
   ];
 }
 
-// Static classes only — Tailwind cannot see `text-${x}-400` at build time.
-function toneClasses(score) {
-  if (score >= 70) return { text: 'text-emerald-400', bar: 'bg-emerald-500' };
-  if (score >= 40) return { text: 'text-amber-400', bar: 'bg-amber-500' };
-  return { text: 'text-red-400', bar: 'bg-red-500' };
-}
-
+/**
+ * Section-by-section breakdown of the latest resume. No headline number here:
+ * an average of these bars would be yet another "overall" score competing with
+ * the one at the top of the page.
+ */
 export default function ResumeHealthRadar({ latestAnalysis }) {
   const categories = deriveCategories(latestAnalysis);
 
-  if (!latestAnalysis) {
-    return (
-      <Card>
-        <SectionHeader icon={HeartIcon} title="Resume Health" className="mb-4" />
-        <EmptyState icon={HeartIcon} message="Analyze a resume to see health metrics" />
-      </Card>
-    );
-  }
-
-  // No headline number here: an average of these bars was yet another "overall"
-  // score competing with the hero's. This card is the breakdown only.
   return (
-    <Card>
-      <SectionHeader
-        icon={HeartIcon}
-        title="Resume Health"
-        right={<span className="text-[11px] font-medium uppercase tracking-wider text-ink-faint">Breakdown</span>}
-        className="mb-6"
-      />
-
-      <div className="space-y-4">
-        {categories.map((cat, i) => {
-          const tone = toneClasses(cat.score);
-          return (
-            <div key={cat.label}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-medium text-ink-muted">{cat.label}</span>
-                <span className={`text-xs font-semibold tabular-nums ${tone.text}`}>{cat.score}%</span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-white/[0.06] overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${cat.score}%` }}
-                  transition={{ duration: 0.6, delay: 0.05 * i, ease: 'easeOut' }}
-                  className={`h-full rounded-full ${tone.bar}`}
-                />
-              </div>
-            </div>
-          );
-        })}
+    <Card className="h-full">
+      <SectionHeader title="Breakdown" hint="How each part of the page holds up" className="mb-6" />
+      <div className="space-y-[1.125rem]">
+        {categories.map((cat, i) => (
+          <Meter key={cat.label} label={cat.label} value={cat.score} delay={0.04 * i} />
+        ))}
       </div>
     </Card>
   );

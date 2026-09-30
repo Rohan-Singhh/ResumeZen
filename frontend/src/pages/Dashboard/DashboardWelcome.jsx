@@ -6,14 +6,16 @@ import DashboardCreditConfirmationPopup from './dashboardwelcome/DashboardCredit
 import DashboardNoCreditPopup from './dashboardwelcome/DashboardNoCreditPopup';
 import ResumeAnalysisModal from './ResumeAnalysisModal';
 import ResumeDetailModal from './ResumeDetailModal';
-import { SparklesIcon } from '@heroicons/react/24/outline';
 import { useResumeHistory } from '../../hooks/useResumeHistory';
-import Card from '../../components/ui/Card';
+import { useCredits } from '../../hooks/useCredits';
 import Button from '../../components/ui/Button';
+import PageHeader from '../../components/ui/PageHeader';
 
 // Overview sub-components
-import HeroSection from './overview/HeroSection';
-import KpiGrid from './overview/KpiGrid';
+import LatestReport from './overview/LatestReport';
+import FirstRun from './overview/FirstRun';
+import OverviewSkeleton from './overview/OverviewSkeleton';
+import StatStrip from './overview/StatStrip';
 import AiInsightsPanel from './overview/AiInsightsPanel';
 import ResumeHealthRadar from './overview/ResumeHealthRadar';
 import AiActionCenter from './overview/AiActionCenter';
@@ -36,8 +38,16 @@ const validateFile = (file) => {
   return null;
 };
 
+const greeting = () => {
+  const h = new Date().getHours();
+  if (h < 5) return 'Still up';
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+};
+
 export default function DashboardWelcome() {
-  const { currentUser, userPlans, fetchUserPlans } = useAuth();
+  const { currentUser, fetchUserPlans } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -53,7 +63,9 @@ export default function DashboardWelcome() {
   const [analysisFileDetails, setAnalysisFileDetails] = useState(null);
   const [selectedResume, setSelectedResume] = useState(null);
 
-  const { data: history = [] } = useResumeHistory();
+  // isPending (not isLoading): the query is disabled until the backend session
+  // exists, and that wait should show the skeleton too, not the first-run card.
+  const { data: history = [], isPending: historyPending } = useResumeHistory();
 
   // Plans are fetched by React Query in AuthContext; only cross-tab purchases
   // need an explicit refetch here.
@@ -65,25 +77,12 @@ export default function DashboardWelcome() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [fetchUserPlans]);
 
-  // Newest plan that is active, unexpired, and still has credits
-  const activePlan = useMemo(() => {
-    const now = new Date();
-    return (userPlans || [])
-      .filter(p => p.isActive && p.planId && (!p.expiresAt || new Date(p.expiresAt) > now) && (p.planId.isUnlimited || p.creditsLeft > 0))
-      .sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt))[0] || null;
-  }, [userPlans]);
-
-  const creditsText = activePlan
-    ? activePlan.planId.isUnlimited ? '∞' : String(activePlan.creditsLeft)
-    : '0';
-
-  const hasCredits = Boolean(activePlan && (activePlan.planId.isUnlimited || activePlan.creditsLeft > 0));
+  const { activePlan, hasCredits } = useCredits();
 
   // Derived analysis data. Normalize once here so every child receives the
   // canonical shape and none of them needs schema-version fallbacks.
   const analyses = useMemo(() => history.map(normalizeAnalysis), [history]);
   const latestAnalysis = analyses[0] || null;
-  const previousAnalysis = analyses[1] || null;
 
   const resetFileInput = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -154,96 +153,86 @@ export default function DashboardWelcome() {
     }
   };
 
-  const handleViewReportFromInsights = () => {
+  const openLatestReport = () => {
     if (latestAnalysis) setSelectedResume(latestAnalysis);
   };
 
   // ─── RENDER ──────────────────────────────────────────────
+  const firstName = currentUser?.name?.split(' ')[0];
+  const issueCount = latestAnalysis?.issues.length || 0;
+  const description = historyPending
+    ? null
+    : !latestAnalysis
+      ? 'Upload a resume to get your first report.'
+      : issueCount > 0
+        ? `Your latest resume has ${issueCount} ${issueCount === 1 ? 'thing' : 'things'} worth fixing before you send it.`
+        : 'Your latest resume came back clean. Nothing flagged.';
+
+  const upload = (
+    <UploadZone
+      selectedFile={selectedFile}
+      onClearFile={() => { setSelectedFile(null); resetFileInput(); }}
+      errorMessage={errorMessage}
+      isDragging={isDragging}
+      setIsDragging={setIsDragging}
+      onFileSelect={handleFileSelect}
+      onAnalyze={handleAnalyzeSelected}
+      fileInputRef={fileInputRef}
+      onFileChange={handleFileChange}
+    />
+  );
+
   return (
-    <div className="space-y-5">
-
-      {/* 1. Top Section: Hero + Upload Zone */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        <div className="xl:col-span-2">
-          <HeroSection
-            currentUser={currentUser}
-            latestAnalysis={latestAnalysis}
-            previousAnalysis={previousAnalysis}
-          />
-        </div>
-        <div className="flex flex-col">
-          <UploadZone
-            selectedFile={selectedFile}
-            onClearFile={() => { setSelectedFile(null); resetFileInput(); }}
-            errorMessage={errorMessage}
-            isDragging={isDragging}
-            setIsDragging={setIsDragging}
-            onFileSelect={handleFileSelect}
-            onAnalyze={handleAnalyzeSelected}
-            fileInputRef={fileInputRef}
-            onFileChange={handleFileChange}
-          />
-        </div>
-      </div>
-
-      {/* 2. KPI Grid */}
-      <KpiGrid
-        latestAnalysis={latestAnalysis}
-        previousAnalysis={previousAnalysis}
-        historyCount={history.length}
-        creditsText={creditsText}
+    <div>
+      <PageHeader
+        eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+        title={<>{greeting()}{firstName ? <>, <em className="t-em">{firstName}.</em></> : '.'}</>}
+        description={description}
       />
 
-      {/* 3. Two-column: AI Insights + Activity Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2">
-          <AiInsightsPanel
-            latestAnalysis={latestAnalysis}
-            onViewReport={handleViewReportFromInsights}
-          />
-        </div>
-        <div>
-          <ActivityTimeline
-            history={analyses}
-            onSelectResume={setSelectedResume}
-          />
-        </div>
-      </div>
-
-      {/* 4. Resume Health */}
-      <ResumeHealthRadar latestAnalysis={latestAnalysis} />
-
-      {/* 5. Action Center */}
-      <AiActionCenter latestAnalysis={latestAnalysis} />
-
-      {/* 6. Plan Banner */}
-      {activePlan ? (
-        <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
-              <SparklesIcon className="h-5 w-5 text-primary" />
-            </span>
-            <div>
-              <p className="font-display text-sm font-semibold text-ink">{activePlan.planId.name}</p>
-              <p className="text-xs text-ink-muted">
-                {activePlan.planId.isUnlimited ? 'Unlimited checks available' : `${activePlan.creditsLeft} of ${activePlan.planId.credits} checks remaining`}
-              </p>
-            </div>
-          </div>
-          <Button variant="secondary" size="sm" onClick={() => navigate('/dashboard/plans')} className="whitespace-nowrap">
-            Manage plan
-          </Button>
-        </Card>
-      ) : (
-        <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-primary/25">
+      {/* No credits: say so up front, where the upload would otherwise fail */}
+      {!historyPending && !hasCredits && (
+        <div className="mb-5 flex flex-col gap-3 rounded-lg border border-warn/25 bg-warn/[0.07] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-display text-sm font-semibold text-ink">No active plan</p>
-            <p className="text-xs text-ink-muted">Select a plan to start analyzing your resumes.</p>
+            <p className="text-sm font-medium text-ink">You need credits to run an analysis</p>
+            <p className="mt-0.5 text-[0.8125rem] text-ink-muted">Each analysis uses one credit. Pick a plan and you can upload right away.</p>
           </div>
-          <Button size="sm" onClick={() => navigate('/dashboard/plans')} className="whitespace-nowrap">
-            View plans
+          <Button size="sm" onClick={() => navigate('/dashboard/plans')} className="flex-shrink-0 self-start sm:self-auto">
+            See plans
           </Button>
-        </Card>
+        </div>
+      )}
+
+      {historyPending ? (
+        <OverviewSkeleton />
+      ) : !latestAnalysis ? (
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+          <FirstRun />
+          {upload}
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {/* 1. The latest report, and the way to make the next one */}
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+            <LatestReport analyses={analyses} onOpen={openLatestReport} />
+            {upload}
+          </div>
+
+          {/* 2. The counts behind it */}
+          <StatStrip latestAnalysis={latestAnalysis} historyCount={history.length} />
+
+          {/* 3. What to fix, and what you've uploaded */}
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+            <AiInsightsPanel latestAnalysis={latestAnalysis} onViewReport={openLatestReport} />
+            <ActivityTimeline history={analyses} onSelectResume={setSelectedResume} />
+          </div>
+
+          {/* 4. Checklist and section breakdown */}
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+            <AiActionCenter latestAnalysis={latestAnalysis} />
+            <ResumeHealthRadar latestAnalysis={latestAnalysis} />
+          </div>
+        </div>
       )}
 
       {/* Modals */}

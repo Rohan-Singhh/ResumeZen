@@ -1,64 +1,73 @@
 import React from 'react';
-import {
-  SparklesIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ArrowRightIcon,
-} from '@heroicons/react/24/outline';
+import { CheckIcon } from '@heroicons/react/20/solid';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import Card from '../../../components/ui/Card';
 import SectionHeader from '../../../components/ui/SectionHeader';
 import EmptyState from '../../../components/ui/EmptyState';
-import Badge from '../../../components/ui/Badge';
 
+const MAX_ISSUES = 5;
+
+/**
+ * "To fix" — the marks on the latest resume, most important first. Each row
+ * opens the full report.
+ */
 export default function AiInsightsPanel({ latestAnalysis, onViewReport }) {
-  const issues = latestAnalysis?.issues || [];
-  const strengths = latestAnalysis?.strengths || [];
-
-  if (!latestAnalysis) {
-    return (
-      <Card>
-        <SectionHeader icon={SparklesIcon} title="AI Insights" className="mb-4" />
-        <EmptyState icon={SparklesIcon} message="Upload a resume to get AI-powered insights" />
-      </Card>
-    );
-  }
+  const issues = latestAnalysis.issues;
+  const strengths = latestAnalysis.strengths;
+  const shown = issues.slice(0, MAX_ISSUES);
+  const hidden = issues.length - shown.length;
 
   return (
-    <Card>
+    <Card className="h-full">
       <SectionHeader
-        icon={SparklesIcon}
-        title="AI Insights"
-        right={<span className="text-[11px] font-medium uppercase tracking-wider text-ink-faint">AI generated</span>}
-        className="mb-5"
+        title="To fix"
+        hint="What a recruiter would mark on your latest resume"
+        right={<span className="t-meta">{issues.length}</span>}
+        className="mb-4"
       />
 
-      {issues.length > 0 && (
-        <div className="space-y-2 mb-5">
-          {issues.map((issue) => (
-            <button
-              key={issue}
-              onClick={() => onViewReport?.()}
-              className="group flex w-full items-start gap-3 rounded-lg border border-line bg-white/[0.02] p-3 text-left transition-colors hover:bg-white/[0.04]"
-            >
-              <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0 text-amber-400 mt-0.5" />
-              <span className="flex-1 min-w-0 text-sm text-ink-muted group-hover:text-ink transition-colors">{issue}</span>
-              <ArrowRightIcon className="h-3.5 w-3.5 flex-shrink-0 text-ink-faint group-hover:text-primary transition-colors mt-0.5" />
-            </button>
+      {issues.length === 0 ? (
+        <EmptyState
+          compact
+          icon={CheckIcon}
+          title="Nothing flagged"
+          message="This resume came back without recruiter notes. Check the full report for the score breakdown."
+        />
+      ) : (
+        <ul className="-mx-2">
+          {shown.map((issue) => (
+            <li key={issue}>
+              <button
+                type="button"
+                onClick={() => onViewReport?.()}
+                className="group flex w-full items-start gap-3 rounded-md px-2 py-2.5 text-left hover:bg-ink/[0.04]"
+              >
+                <span aria-hidden="true" className="mt-[0.68em] h-[2px] w-3 flex-shrink-0 rounded-full bg-primary" />
+                <span className="min-w-0 flex-1 text-sm leading-relaxed text-ink-muted group-hover:text-ink">{issue}</span>
+                <ArrowRightIcon className="mt-1 h-3.5 w-3.5 flex-shrink-0 -translate-x-1 text-ink-faint opacity-0 transition-[opacity,transform] duration-base ease-out group-hover:translate-x-0 group-hover:opacity-100" />
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
+      )}
+
+      {hidden > 0 && (
+        <button type="button" onClick={() => onViewReport?.()} className="mt-2 text-[0.8125rem] font-medium text-ink-muted hover:text-ink">
+          + {hidden} more in the full report
+        </button>
       )}
 
       {strengths.length > 0 && (
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-ink-faint mb-2.5">Strengths detected</p>
-          <div className="flex flex-wrap gap-2">
-            {strengths.map((str) => (
-              <Badge key={str} variant="emerald">
-                <CheckCircleIcon className="h-3.5 w-3.5" />
+        <div className="mt-5 border-t border-line pt-5">
+          <p className="t-label mb-3">Keep these</p>
+          <ul className="space-y-2">
+            {strengths.slice(0, 3).map((str) => (
+              <li key={str} className="flex items-start gap-2.5 text-sm leading-snug text-ink-muted">
+                <CheckIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-good" aria-hidden="true" />
                 {str}
-              </Badge>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
     </Card>
