@@ -20,7 +20,7 @@ export const Input = React.forwardRef(function Input({ className = '', ...rest }
 });
 
 export const Textarea = React.forwardRef(function Textarea({ className = '', ...rest }, ref) {
-  return <textarea ref={ref} className={`${controlClasses} min-h-[104px] resize-y py-3 leading-relaxed ${className}`} {...rest} />;
+  return <textarea ref={ref} className={`${controlClasses} min-h-[6.5rem] resize-y py-3 leading-relaxed ${className}`} {...rest} />;
 });
 
 /**
