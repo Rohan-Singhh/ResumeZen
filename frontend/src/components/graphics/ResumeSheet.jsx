@@ -11,8 +11,9 @@ import Seal from './Seal';
  * so one `fontSize` scales the whole sheet.
  *
  * Props:
- *   className — outer box; give it a width and a font size (e.g. "w-full
- *               text-[12px]"). The sheet is ~38em wide at its natural size.
+ *   className — outer box; give it a width and a font size in rem (e.g.
+ *               "w-full text-[0.75rem]") so it scales with the root size on
+ *               large displays. The sheet is ~38em wide at its natural size.
  *   play      — force the marks on/off; by default they draw when scrolled into view
  *   delay     — seconds before the first mark
  *   active    — 'impact' | 'voice' | 'proof' | 'keywords' | null. When set, that

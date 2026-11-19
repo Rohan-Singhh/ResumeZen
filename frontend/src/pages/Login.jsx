@@ -136,7 +136,7 @@ export default function Login() {
               transition={{ ...springGentle, delay: 0.15 }}
               className="w-full max-w-[28rem]"
             >
-              <ResumeSheet play delay={0.9} className="w-full text-[11px] xl:text-[12px]" />
+              <ResumeSheet play delay={0.9} className="w-full text-[0.6875rem] xl:text-[0.75rem]" />
             </motion.div>
           </div>
 

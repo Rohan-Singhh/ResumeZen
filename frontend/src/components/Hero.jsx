@@ -108,7 +108,7 @@ export default function Hero() {
             transition={{ ...springGentle, delay: 0.35 }}
             className="origin-bottom-right"
           >
-            <ResumeSheet play delay={1.25} className="w-full text-[10.5px] sm:text-[12px]" />
+            <ResumeSheet play delay={1.25} className="w-full text-[0.65625rem] sm:text-[0.75rem]" />
           </motion.div>
 
           <motion.div

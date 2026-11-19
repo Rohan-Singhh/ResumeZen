@@ -40,6 +40,16 @@
     }
   }
 
+  /* Past 2560px CSS width (4K displays, or a zoomed-out browser) keep the
+     root proportional to the viewport (20px at 2560, continuous with the rule
+     above), so the layout holds the same share of the screen at any width
+     instead of shrinking back into the middle. */
+  @media (min-width: 2560px) {
+    html {
+      font-size: clamp(125%, 0.78125vw, 200%);
+    }
+  }
+
   body {
     margin: 0;
     min-width: 320px;
