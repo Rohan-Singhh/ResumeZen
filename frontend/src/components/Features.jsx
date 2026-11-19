@@ -185,7 +185,7 @@ export default function Features() {
             className="hidden lg:sticky lg:top-[calc(var(--nav-h)+2rem)] lg:block lg:self-start"
           >
             <div className="-rotate-1">
-              <ResumeSheet active={activeMark} seal={false} className="w-full text-[10px] sm:text-[12px]" />
+              <ResumeSheet active={activeMark} seal={false} className="w-full text-[0.625rem] sm:text-[0.75rem]" />
             </div>
             <p className="t-meta mt-5">A sample resume. Yours stays private to your account.</p>
           </motion.div>

@@ -11,7 +11,7 @@ import { ease } from '../../utils/motion';
  *
  * Props:
  *   value    — 0–100, or null for "no score yet" (draws the faint ring only)
- *   size     — px (default 120)
+ *   size     — px at the default 16px root, rendered in rem (default 120)
  *   tone     — auto (by score) | good | warn | bad | accent | paper
  *   weight   — stroke width in drawing units out of 100 (default 8)
  *   animated — sweep in on mount / on value change (default true)
@@ -89,8 +89,12 @@ export default function Enso({
   const sx = 50 + r * Math.cos(startRad);
   const sy = 50 + r * Math.sin(startRad);
 
+  // `size` is given in px at the default 16px root and rendered in rem, so the
+  // ring and its numerals scale with the root size on large displays.
+  const rem = (px) => `${px / 16}rem`;
+
   return (
-    <div className={`relative flex-shrink-0 ${className}`} style={{ width: size, height: size }}>
+    <div className={`relative flex-shrink-0 ${className}`} style={{ width: rem(size), height: rem(size) }}>
       <svg viewBox="0 0 100 100" className="h-full w-full overflow-visible" aria-hidden="true">
         <defs>
           <filter id={`${uid}-ink`} x="-10%" y="-10%" width="120%" height="120%">
@@ -136,11 +140,11 @@ export default function Enso({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {children ?? (
           <>
-            <span className="t-num" style={{ fontSize: size * 0.34 }}>
+            <span className="t-num" style={{ fontSize: rem(size * 0.34) }}>
               {hasValue ? (animated ? <CountUp value={value} delay={delay} /> : value) : '–'}
             </span>
             {label && (
-              <span className="t-label mt-[0.35em]" style={{ fontSize: Math.max(9, size * 0.085) }}>
+              <span className="t-label mt-[0.35em]" style={{ fontSize: rem(Math.max(9, size * 0.085)) }}>
                 {label}
               </span>
             )}
