@@ -41,13 +41,14 @@ export default function Hero() {
   return (
     <section id="home" ref={ref} className="relative isolate overflow-hidden">
       {/* Scene. The sun is pinned to the sheet's corner (the sheet's left edge
-          sits at 50% + 80px inside the 1200px shell), so the red disc rises
-          from behind the paper at every desktop width. */}
+          sits at 50% + 5rem inside the 75rem shell), so the red disc rises
+          from behind the paper at every desktop width. Offsets are in rem so
+          they track the root size on large displays. */}
       <InkLandscape
         progress={scrollYProgress}
         seed={11}
         mist
-        sun="left-[74%] top-[5.25rem] h-20 w-20 sm:left-[77%] sm:top-20 sm:h-32 sm:w-32 lg:left-[calc(50%+22px)] lg:top-[calc(50%-330px)] lg:h-60 lg:w-60"
+        sun="left-[74%] top-[5.25rem] h-20 w-20 sm:left-[77%] sm:top-20 sm:h-32 sm:w-32 lg:left-[calc(50%+1.375rem)] lg:top-[calc(50%-20.625rem)] lg:h-60 lg:w-60"
         className="absolute inset-0 -z-10"
       />
       {/* Ink pooled behind the copy so type never fights the ridges */}

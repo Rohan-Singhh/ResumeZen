@@ -17,7 +17,7 @@
   -moz-osx-font-smoothing: grayscale;
 
   /* Height of the fixed marketing navbar; sections offset anchors by it */
-  --nav-h: 72px;
+  --nav-h: 4.5rem;
 }
 
 @layer base {
@@ -27,6 +27,17 @@
     /* Scroll-linked animations measure their targets against the scroller,
        which needs to be a positioned box */
     position: relative;
+  }
+
+  /* Large displays: grow the root size from 16px at 1536px wide to 20px at
+     2560px. Everything is sized in rem (type, spacing, the 75rem shell), so
+     the layout scales as one piece instead of shrinking to a narrow column
+     in the middle of the screen. Expressed in rem/% so a reader's browser
+     font-size preference still applies. */
+  @media (min-width: 1536px) {
+    html {
+      font-size: clamp(100%, calc(0.625rem + 0.390625vw), 125%);
+    }
   }
 
   body {

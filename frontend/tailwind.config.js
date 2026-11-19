@@ -114,7 +114,8 @@ export default {
       },
 
       maxWidth: {
-        shell: '1200px',
+        // rem, not px, so it scales with the root size on large displays
+        shell: '75rem',
         prose: '62ch',
       },
     },
