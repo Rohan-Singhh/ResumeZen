@@ -307,7 +307,7 @@ export default function DashboardLayout() {
         <MobileTopBar onHelp={() => setHelpOpen(true)} />
 
         <main className="flex-1 overflow-y-auto" data-dashboard-scroll>
-          <div className="mx-auto w-full max-w-[1180px] px-4 pb-28 pt-7 sm:px-8 sm:pt-9 lg:px-10 lg:pb-14 lg:pt-10">
+          <div className="mx-auto w-full max-w-[73.75rem] px-4 pb-28 pt-7 sm:px-8 sm:pt-9 lg:px-10 lg:pb-14 lg:pt-10">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}

@@ -48,7 +48,7 @@ export default function FirstRun() {
             transition={{ ...springGentle, delay: 0.2 }}
             className="absolute left-8 top-10 w-[30rem] origin-top-left"
           >
-            <ResumeSheet play delay={0.8} seal={false} className="w-full text-[11px]" />
+            <ResumeSheet play delay={0.8} seal={false} className="w-full text-[0.6875rem]" />
           </motion.div>
           <p className="t-label absolute bottom-4 right-5 rounded bg-surface-sunken/90 px-2 py-1.5">Sample</p>
         </div>
